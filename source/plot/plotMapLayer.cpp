@@ -94,7 +94,7 @@ PlotMapLayerGrid::PlotMapLayerGrid(Config &config)
     points = grid.points;
     areas  = grid.areas;
 
-    if(grid.values.size()==0)
+    if(!points.size() || !grid.values.size())
       throw(Exception("<"+fileNameGrid.str()+"> has no values."));
 
     // try to define grid spacing
@@ -154,9 +154,6 @@ std::string PlotMapLayerGrid::scriptEntry() const
 {
   try
   {
-    if(!points.size())
-      return "";
-
     std::stringstream ss;
     ss<<"gmt xyz2grd -bi3d "<<dataFileName<<" -G"<<dataFileName<<".grd -Vn -I"<<incrementLon*RAD2DEG*3600.<<"s/"<<incrementLat*RAD2DEG*3600.<<"s -R"<<PlotBasics::scriptVariable("region")<<(isGridline ? "" : " -r")<<std::endl;
     if(illuminate)
@@ -257,7 +254,7 @@ std::string PlotMapLayerPoints::scriptEntry() const
 {
   try
   {
-    if(!points.size())
+    if(!data.size())
       return "";
 
     std::stringstream ss;
@@ -389,18 +386,18 @@ std::string PlotMapLayerArrows::scriptEntry() const
 {
   try
   {
-    if(!points.size())
-      return "";
-
     std::stringstream ss;
 
     // arrows from grid file
-    ss<<"gmt psxy "<<dataFileName<<" -bi"<<2+data.columns()<<"d -J -R -A -SV"<<headSize<<"p+ea+z"<<scale<<"c";
-    if(hasZValues)
-      ss<<" -W"<<penSize<<"p+cl -CgroopsPlot.cpt";
-    else
-      ss<<" -W"<<penSize<<"p,"<<penColor->str()<<" -G"<<penColor->str();
-    ss<<" -O -K >> groopsPlot.ps"<<std::endl;
+    if(data.size())
+    {
+      ss<<"gmt psxy "<<dataFileName<<" -bi"<<2+data.columns()<<"d -J -R -A -SV"<<headSize<<"p+ea+z"<<scale<<"c";
+      if(hasZValues)
+        ss<<" -W"<<penSize<<"p+cl -CgroopsPlot.cpt";
+      else
+        ss<<" -W"<<penSize<<"p,"<<penColor->str()<<" -G"<<penColor->str();
+      ss<<" -O -K >> groopsPlot.ps"<<std::endl;
+    }
 
     if(drawScaleArrow)
     {
@@ -556,9 +553,7 @@ void PlotMapLayerPolygon::writeDataFile(const Ellipsoid &/*ellipsoid*/, const Fi
     for(auto &p : polygons)
     {
       for(UInt i=0; i<p.L.size(); i++)
-      {
         file<<p.L(i)*RAD2DEG<<" "<<p.B(i)*RAD2DEG<<std::endl;
-      }
       file<<">"<<std::endl;
     }
   }
@@ -1054,10 +1049,7 @@ void PlotMapLayer::getIntervalZ(Bool isLogarithmic, Double &minZ, Double &maxZ) 
 {
   try
   {
-    if(!requiresColorBar())
-      return;
-    // in case there are no valid data points
-    if(!points.size())
+    if(!requiresColorBar() || !data.size())
       return;
 
     UInt   count =  0;
@@ -1119,9 +1111,6 @@ std::string PlotMapLayer::scriptStatisticsInfo(UInt fontSize, Double width, cons
   try
   {
     if(!requiresColorBar())
-      return std::string();
-
-    if(!points.size())
       return std::string();
 
     Double rms, avg, vmin, vmax, mean;
