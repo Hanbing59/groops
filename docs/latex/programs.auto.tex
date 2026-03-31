@@ -846,8 +846,8 @@ Name & Type & Annotation\\
 %==================================
 \subsection{GnssGlonassFrequencyNumberUpdate}\label{GnssGlonassFrequencyNumberUpdate}
 Update/set GLONASS frequency number in \configFile{inputfileTransmitterInfo}{platform} files.
-
-PRN/SVN to frequency number source: \url{http://semisys.gfz-potsdam.de/semisys/api/?symname=2002&format=json&satellite=GLO}.
+The \configFile{inputfilePrn2FrequencyNumber}{matrix} can be generated with
+\program{SinexMetadata2GlonassFrequencyNumber}.
 
 See also \program{GnssAntex2AntennaDefinition}.
 
@@ -859,7 +859,7 @@ Name & Type & Annotation\\
 \hline
 \hfuzz=500pt\includegraphics[width=1em]{element.pdf}~outputfileTransmitterInfo & \hfuzz=500pt filename & \hfuzz=500pt templated for PRN list (variableNamePrn)\\
 \hfuzz=500pt\includegraphics[width=1em]{element-mustset.pdf}~inputfileTransmitterInfo & \hfuzz=500pt filename & \hfuzz=500pt templated for PRN list (variableNamePrn)\\
-\hfuzz=500pt\includegraphics[width=1em]{element-mustset.pdf}~inputfilePrn2FrequencyNumber & \hfuzz=500pt filename & \hfuzz=500pt GROOPS matrix with columns: GLONASS PRN, SVN, mjdStart, mjdEnd, frequencyNumber\\
+\hfuzz=500pt\includegraphics[width=1em]{element-mustset.pdf}~inputfilePrn2FrequencyNumber & \hfuzz=500pt filename & \hfuzz=500pt matrix with columns: GLONASS PRN, SVN, mjdStart, mjdEnd, frequencyNumber\\
 \hfuzz=500pt\includegraphics[width=1em]{element-unbounded.pdf}~prn & \hfuzz=500pt string & \hfuzz=500pt PRN (e.g. R01) for transmitter info files\\
 \hfuzz=500pt\includegraphics[width=1em]{element.pdf}~variableNamePrn & \hfuzz=500pt string & \hfuzz=500pt variable name for PRN in transmitter info files\\
 \hline
@@ -7848,8 +7848,10 @@ Name & Type & Annotation\\
 %==================================
 \subsection{GnssAntex2AntennaDefinition}\label{GnssAntex2AntennaDefinition}
 Converts metadata and antenna definitions from the \href{https://files.igs.org/pub/data/format/antex14.txt}{IGS ANTEX format}.
-to \configFile{transmitterInfo}{platform}, \configFile{antennaDefinition}{gnssAntennaDefinition}, \configFile{svnBlockTable}{stringTable},
-and \configFile{transmitterList}{stringList} files for the respective GNSS and for the list of ground station antennas.
+to \configFile{antennaDefinition}{gnssAntennaDefinition}, \configFile{transmitterInfo}{platform}, and
+\configFile{transmitterList}{stringList} files for the respective GNSS and for the list of ground station antennas.
+
+The \file{transmitterInfo}{platform} files for GLONASS satellites should then be updated using \program{GnssGlonassFrequencyNumberUpdate}.
 
 
 \keepXColumns
@@ -7860,16 +7862,12 @@ Name & Type & Annotation\\
 \hfuzz=500pt\includegraphics[width=1em]{element.pdf}~outputfileAntennaDefinitionStation & \hfuzz=500pt filename & \hfuzz=500pt antenna center variations\\
 \hfuzz=500pt\includegraphics[width=1em]{element.pdf}~outputfileAntennaDefinitionTransmitter & \hfuzz=500pt filename & \hfuzz=500pt antenna center variations\\
 \hfuzz=500pt\includegraphics[width=1em]{element.pdf}~outputfileTransmitterInfo & \hfuzz=500pt filename & \hfuzz=500pt PRN is appended to file name\\
-\hfuzz=500pt\includegraphics[width=1em]{element.pdf}~outputfileSvnBlockTableGps & \hfuzz=500pt filename & \hfuzz=500pt SVN to satellite block mapping\\
-\hfuzz=500pt\includegraphics[width=1em]{element.pdf}~outputfileSvnBlockTableGlonass & \hfuzz=500pt filename & \hfuzz=500pt SVN to satellite block mapping\\
-\hfuzz=500pt\includegraphics[width=1em]{element.pdf}~outputfileSvnBlockTableGalileo & \hfuzz=500pt filename & \hfuzz=500pt SVN to satellite block mapping\\
-\hfuzz=500pt\includegraphics[width=1em]{element.pdf}~outputfileSvnBlockTableBeiDou & \hfuzz=500pt filename & \hfuzz=500pt SVN to satellite block mapping\\
-\hfuzz=500pt\includegraphics[width=1em]{element.pdf}~outputfileSvnBlockTableQzss & \hfuzz=500pt filename & \hfuzz=500pt SVN to satellite block mapping\\
 \hfuzz=500pt\includegraphics[width=1em]{element.pdf}~outputfileTransmitterListGps & \hfuzz=500pt filename & \hfuzz=500pt list of PRNs\\
 \hfuzz=500pt\includegraphics[width=1em]{element.pdf}~outputfileTransmitterListGlonass & \hfuzz=500pt filename & \hfuzz=500pt list of PRNs\\
 \hfuzz=500pt\includegraphics[width=1em]{element.pdf}~outputfileTransmitterListGalileo & \hfuzz=500pt filename & \hfuzz=500pt list of PRNs\\
 \hfuzz=500pt\includegraphics[width=1em]{element.pdf}~outputfileTransmitterListBeiDou & \hfuzz=500pt filename & \hfuzz=500pt list of PRNs\\
 \hfuzz=500pt\includegraphics[width=1em]{element.pdf}~outputfileTransmitterListQzss & \hfuzz=500pt filename & \hfuzz=500pt list of PRNs\\
+\hfuzz=500pt\includegraphics[width=1em]{element.pdf}~outputfileTransmitterListIrnss & \hfuzz=500pt filename & \hfuzz=500pt list of PRNs\\
 \hfuzz=500pt\includegraphics[width=1em]{element-mustset.pdf}~inputfileAntex & \hfuzz=500pt filename & \hfuzz=500pt \\
 \hfuzz=500pt\includegraphics[width=1em]{element.pdf}~timeStart & \hfuzz=500pt time & \hfuzz=500pt ignore older antenna definitions\\
 \hfuzz=500pt\includegraphics[width=1em]{element.pdf}~createZeroModel & \hfuzz=500pt boolean & \hfuzz=500pt create empty antenna patterns\\
@@ -7953,7 +7951,7 @@ Name & Type & Annotation\\
 \hfuzz=500pt\includegraphics[width=1em]{element-mustset.pdf}~outputfileIgsErp & \hfuzz=500pt filename & \hfuzz=500pt IGS ERP file\\
 \hfuzz=500pt\includegraphics[width=1em]{element-mustset-unbounded.pdf}~epoch & \hfuzz=500pt sequence & \hfuzz=500pt e.g. daily solution\\
 \hfuzz=500pt\includegraphics[width=1em]{connector.pdf}\includegraphics[width=1em]{element-mustset.pdf}~inputfileSolution & \hfuzz=500pt filename & \hfuzz=500pt parameter vector\\
-\hfuzz=500pt\includegraphics[width=1em]{connector.pdf}\includegraphics[width=1em]{element-mustset.pdf}~inputfileSigmax & \hfuzz=500pt filename & \hfuzz=500pt standard deviations of the parameters (sqrt of the diagonal of the inverse normal equation)\\
+\hfuzz=500pt\includegraphics[width=1em]{connector.pdf}\includegraphics[width=1em]{element.pdf}~inputfileSigmax & \hfuzz=500pt filename & \hfuzz=500pt standard deviations of the parameters (sqrt of the diagonal of the inverse normal equation)\\
 \hfuzz=500pt\includegraphics[width=1em]{connector.pdf}\includegraphics[width=1em]{element-mustset.pdf}~inputfileParameterNames & \hfuzz=500pt filename & \hfuzz=500pt parameter names\\
 \hfuzz=500pt\includegraphics[width=1em]{connector.pdf}\includegraphics[width=1em]{element-unbounded.pdf}~inputfileTransmitterList & \hfuzz=500pt filename & \hfuzz=500pt transmitter PRNs used in solution (used for transmitter count)\\
 \hfuzz=500pt\includegraphics[width=1em]{connector.pdf}\includegraphics[width=1em]{element.pdf}~inputfileStationList & \hfuzz=500pt filename & \hfuzz=500pt stations used in solution (used for station count)\\
@@ -8202,17 +8200,17 @@ Name & Type & Annotation\\
 \hfuzz=500pt\includegraphics[width=1em]{element-mustset.pdf}~biasMode & \hfuzz=500pt choice & \hfuzz=500pt absolute or relative bias estimates\\
 \hfuzz=500pt\includegraphics[width=1em]{connector.pdf}\includegraphics[width=1em]{element-mustset.pdf}~absolute & \hfuzz=500pt  & \hfuzz=500pt \\
 \hfuzz=500pt\includegraphics[width=1em]{connector.pdf}\includegraphics[width=1em]{element-mustset.pdf}~relative & \hfuzz=500pt  & \hfuzz=500pt \\
-\hfuzz=500pt\includegraphics[width=1em]{element.pdf}~observationSampling & \hfuzz=500pt uint & \hfuzz=500pt [seconds]\\
-\hfuzz=500pt\includegraphics[width=1em]{element.pdf}~intervalLength & \hfuzz=500pt uint & \hfuzz=500pt [seconds] interval for bias parameter representation\\
-\hfuzz=500pt\includegraphics[width=1em]{element-mustset.pdf}~determinationMethod & \hfuzz=500pt string & \hfuzz=500pt determination method used to generate the bias results (see SINEX Bias format description)\\
+\hfuzz=500pt\includegraphics[width=1em]{element.pdf}~observationSampling & \hfuzz=500pt double & \hfuzz=500pt [seconds]\\
+\hfuzz=500pt\includegraphics[width=1em]{element.pdf}~intervalLength & \hfuzz=500pt double & \hfuzz=500pt [seconds] interval for bias parameter representation\\
+\hfuzz=500pt\includegraphics[width=1em]{element.pdf}~determinationMethod & \hfuzz=500pt string & \hfuzz=500pt determination method used to generate the bias results (see SINEX Bias format description)\\
 \hfuzz=500pt\includegraphics[width=1em]{element.pdf}~receiverClockReferenceGnss & \hfuzz=500pt string & \hfuzz=500pt (G, R, E, C) reference GNSS used for receiver clock estimation\\
 \hfuzz=500pt\includegraphics[width=1em]{element-unbounded.pdf}~satelliteClockReferenceObservables & \hfuzz=500pt string & \hfuzz=500pt one per system, reference code observable on first and second frequency (RINEX3 format)\\
-\hfuzz=500pt\includegraphics[width=1em]{element-mustset.pdf}~description & \hfuzz=500pt string & \hfuzz=500pt organizition gathering/altering the file contents\\
-\hfuzz=500pt\includegraphics[width=1em]{element-mustset.pdf}~contact & \hfuzz=500pt string & \hfuzz=500pt contact name and/or email address\\
-\hfuzz=500pt\includegraphics[width=1em]{element-mustset.pdf}~input & \hfuzz=500pt string & \hfuzz=500pt brief description of the input used to generate this solution\\
-\hfuzz=500pt\includegraphics[width=1em]{element-mustset.pdf}~output & \hfuzz=500pt string & \hfuzz=500pt description of the file contents\\
-\hfuzz=500pt\includegraphics[width=1em]{element-mustset.pdf}~software & \hfuzz=500pt string & \hfuzz=500pt software used to generate the file\\
-\hfuzz=500pt\includegraphics[width=1em]{element-mustset.pdf}~hardware & \hfuzz=500pt string & \hfuzz=500pt computer hardware on which above software was run\\
+\hfuzz=500pt\includegraphics[width=1em]{element.pdf}~description & \hfuzz=500pt string & \hfuzz=500pt organizition gathering/altering the file contents\\
+\hfuzz=500pt\includegraphics[width=1em]{element.pdf}~contact & \hfuzz=500pt string & \hfuzz=500pt contact name and/or email address\\
+\hfuzz=500pt\includegraphics[width=1em]{element.pdf}~input & \hfuzz=500pt string & \hfuzz=500pt brief description of the input used to generate this solution\\
+\hfuzz=500pt\includegraphics[width=1em]{element.pdf}~output & \hfuzz=500pt string & \hfuzz=500pt description of the file contents\\
+\hfuzz=500pt\includegraphics[width=1em]{element.pdf}~software & \hfuzz=500pt string & \hfuzz=500pt software used to generate the file\\
+\hfuzz=500pt\includegraphics[width=1em]{element.pdf}~hardware & \hfuzz=500pt string & \hfuzz=500pt computer hardware on which above software was run\\
 \hfuzz=500pt\includegraphics[width=1em]{element-unbounded.pdf}~comment & \hfuzz=500pt string & \hfuzz=500pt comments in the comment block\\
 \hline
 \end{tabularx}
@@ -8267,14 +8265,24 @@ Name & Type & Annotation\\
 \clearpage
 %==================================
 \subsection{GnssTroposphere2TropoSinex}\label{GnssTroposphere2TropoSinex}
-Convert GNSS troposphere data from GROOPS format to \href{https://files.igs.org/pub/data/format/sinex_tro_v2.00.pdf}{IGS SINEX TRO} format.
+Convert GNSS troposphere data from GROOPS format as estimated by \program{GnssProcessing}
+to \href{https://files.igs.org/pub/data/format/sinex_tro_v2.00.pdf}{IGS SINEX TRO} format.
 
-Specification of the station list is done via \config{inputfileStationList}.
-\config{inputfileTroposphereData} needs the troposphere data provided from \program{GnssProcessing}.
-Additional following station metadata are required: \config{inputfileStationInfo} using file type \file{Station info}{platform},
-\config{inputfileAntennaDefinition} using file type \file{Antenna definition}{gnssAntennaDefinition} and \config{inputfileGridPos} which
-uses the stations positions provided from \program{GnssProcessing}.
-For considering the geoid height use \config{inputfileGeoidHeight}. The geoid height is provided by \program{Gravityfield2GriddedData}.
+For each station folling files are needed:
+\begin{itemize}
+  \item \configFile{inputfileStationInfo}{platform},
+  \item \configFile{inputfileTroposphereData}{instrument}(MISVALUES),
+  \item optional standard deviations with \configFile{inputfileTroposphereSigmas}{instrument}(MISVALUES),
+  \item \configFile{inputfilePosition}{instrument}(VECTOR3D).
+\end{itemize}
+The \configFile{inputfileAntennaDefinition}{gnssAntennaDefinition} contains antenna center offsets and variations
+of all used antennas. Created via \program{GnssAntex2AntennaDefinition} or \program{GnssAntennaDefinitionCreate}.
+
+For considering the geoid height use \configFile{inputfileGriddedGeoidHeight}{griddedData}
+as it might be computed by \program{Gravityfield2GriddedData}.
+The height closest to the station's position is used in each case.
+
+See also \program{GnssProcessing}.
 
 
 \keepXColumns
@@ -8283,47 +8291,43 @@ For considering the geoid height use \config{inputfileGeoidHeight}. The geoid he
 Name & Type & Annotation\\
 \hline
 \hfuzz=500pt\includegraphics[width=1em]{element-mustset.pdf}~outputfileTropoSinex & \hfuzz=500pt filename & \hfuzz=500pt \\
-\hfuzz=500pt\includegraphics[width=1em]{element-mustset.pdf}~stations & \hfuzz=500pt sequence & \hfuzz=500pt \\
-\hfuzz=500pt\includegraphics[width=1em]{connector.pdf}\includegraphics[width=1em]{element-mustset.pdf}~inputfileStationList & \hfuzz=500pt filename & \hfuzz=500pt ASCII file with station names\\
-\hfuzz=500pt\includegraphics[width=1em]{connector.pdf}\includegraphics[width=1em]{element-mustset.pdf}~inputfileTroposphereData & \hfuzz=500pt filename & \hfuzz=500pt Troposphere data estimates template (columns: mjd, trodry, trowet, tgndry, tgnwet, tgedry, tgewet)\\
-\hfuzz=500pt\includegraphics[width=1em]{connector.pdf}\includegraphics[width=1em]{element.pdf}~inputfileTroposphereSigmas & \hfuzz=500pt filename & \hfuzz=500pt Troposphere data sigmas template (columns: mjd, sigma\_trowet, sigma\_tgnwet, sigma\_tgewet)\\
-\hfuzz=500pt\includegraphics[width=1em]{connector.pdf}\includegraphics[width=1em]{element-mustset.pdf}~inputfileStationInfo & \hfuzz=500pt filename & \hfuzz=500pt station info file template\\
-\hfuzz=500pt\includegraphics[width=1em]{connector.pdf}\includegraphics[width=1em]{element.pdf}~inputfileGeoidHeight & \hfuzz=500pt filename & \hfuzz=500pt File including geoid height\\
-\hfuzz=500pt\includegraphics[width=1em]{connector.pdf}\includegraphics[width=1em]{element-mustset.pdf}~inputfileGridPos & \hfuzz=500pt filename & \hfuzz=500pt File including stations positions\\
-\hfuzz=500pt\includegraphics[width=1em]{connector.pdf}\includegraphics[width=1em]{element-mustset.pdf}~inputfileAntennaDefinition & \hfuzz=500pt filename & \hfuzz=500pt station phase centers and variations (ANTEX)\\
-\hfuzz=500pt\includegraphics[width=1em]{connector.pdf}\includegraphics[width=1em]{element.pdf}~variableStationName & \hfuzz=500pt filename & \hfuzz=500pt Loop variable for station names from station list\\
-\hfuzz=500pt\includegraphics[width=1em]{connector.pdf}\includegraphics[width=1em]{element-mustset.pdf}~observationTimeStart & \hfuzz=500pt time & \hfuzz=500pt Start time for which solution has observations\\
-\hfuzz=500pt\includegraphics[width=1em]{connector.pdf}\includegraphics[width=1em]{element-mustset.pdf}~observationTimeEnd & \hfuzz=500pt time & \hfuzz=500pt End time for which solution has observations\\
-\hfuzz=500pt\includegraphics[width=1em]{element-mustset.pdf}~dataSamplingInterval & \hfuzz=500pt double & \hfuzz=500pt [sec] GNSS data sampling rate\\
-\hfuzz=500pt\includegraphics[width=1em]{element-mustset.pdf}~tropoSamplingInterval & \hfuzz=500pt double & \hfuzz=500pt [sec] Tropospheric parameter sampling interval\\
-\hfuzz=500pt\includegraphics[width=1em]{element-mustset.pdf}~tropoModelingMethod & \hfuzz=500pt string & \hfuzz=500pt Tropospheric estimation method: Filter, Smoother, Least Squares, Piece-Wise Linear Interpolation\\
-\hfuzz=500pt\includegraphics[width=1em]{element-mustset.pdf}~aPrioriTropoModel & \hfuzz=500pt string & \hfuzz=500pt A priori tropospheric model used\\
-\hfuzz=500pt\includegraphics[width=1em]{element-mustset.pdf}~tropoMappingFunction & \hfuzz=500pt string & \hfuzz=500pt Name of mapping function used for hydrostatic and wet delay\\
-\hfuzz=500pt\includegraphics[width=1em]{element-mustset.pdf}~gradientMappingFunction & \hfuzz=500pt string & \hfuzz=500pt Name of mapping function used for gradients\\
+\hfuzz=500pt\includegraphics[width=1em]{element-mustset-unbounded.pdf}~station & \hfuzz=500pt sequence & \hfuzz=500pt \\
+\hfuzz=500pt\includegraphics[width=1em]{connector.pdf}\includegraphics[width=1em]{element-mustset.pdf}~inputfileStationInfo & \hfuzz=500pt filename & \hfuzz=500pt platform file\\
+\hfuzz=500pt\includegraphics[width=1em]{connector.pdf}\includegraphics[width=1em]{element-mustset.pdf}~inputfileTroposphereData & \hfuzz=500pt filename & \hfuzz=500pt Troposphere data estimates (columns: mjd, trodry, trowet, tgndry, tgnwet, tgedry, tgewet)\\
+\hfuzz=500pt\includegraphics[width=1em]{connector.pdf}\includegraphics[width=1em]{element.pdf}~inputfileTroposphereSigmas & \hfuzz=500pt filename & \hfuzz=500pt Troposphere data sigmas (columns: mjd, sigma\_trowet, sigma\_tgnwet, sigma\_tgewet)\\
+\hfuzz=500pt\includegraphics[width=1em]{connector.pdf}\includegraphics[width=1em]{element.pdf}~inputfilePosition & \hfuzz=500pt filename & \hfuzz=500pt Precise station position (columns: mjd, x, y, z [m in TRF])\\
+\hfuzz=500pt\includegraphics[width=1em]{element-mustset.pdf}~inputfileAntennaDefinition & \hfuzz=500pt filename & \hfuzz=500pt station phase centers and variations\\
+\hfuzz=500pt\includegraphics[width=1em]{element.pdf}~inputfileGriddedGeoidHeight & \hfuzz=500pt filename & \hfuzz=500pt value closest to the station's position is used in each case\\
+\hfuzz=500pt\includegraphics[width=1em]{element.pdf}~dataSamplingInterval & \hfuzz=500pt double & \hfuzz=500pt [sec] GNSS data sampling rate\\
+\hfuzz=500pt\includegraphics[width=1em]{element.pdf}~tropoSamplingInterval & \hfuzz=500pt double & \hfuzz=500pt [sec] Tropospheric parameter sampling interval\\
+\hfuzz=500pt\includegraphics[width=1em]{element.pdf}~tropoModelingMethod & \hfuzz=500pt string & \hfuzz=500pt Tropospheric estimation method: Filter, Smoother, Least Squares, Piece-Wise Linear Interpolation\\
+\hfuzz=500pt\includegraphics[width=1em]{element.pdf}~aPrioriTropoModel & \hfuzz=500pt string & \hfuzz=500pt A priori tropospheric model used\\
+\hfuzz=500pt\includegraphics[width=1em]{element.pdf}~tropoMappingFunction & \hfuzz=500pt string & \hfuzz=500pt Name of mapping function used for hydrostatic and wet delay\\
+\hfuzz=500pt\includegraphics[width=1em]{element.pdf}~gradientMappingFunction & \hfuzz=500pt string & \hfuzz=500pt Name of mapping function used for gradients\\
 \hfuzz=500pt\includegraphics[width=1em]{element.pdf}~metDataSource & \hfuzz=500pt string & \hfuzz=500pt source of surface meteorological observations used (see format desc.)\\
-\hfuzz=500pt\includegraphics[width=1em]{element-mustset.pdf}~observationWeighting & \hfuzz=500pt string & \hfuzz=500pt observation weighting model applied\\
-\hfuzz=500pt\includegraphics[width=1em]{element-mustset.pdf}~elevationCutoff & \hfuzz=500pt double & \hfuzz=500pt [deg]\\
-\hfuzz=500pt\includegraphics[width=1em]{element-mustset.pdf}~gnssSystems & \hfuzz=500pt string & \hfuzz=500pt G=GPS, R=GLONASS, E=Galileo, C=BeiDou\\
-\hfuzz=500pt\includegraphics[width=1em]{element-mustset.pdf}~timeSystem & \hfuzz=500pt string & \hfuzz=500pt G (GPS) or UTC\\
-\hfuzz=500pt\includegraphics[width=1em]{element.pdf}~oceanTideModel & \hfuzz=500pt string & \hfuzz=500pt Ocean tide loading model applied\\
-\hfuzz=500pt\includegraphics[width=1em]{element.pdf}~atmosphericTideModel & \hfuzz=500pt string & \hfuzz=500pt Atmospheric tide loading model applied\\
+\hfuzz=500pt\includegraphics[width=1em]{element.pdf}~observationWeighting & \hfuzz=500pt string & \hfuzz=500pt observation weighting model applied\\
+\hfuzz=500pt\includegraphics[width=1em]{element.pdf}~elevationCutoff & \hfuzz=500pt double & \hfuzz=500pt [deg]\\
+\hfuzz=500pt\includegraphics[width=1em]{element.pdf}~gnssSystems & \hfuzz=500pt string & \hfuzz=500pt G=GPS, R=GLONASS, E=Galileo, C=BeiDou\\
+\hfuzz=500pt\includegraphics[width=1em]{element.pdf}~timeSystem & \hfuzz=500pt string & \hfuzz=500pt G (GPS) or UTC\\
+\hfuzz=500pt\includegraphics[width=1em]{element.pdf}~oceanTideModel & \hfuzz=500pt string & \hfuzz=500pt Name of applied Ocean tide loading model\\
+\hfuzz=500pt\includegraphics[width=1em]{element.pdf}~atmosphericTideModel & \hfuzz=500pt string & \hfuzz=500pt Name of applied Atmospheric tide loading model\\
 \hfuzz=500pt\includegraphics[width=1em]{element.pdf}~geoidModel & \hfuzz=500pt string & \hfuzz=500pt Geoid model name for undulation values\\
-\hfuzz=500pt\includegraphics[width=1em]{element-mustset.pdf}~systemCode & \hfuzz=500pt string & \hfuzz=500pt Terrestrial reference system code\\
-\hfuzz=500pt\includegraphics[width=1em]{element-mustset.pdf}~remark & \hfuzz=500pt string & \hfuzz=500pt Remark used to identify the origin of the coordinates (AC acronym)\\
-\hfuzz=500pt\includegraphics[width=1em]{element-mustset.pdf}~antennaCalibrationModel & \hfuzz=500pt string & \hfuzz=500pt e.g. IGS14\_WWWW (WWWW = ANTEX release GPS week)\\
+\hfuzz=500pt\includegraphics[width=1em]{element.pdf}~systemCode & \hfuzz=500pt string & \hfuzz=500pt Terrestrial reference system code\\
+\hfuzz=500pt\includegraphics[width=1em]{element.pdf}~remark & \hfuzz=500pt string & \hfuzz=500pt Remark used to identify the origin of the coordinates (AC acronym)\\
+\hfuzz=500pt\includegraphics[width=1em]{element.pdf}~antennaCalibrationModel & \hfuzz=500pt string & \hfuzz=500pt e.g. IGS20\_WWWW (WWWW = ANTEX release GPS week)\\
 \hfuzz=500pt\includegraphics[width=1em]{element-mustset.pdf}~sinexTroHeader & \hfuzz=500pt sequence & \hfuzz=500pt \\
-\hfuzz=500pt\includegraphics[width=1em]{connector.pdf}\includegraphics[width=1em]{element-mustset.pdf}~agencyCode & \hfuzz=500pt string & \hfuzz=500pt Identify the agency providing the data\\
-\hfuzz=500pt\includegraphics[width=1em]{connector.pdf}\includegraphics[width=1em]{element-mustset.pdf}~timeStart & \hfuzz=500pt time & \hfuzz=500pt Start time of the data\\
-\hfuzz=500pt\includegraphics[width=1em]{connector.pdf}\includegraphics[width=1em]{element-mustset.pdf}~timeEnd & \hfuzz=500pt time & \hfuzz=500pt End time of the data \\
-\hfuzz=500pt\includegraphics[width=1em]{connector.pdf}\includegraphics[width=1em]{element-mustset.pdf}~observationCode & \hfuzz=500pt string & \hfuzz=500pt Technique used to generate the SINEX solution\\
-\hfuzz=500pt\includegraphics[width=1em]{connector.pdf}\includegraphics[width=1em]{element-mustset.pdf}~solutionContents & \hfuzz=500pt string & \hfuzz=500pt Marker name if single station, MIX if multiple stations\\
-\hfuzz=500pt\includegraphics[width=1em]{connector.pdf}\includegraphics[width=1em]{element-mustset.pdf}~description & \hfuzz=500pt string & \hfuzz=500pt Organizitions gathering/alerting the file contents\\
-\hfuzz=500pt\includegraphics[width=1em]{connector.pdf}\includegraphics[width=1em]{element-mustset.pdf}~output & \hfuzz=500pt string & \hfuzz=500pt Description of the file contents\\
-\hfuzz=500pt\includegraphics[width=1em]{connector.pdf}\includegraphics[width=1em]{element-mustset.pdf}~contact & \hfuzz=500pt string & \hfuzz=500pt Address of the relevant contact e-mail\\
-\hfuzz=500pt\includegraphics[width=1em]{connector.pdf}\includegraphics[width=1em]{element-mustset.pdf}~software & \hfuzz=500pt string & \hfuzz=500pt Software used to generate the file\\
-\hfuzz=500pt\includegraphics[width=1em]{connector.pdf}\includegraphics[width=1em]{element-mustset.pdf}~hardware & \hfuzz=500pt string & \hfuzz=500pt Computer hardware on which above software was run\\
-\hfuzz=500pt\includegraphics[width=1em]{connector.pdf}\includegraphics[width=1em]{element-mustset.pdf}~input & \hfuzz=500pt string & \hfuzz=500pt Brief description of the input used to generate this solution\\
-\hfuzz=500pt\includegraphics[width=1em]{connector.pdf}\includegraphics[width=1em]{element-mustset.pdf}~versionNumber & \hfuzz=500pt string & \hfuzz=500pt Unique identifier of the product, same as in file name, e.g. 000\\
+\hfuzz=500pt\includegraphics[width=1em]{connector.pdf}\includegraphics[width=1em]{element.pdf}~agencyCode & \hfuzz=500pt string & \hfuzz=500pt Identify the agency providing the data\\
+\hfuzz=500pt\includegraphics[width=1em]{connector.pdf}\includegraphics[width=1em]{element.pdf}~timeStart & \hfuzz=500pt time & \hfuzz=500pt Start time of the data\\
+\hfuzz=500pt\includegraphics[width=1em]{connector.pdf}\includegraphics[width=1em]{element.pdf}~timeEnd & \hfuzz=500pt time & \hfuzz=500pt End time of the data \\
+\hfuzz=500pt\includegraphics[width=1em]{connector.pdf}\includegraphics[width=1em]{element.pdf}~observationCode & \hfuzz=500pt string & \hfuzz=500pt Technique used to generate the SINEX solution\\
+\hfuzz=500pt\includegraphics[width=1em]{connector.pdf}\includegraphics[width=1em]{element.pdf}~solutionContents & \hfuzz=500pt string & \hfuzz=500pt Marker name if single station, MIX if multiple stations\\
+\hfuzz=500pt\includegraphics[width=1em]{connector.pdf}\includegraphics[width=1em]{element.pdf}~description & \hfuzz=500pt string & \hfuzz=500pt Organizitions gathering/alerting the file contents\\
+\hfuzz=500pt\includegraphics[width=1em]{connector.pdf}\includegraphics[width=1em]{element.pdf}~output & \hfuzz=500pt string & \hfuzz=500pt Description of the file contents\\
+\hfuzz=500pt\includegraphics[width=1em]{connector.pdf}\includegraphics[width=1em]{element.pdf}~contact & \hfuzz=500pt string & \hfuzz=500pt Address of the relevant contact e-mail\\
+\hfuzz=500pt\includegraphics[width=1em]{connector.pdf}\includegraphics[width=1em]{element.pdf}~software & \hfuzz=500pt string & \hfuzz=500pt Software used to generate the file\\
+\hfuzz=500pt\includegraphics[width=1em]{connector.pdf}\includegraphics[width=1em]{element.pdf}~hardware & \hfuzz=500pt string & \hfuzz=500pt Computer hardware on which above software was run\\
+\hfuzz=500pt\includegraphics[width=1em]{connector.pdf}\includegraphics[width=1em]{element.pdf}~input & \hfuzz=500pt string & \hfuzz=500pt Brief description of the input used to generate this solution\\
+\hfuzz=500pt\includegraphics[width=1em]{connector.pdf}\includegraphics[width=1em]{element.pdf}~versionNumber & \hfuzz=500pt string & \hfuzz=500pt Unique identifier of the product, same as in file name, e.g. 000\\
 \hfuzz=500pt\includegraphics[width=1em]{connector.pdf}\includegraphics[width=1em]{element.pdf}~inputfileComment & \hfuzz=500pt filename & \hfuzz=500pt comments in the comment block from a file (truncated at 80 characters per line)\\
 \hfuzz=500pt\includegraphics[width=1em]{connector.pdf}\includegraphics[width=1em]{element-unbounded.pdf}~comment & \hfuzz=500pt string & \hfuzz=500pt comments in the comment block\\
 \hline
@@ -9683,13 +9687,11 @@ Name & Type & Annotation\\
 \subsection{RinexObservation2GnssReceiver}\label{RinexObservation2GnssReceiver}
 Converts \href{https://files.igs.org/pub/data/format/rinex_4.00.pdf}{RINEX} (version 2, 3, and 4) and
 \href{https://terras.gsi.go.jp/ja/crx2rnx.html}{Compact RINEX} observation files to
-\file{GnssReceiver Instrument file}{instrument}.
+\configFile{outputfileGnssReceiver}{instrument}.
 
 In case of \href{https://files.igs.org/pub/data/format/rinex211.txt}{RINEX v2.x} observation files
-containing GLONASS satellites, a mapping from PRN
-to frequency number must be provided via \config{inputfileMatrixPrn2FrequencyNumber}
-in the form of a \file{matrix file}{matrix} with columns: GLONASS PRN, mjdStart, mjdEnd, frequencyNumber.
-Source for mapping: \url{http://semisys.gfz-potsdam.de/semisys/api/?symname=2002&format=json&satellite=GLO}.
+containing GLONASS satellites, a mapping from PRN to frequency number must be provided via
+\configFile{inputfileMatrixPrn2FrequencyNumber}{matrix}, see \program{SinexMetadata2GlonassFrequencyNumber}.
 RINEX v3+ observation files already contain this information.
 
 \configClass{useType}{gnssType} and \configClass{ignoreType}{gnssType} can be used to filter
@@ -9699,12 +9701,12 @@ If \configFile{inputfileStationInfo}{platform} is set, RINEX antenna and receive
 will be cross-checked with the provided file and warnings are raised in case of differences.
 
 A list of semi-codeless GPS receivers (observing C2D instead of C2W) can be provided via
-\configFile{inputfileSemiCodelessReceivers}{stringList} in ASCII format with one receiver name per line.
+\configFile{inputfileSemiCodelessReceivers}{stringList} with one receiver name per line.
 Observation types will be automatically corrected for these receivers.
 
 Some LEO satellites use special RINEX observation types, either from the unofficial RINEX v2.20
-or custom ones. These can be provided via \configFile{inputfileSpecialObservationTypes}{stringTable}
-in ASCII format. The file must  must contain a table with two columns, the first being the special type,
+or custom ones. These can be provided via \configFile{inputfileSpecialObservationTypes}{stringTable}.
+The file must  must contain a table with two columns, the first being the special type,
 and the second being the equivalent RINEX v3 type.
 
 %Example for RINEX v2.20:
@@ -9726,10 +9728,10 @@ Name & Type & Annotation\\
 \hline
 \hfuzz=500pt\includegraphics[width=1em]{element-mustset.pdf}~outputfileGnssReceiver & \hfuzz=500pt filename & \hfuzz=500pt \\
 \hfuzz=500pt\includegraphics[width=1em]{element-mustset-unbounded.pdf}~inputfileRinexObservation & \hfuzz=500pt filename & \hfuzz=500pt RINEX or Compact RINEX observation files\\
-\hfuzz=500pt\includegraphics[width=1em]{element.pdf}~inputfileMatrixPrn2FrequencyNumber & \hfuzz=500pt filename & \hfuzz=500pt (required for RINEX v2 files containing GLONASS observations) GROOPS matrix with columns: GLONASS PRN, SVN, mjdStart, mjdEnd, frequencyNumber\\
+\hfuzz=500pt\includegraphics[width=1em]{element.pdf}~inputfileMatrixPrn2FrequencyNumber & \hfuzz=500pt filename & \hfuzz=500pt (required for RINEX v2 files containing GLONASS observations), matrix with columns: GLONASS PRN, SVN, mjdStart, mjdEnd, frequencyNumber\\
 \hfuzz=500pt\includegraphics[width=1em]{element.pdf}~inputfileStationInfo & \hfuzz=500pt filename & \hfuzz=500pt used to determine semi-codeless receivers and to cross-check antenna and receiver info\\
-\hfuzz=500pt\includegraphics[width=1em]{element.pdf}~inputfileSemiCodelessReceivers & \hfuzz=500pt filename & \hfuzz=500pt ASCII list with one receiver name per line\\
-\hfuzz=500pt\includegraphics[width=1em]{element.pdf}~inputfileSpecialObservationTypes & \hfuzz=500pt filename & \hfuzz=500pt ASCII table mapping special observation types to RINEX 3 types, e.g.: LA L1C\\
+\hfuzz=500pt\includegraphics[width=1em]{element.pdf}~inputfileSemiCodelessReceivers & \hfuzz=500pt filename & \hfuzz=500pt list with one receiver name per line\\
+\hfuzz=500pt\includegraphics[width=1em]{element.pdf}~inputfileSpecialObservationTypes & \hfuzz=500pt filename & \hfuzz=500pt table mapping special observation types to RINEX 3 types, e.g.: LA L1C\\
 \hfuzz=500pt\includegraphics[width=1em]{element-unbounded.pdf}~useType & \hfuzz=500pt \hyperref[gnssType]{gnssType} & \hfuzz=500pt only use observations that match any of these patterns\\
 \hfuzz=500pt\includegraphics[width=1em]{element-unbounded.pdf}~ignoreType & \hfuzz=500pt \hyperref[gnssType]{gnssType} & \hfuzz=500pt ignore observations that match any of these patterns\\
 \hline
@@ -9927,7 +9929,8 @@ Create \configFile{outputfileMatrixPrn2FrequencyNumber}{matrix} matrix
 from \href{https://www.igs.org/mgex/metadata/#metadata}{IGS SINEX metadata format}
 with the columns: GLONASS PRN, SVN, mjdStart, mjdEnd, frequencyNumber.
 
-See also \program{RinexObservation2GnssReceiver}.
+See also \program{GnssGlonassFrequencyNumberUpdate}, \program{GnssAntex2AntennaDefinition},
+\program{RinexObservation2GnssReceiver}.
 
 
 \keepXColumns
