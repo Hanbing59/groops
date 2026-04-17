@@ -48,7 +48,6 @@ void SlrSinexDataHandling2Files::run(Config &config, Parallel::CommunicatorPtr /
     FileName                 fileNameSinex, fileNameSatelliteId;
     std::string              variableLoopStation, variableLoopSatellite;
     std::vector<std::string> stationNames;
-    std::map<std::string, std::string> satelliteNameFromSp3Id;
 
     readConfig(config, "outputfileRangeBiasStation",          fileNameRangeBiasStation,   Config::OPTIONAL, "rangeBias.{station}.txt",             "MISCVALUE [m]");
     readConfig(config, "outputfileRangeBiasStationSatellite", fileNameRangeBiasSatellite, Config::OPTIONAL, "rangeBias.{station}.{satellite}.txt", "MISCVALUE [m]");
@@ -117,6 +116,8 @@ void SlrSinexDataHandling2Files::run(Config &config, Parallel::CommunicatorPtr /
         auto iter = std::find_if(tableSatelliteId.begin(), tableSatelliteId.end(), [&](auto &t){return (t.size()>1) && ((t.front() == satId) || (t.front() == "L"+satId));});
         if(iter != tableSatelliteId.end())
           satId = iter->at(1); // replace SP3 ID by satellite name from table
+        else
+          satId = "L" + satId;
 
         if(rangeBiasesStationSatellite[station][satId].size() && (rangeBiasesStationSatellite[station][satId].back().time >= timeStart-seconds2time(1)))
           rangeBiasesStationSatellite[station][satId].remove(rangeBiasesStationSatellite[station][satId].size()-1);
