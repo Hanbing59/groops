@@ -90,6 +90,7 @@ inline void SlrProcessingStepWriteResiduals::process(SlrProcessingStep::State &s
               for(UInt i=0; i<data.rows(); i++)
               {
                 data(i, 2) = obs->sigmas(i)/obs->sigmas0(i); // column 2: data1, rms
+                data(i, 4) = eqn.l.at(i);                    // column 4: data3, reduced observation
                 data(i, 5) = obs->laserWavelength(i);        // column 5: data4, laser wavelength
                 data(i, 6) = eqn.azimutStat.at(i);           // column 6: data5, azimuth
                 data(i, 7) = eqn.elevationStat.at(i);        // column 7: data6, elevation
