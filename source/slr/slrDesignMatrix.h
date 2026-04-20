@@ -21,7 +21,7 @@
 
 /***** CLASS ***********************************/
 
-/** @brief Management of sparse design matrix. */
+/** @brief Management of sparse design matrix of SLR observations. */
 class SlrDesignMatrix
 {
   const SlrNormalEquationInfo   &normalEquationInfo;

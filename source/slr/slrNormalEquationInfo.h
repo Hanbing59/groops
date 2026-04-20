@@ -23,6 +23,7 @@
 
 /***** CLASS ***********************************/
 
+/** @brief SLR parameter index. */
 class SlrParameterIndex
 {
   UInt index;
@@ -37,39 +38,70 @@ public:
 
 /***** CLASS ***********************************/
 
+/** @brief Information about the SLR normal equation. */
 class SlrNormalEquationInfo
 {
 public:
-  std::vector<std::pair<std::regex, Bool>> enableParametrizations; // wildcard matching, enable/disable
+  /// wildcard matching, enable/disable
+  std::vector<std::pair<std::regex, Bool>> enableParametrizations;
   std::vector<Byte>                        estimateStation;
   std::vector<Byte>                        estimateSatellite;
   UInt                                     defaultBlockSize;
   std::vector<SlrParameterIndex>           indexGravity;
 
+  /** @brief Constructor. */
   SlrNormalEquationInfo(UInt countStations, UInt countSatellites);
 
+  /** @brief Initializes the status of parameters. */
   void initNewParameterNames();
+
+  /** @brief Adds station-specific parameters. */
   SlrParameterIndex parameterNamesStation  (UInt idStat, const std::vector<ParameterName> &parameterNames) {return addParameters(idStat,    NULLINDEX, parameterNames);}
+  
+  /** @brief Adds satellite-specific parameters. */
   SlrParameterIndex parameterNamesSatellite(UInt idSat,  const std::vector<ParameterName> &parameterNames) {return addParameters(NULLINDEX, idSat,     parameterNames);}
+  
+  /** @brief Adds other parameters. */
   SlrParameterIndex parameterNamesOther    (const std::vector<ParameterName> &parameterNames)              {return addParameters(NULLINDEX, NULLINDEX, parameterNames);}
+  
+  /** @brief Calculate indexes of normal matrix blocks. */
   void calculateIndex();
 
   UInt block(const SlrParameterIndex &index) const {return block_.at(index.index);}
   UInt index(const SlrParameterIndex &index) const {return index_.at(index.index);}
   UInt count(const SlrParameterIndex &index) const {return count_.at(index.index);}
 
+  /** @brief Gets the list of parameters. */
   const std::vector<ParameterName> &parameterNames() const {return parameterNames_;}
+
+  /** @brief Gets the list of start indexes of normal matrix blocks and the total parameter count as the last element. */
   const std::vector<UInt>          &blockIndices()   const {return blockIndices_;}
 
-  UInt parameterCount()   const {return blockIndices_.back();}                      //!< Number of rows/columns (dimension) of distributed matrix
-  UInt blockIndex(UInt i) const {return blockIndices_.at(i);}                       //!< Start index of block @a i
-  UInt blockSize(UInt i)  const {return blockIndices_.at(i+1)-blockIndices_.at(i);} //!< Size of block @a i
-  UInt blockCount()       const {return blockIndices_.size()-1;}                    //!< Number of block rows/columns
+  /** @brief Gets the number of parameters. 
+   * Number of rows/columns (dimension) of distributed matrix
+  */
+  UInt parameterCount()   const {return blockIndices_.back();}
+
+  /** @brief Gets the start index of block @a i. 
+   * Note that the last element of blockIndices() is the total parameter count.
+  */
+  UInt blockIndex(UInt i) const {return blockIndices_.at(i);}
+
+  /** @brief Gets the size of block @a i. */
+  UInt blockSize(UInt i)  const {return blockIndices_.at(i+1)-blockIndices_.at(i);}
+  
+  /** @brief Gets the number of blocks.
+   * Note that the block count is blockIndices().size()-1, as the last element of blockIndices() is the total parameter count.
+  */
+  UInt blockCount()       const {return blockIndices_.size()-1;}
 
 private:
-  std::vector<std::tuple<UInt, UInt, UInt, std::vector<ParameterName>>> parameters; // idStat, idSat, idx, name
+  /// idStat, idSat, idx, name
+  std::vector<std::tuple<UInt, UInt, UInt, std::vector<ParameterName>>> parameters;
   std::vector<UInt>          block_, index_, count_;
+  /// Parameters list
   std::vector<ParameterName> parameterNames_;
+  /// List of start indexes of normal matrix blocks and the total parameter count as the last element
   std::vector<UInt>          blockIndices_;
   std::vector<UInt>          blockCountEpoch_;
 

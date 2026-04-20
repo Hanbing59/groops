@@ -44,32 +44,33 @@ typedef std::shared_ptr<SlrSatelliteGenerator> SlrSatelliteGeneratorPtr;
 
 /***** CLASS ***********************************/
 
-/** @brief Provides a list of satellites.
-* An Instance of this class can be created by @ref readConfig. */
+/** @brief A list of SLR satellite generators.
+* An Instance of this class can be created by the function @ref readConfig(). */
 class SlrSatelliteGenerator
 {
+  /// A list of SLR satellite generators
   std::vector<SlrSatelliteGeneratorBase*> base;
 
 public:
-  /** @brief Constructor from config. */
+  /** @brief Constructor from the configuration node @a config. */
   SlrSatelliteGenerator(Config &config, const std::string &name);
 
-  /// Destructor.
+  /** @brief Destructor. */
  ~SlrSatelliteGenerator();
 
-  /** @brief Iniatialize and returns a vector of satellites. */
+  /** @brief Iniatializes and returns a list of satellites from a list of satellite generators. */
   std::vector<SlrSatellitePtr> satellites(const std::vector<Time> &times);
 
-  /** @brief creates an derived instance of this class. */
+  /** @brief Creates an derived instance of this class. */
   static SlrSatelliteGeneratorPtr create(Config &config, const std::string &name) {return SlrSatelliteGeneratorPtr(new SlrSatelliteGenerator(config, name));}
 };
 
 /***** FUNCTIONS *******************************/
 
 /** @brief Creates an instance of the class SlrSatelliteGenerator.
-* Search for a node with @a name in the Config node.
-* if @a name is not found the function returns FALSE and @a var is untouched.
-* @param config The config node which includes the node with the options for this class
+* Search for a node with @a name in the configuration.
+* If the node @a name is not found, the function returns FALSE and @a var is untouched.
+* @param config The configuration node which includes the node with the options for this class
 * @param name Tag name in the config.
 * @param[out] var Created class.
 * @param mustSet If is MUSTSET and @a name is not found, this function throws an exception instead of returning with FALSE.
@@ -82,7 +83,7 @@ template<> Bool readConfig(Config &config, const std::string &name, SlrSatellite
 
 /***** CLASS ***********************************/
 
-// Internal class
+/** @brief  Internal class, the base class for SLR satellite generator classes*/
 class SlrSatelliteGeneratorBase
 {
 public:

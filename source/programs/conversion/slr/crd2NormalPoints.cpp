@@ -29,7 +29,12 @@ including normal point data like range, accuracy, redundancy, wavelength and win
 
 /***** CLASS ***********************************/
 
-/** @brief Read SLR data from CRD format.
+/** @brief Converts SLR normal point data in ILRS CRD format to GROOPS internal format for each station.
+ * The input CRD file should contain only one satellite but one or more sateions.
+ * The Consolidated laser Ranging Data (CRD) format can accomodate all three types of laser ranging
+ * data: full-rate, sampled engineering, and normal point. Both the version 1 and version 2
+ * of the CRD format are supported. Format specifications of CRD version 1 and version 2 
+ * can be found at <a href="https://ilrs.gsfc.nasa.gov/data_and_products/formats/crd.html">ILRS</a>.
 * @ingroup programsConversionGroup */
 class Crd2NormalPoints
 {
@@ -112,11 +117,11 @@ void Crd2NormalPoints::run(Config &config, Parallel::CommunicatorPtr /*comm*/)
           stationMonumentNumbers.push_back(stationMonumentNumber);
         }
       }
-      else if(type == "H3") // target header
+      else if(type == "H3") // Target Header
       {
         ss>>satelliteName;
       }
-      else if(type == "H4") // session header
+      else if(type == "H4") // Session (Pass/Pass segment) Header
       {
         Int dataType,year, month, day;
 
@@ -127,7 +132,7 @@ void Crd2NormalPoints::run(Config &config, Parallel::CommunicatorPtr /*comm*/)
       else if(type == "H5") // Prediction Header
       {
       }
-      else if(type == "H8") // end of session
+      else if(type == "H8") // End of Session (EOS) Footer
       {
         normalPointEpochStations.insert({stationMonumentNumber, normalPointEpoch});
         metEpochStations.insert({stationMonumentNumber, metEpoch});
@@ -138,12 +143,12 @@ void Crd2NormalPoints::run(Config &config, Parallel::CommunicatorPtr /*comm*/)
         continue;
 
       }
-      else if(type == "C0")
+      else if(type == "C0") // System Configuration Record
       {
         Int detailType;
         ss>>detailType>>transmitWavelength;
       }
-      else if(type == "11") // normal points record
+      else if(type == "11") // Range Record (Normal Point)
       {
         Double      seconds, timeOfFlight;
         std::string systemId;
@@ -156,6 +161,7 @@ void Crd2NormalPoints::run(Config &config, Parallel::CommunicatorPtr /*comm*/)
         // Time in UTC
         Time time = sessionDate + seconds2time(seconds);
 
+        // Calculate the ground transmit time based on Epoch Event
         switch(epoch)
         {
           case 0: time -= seconds2time(timeOfFlight);     break; // ground receive time (at SRP) (two-way)
@@ -182,7 +188,7 @@ void Crd2NormalPoints::run(Config &config, Parallel::CommunicatorPtr /*comm*/)
 
         normalPointEpoch.push_back(nPointEpoch);
       }
-      else if(type == "20") // meteorological record
+      else if(type == "20") // Meteorological Record
       {
         Double seconds, surfacePressure, surfaceTemperature, relativeHumidity;
 
@@ -201,7 +207,7 @@ void Crd2NormalPoints::run(Config &config, Parallel::CommunicatorPtr /*comm*/)
         meteorologicalEpoch.humidity = relativeHumidity;
 
       }
-      else if(type == "21")
+      else if(type == "21") // Meteorological Supplement Record
       {
         Double seconds, windSpeed;
 
@@ -215,13 +221,14 @@ void Crd2NormalPoints::run(Config &config, Parallel::CommunicatorPtr /*comm*/)
         // Set wind speed at correct time
         meteorologicalEpoch.windSpeed = windSpeed;
       }
-      else if(type == "30")
+      else if(type == "30") // Pointing Angle Record
       {
         // Angles are not considered in the moment.
         logStatus<<"Record 30 available" <<Log::endl;
       }
       else
       {
+        // Ignore User Defined Records (type 90-99) and Comment Record (type 00)
       }
     } // while
 

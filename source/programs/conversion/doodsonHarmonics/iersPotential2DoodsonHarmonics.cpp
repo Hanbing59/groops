@@ -24,7 +24,14 @@ Read ocean tide file in IERS format.
 
 /***** CLASS ***********************************/
 
-/** @brief Read ocean tide file in IERS format.
+/** @brief Reads ocean tide file in IERS format and writes out a \b DoodsonHarmonic file.
+ * 
+ * This is the inverse conversion of the program \b DoodsonHarmonics2IersPotential.
+ * The input file contains the geopotential harmonic amplitudes for different tide constituents 
+ * of an ocean tide model (e.g. FES2004). Its data format should refer to that provided 
+ * by the IERS Convention 2010 for the model FES2004 at 
+ * ftp://tai.bipm.org/iers/conv2010/chapter6/tidemodels/fes2004_Cnm-Snm.dat.
+ * Refer to the IERS Conventions 2010, Section 6.3, for details.
 * @ingroup programsConversionGroup */
 class IersPotential2DoodsonHarmonics
 {
@@ -84,6 +91,7 @@ void IersPotential2DoodsonHarmonics::run(Config &config, Parallel::CommunicatorP
       std::string doodstring, name;
       UInt   n, m;
       Double cPlus, sPlus, cMinus, sMinus;
+      // the geopotential harmonic amplitudes for each tide constituent
       ss>>doodstring>>name>>n>>m>>cPlus>>sPlus>>cMinus>>sMinus;
       if(doodstring.size() == 6)
         doodstring = '0'+doodstring;
@@ -100,12 +108,18 @@ void IersPotential2DoodsonHarmonics::run(Config &config, Parallel::CommunicatorP
         snmSin.push_back(Matrix(maxDegree+1, Matrix::TRIANGULAR, Matrix::LOWER));
       }
 
-      // iers conventions 2010, eq. (6.15)
+      // Refer to IERS conventions 2010, eq. (6.15)
+      // Expand the right-hand side of eq. (6.15) by Euler's formula and group the terms
+      // into real (Delta C) and imaginary (Delta S) parts.
       if((n>=minDegree) && (n<=maxDegree))
       {
+        // coefficients for cosine terms of the real part (Delta C)
         cnmCos.at(idx)(n,m) =  (cPlus + cMinus) * 1e-11;
+        // coefficients for cosine terms of the imaginary part (Delta S)
         snmCos.at(idx)(n,m) =  (sPlus - sMinus) * 1e-11;
+        // coefficients for sine terms of the real part (Delta C)
         cnmSin.at(idx)(n,m) =  (sPlus + sMinus) * 1e-11;
+        // coefficients for sine terms of the imaginary part (Delta S)
         snmSin.at(idx)(n,m) = -(cPlus - cMinus) * 1e-11;
       }
     }

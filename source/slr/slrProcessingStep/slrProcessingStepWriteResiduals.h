@@ -85,14 +85,14 @@ inline void SlrProcessingStepWriteResiduals::process(SlrProcessingStep::State &s
               SlrObservationEquation eqn;
               eqn.compute(*obs, *stat, *sat, state.slr->funcRotationCrf2Trf, state.slr->funcReduceModels, FALSE);
               Matrix data(obs->observations.rows(), 1+Epoch::dataCount(Epoch::SATELLITELASERRANGING));
-              copy(obs->residuals,    data.column(1)); // data1 range [seconds]
-              copy(obs->redundancies, data.column(3)); // data3 redundancy
+              copy(obs->residuals,    data.column(1));       // column 1: data0, range [seconds]
+              copy(obs->redundancies, data.column(3));       // column 3: data2, redundancy
               for(UInt i=0; i<data.rows(); i++)
               {
-                data(i, 2) = obs->sigmas(i)/obs->sigmas0(i); // data2 rms
-                data(i, 5) = obs->laserWavelength(i);        // data5 laser wavelength
-                data(i, 6) = eqn.azimutStat.at(i);           // data5 azmiuth
-                data(i, 7) = eqn.elevationStat.at(i);        // data6 elevation
+                data(i, 2) = obs->sigmas(i)/obs->sigmas0(i); // column 2: data1, rms
+                data(i, 5) = obs->laserWavelength(i);        // column 5: data4, laser wavelength
+                data(i, 6) = eqn.azimutStat.at(i);           // column 6: data5, azimuth
+                data(i, 7) = eqn.elevationStat.at(i);        // column 7: data6, elevation
               }
 
               arcList.push_back(Arc(obs->timesTrans, data, Epoch::SATELLITELASERRANGING));

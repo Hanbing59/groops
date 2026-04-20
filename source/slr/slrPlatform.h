@@ -25,14 +25,15 @@ typedef std::shared_ptr<SlrPlatform> SlrPlatformPtr;
 
 /***** CLASS ***********************************/
 
-/** @brief Abstract class for SLR station or satellite.
-* eg. GPS satellites. */
+/** @brief Abstract class for a SLR station or satellite */
 class SlrPlatform
 {
+   /// Whether the platform is usable at a given epoch (or all epochs).
    Bool     useable_;
 
 public:
-   UInt     id_; // set by Slr::init()
+   /// ID of the platform (set by Slr::init())
+   UInt     id_;
    Platform platform;
    Double   rangeBias;
 
@@ -43,13 +44,13 @@ public:
   /// Destructor.
   virtual ~SlrPlatform() {}
 
-  /** @brief name. */
+  /** @brief Gets the name of the platform. */
   std::string name() const {return platform.name;}
 
-  /** @brief Is the platform usable at given epoch (or all epochs). */
+  /** @brief Checks if the platform is usable at a given epoch (or all epochs). */
   Bool useable() const {return useable_;}
 
-  /** @brief Disable platform. */
+  /** @brief Disables platform. */
   virtual void disable(const std::string &reason);
 
   void save(OutArchive &oa) const;

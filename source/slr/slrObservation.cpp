@@ -2,7 +2,7 @@
 /**
 * @file slrObservation.cpp
 *
-* @brief Code & Phase observations.
+* @brief SLR observations and observation equations.
 *
 * @author Torsten Mayer-Guerr
 * @date 2022-04-28
@@ -17,6 +17,20 @@
 
 /***********************************************/
 
+/** @brief Computes the position and velocity of the SLR station and satellite at different epochs during the observation.
+ * @param[in] station the SLR station
+ * @param[in] satellite the SLR satellite
+ * @param[in] rotationCrf2Trf the rotation from CRF to TRF
+ * @param[in] timeTrans the transmit time at the station
+ * @param[out] posTrans the position of the station at the transmit time in CRF
+ * @param[out] velTrans the average velocity of the station during the observing
+ * @param[out] timeBounce the bounce time at the satellite
+ * @param[out] posBounce the position of the satellite at the bounce time in CRF
+ * @param[out] velBounce the velocity of the satellite at the bounce time
+ * @param[out] timeRecv the receive time at the station
+ * @param[out] posRecv the position of the station at the receive time in CRF
+ * @return TRUE if successful, FALSE otherwise
+ */
 static Bool positionVelocityTime(const SlrStation &station, const SlrSatellite &satellite,
                                  const std::function<Rotary3d(const Time &time)> &rotationCrf2Trf, const Time &timeTrans,
                                  Vector3d &posTrans, Vector3d &velTrans, Time &timeBounce, Vector3d &posBounce, Vector3d &velBounce,
@@ -24,12 +38,12 @@ static Bool positionVelocityTime(const SlrStation &station, const SlrSatellite &
 {
   try
   {
-    // station position at transmit time
+    // station position at transmit time in CRF
     posTrans = rotationCrf2Trf(timeTrans).inverseRotate(station.position(timeTrans));
     if(std::isnan(posTrans.quadsum()))
       return FALSE;
 
-    // satellite position at bounce time
+    // Calculate iteratively satellite position at bounce time
     posBounce = satellite.position(timeTrans);
     if(std::isnan(posBounce.quadsum()))
       return FALSE;
@@ -42,7 +56,7 @@ static Bool positionVelocityTime(const SlrStation &station, const SlrSatellite &
     }
     velBounce = satellite.velocity(timeBounce);
 
-    // station position at receive time
+    // Calculate iteratively station position at receive time
     timeRecv = timeBounce + seconds2time((posBounce-posTrans).r()/LIGHT_VELOCITY);
     posRecv  = rotationCrf2Trf(timeRecv).inverseRotate(station.position(timeRecv));
     for(UInt i=0; (i<10) && ((posRecv-posOld).r() > 0.0001); i++) // iteration
@@ -192,8 +206,10 @@ void SlrObservationEquation::compute(const SlrObservation &observation, const Sl
 
       // geometry of roundtrip
       // ---------------------
-      const Vector3d k1     = normalize(posSat.at(i) - posStat.at(i)); // unit vector stat -> sat
-      const Vector3d k2     = normalize(posRecv - posSat.at(i));       // unit vector sat -> stat
+      // unit vector from station at transmit time to satellite at bounce time
+      const Vector3d k1     = normalize(posSat.at(i) - posStat.at(i));
+      // unit vector from satellite at bounce time to station at receive time
+      const Vector3d k2     = normalize(posRecv - posSat.at(i));
       const Double   d1Stat = inner(k1, velStat)/LIGHT_VELOCITY;
       const Double   d1Sat  = inner(k1, velSat) /LIGHT_VELOCITY;
       const Double   d2Stat = inner(k2, velStat)/LIGHT_VELOCITY;

@@ -48,39 +48,44 @@ typedef std::shared_ptr<SlrStationGenerator> SlrStationGeneratorPtr;
 
 /***** CLASS ***********************************/
 
-/** @brief Provides a list of stations.
-* An Instance of this class can be created by @ref readConfig. */
+/** @brief A list of SLR station generators.
+* An instance of this class can be created by the function @ref readConfig(). */
 class SlrStationGenerator
 {
+  /// A list of SLR station generators
   std::vector<SlrStationGeneratorBase*> base;
 
 public:
-  /** @brief Constructor from config. */
+  /** @brief Constructor from the configuration node @a config. */
   SlrStationGenerator(Config &config, const std::string &name);
 
-  /// Destructor.
- ~SlrStationGenerator();
+  /** @brief Destructor. */
+  ~SlrStationGenerator();
 
-  /** @brief Iniatialize and returns a vector of stations. */
+  /** @brief Iniatializes and returns a list of stations from a list of station generators. 
+   * @param times
+   * @param satellites
+   * @param earthRotation
+  */
   std::vector<SlrStationPtr> stations(const std::vector<Time> &times, const std::vector<SlrSatellitePtr> &satellites,
                                       EarthRotationPtr earthRotation);
 
-  /** @brief preprocess the observations of stations. */
+  /** @brief Preprocesses the observations of stations. */
   void preprocessing(Slr *slr);
 
 //   /** @brief simulate the observations of stations. */
 //   void simulation(NoiseGeneratorPtr noiseObs, Slr *slr);
 
-  /** @brief creates an derived instance of this class. */
+  /** @brief Creates a derived instance of this class. */
   static SlrStationGeneratorPtr create(Config &config, const std::string &name) {return SlrStationGeneratorPtr(new SlrStationGenerator(config, name));}
 };
 
 /***** FUNCTIONS *******************************/
 
 /** @brief Creates an instance of the class SlrStationGenerator.
-* Search for a node with @a name in the Config node.
-* if @a name is not found the function returns FALSE and @a var is untouched.
-* @param config The config node which includes the node with the options for this class
+* Search for a node with @a name in the configuration node @a config.
+* If @a name is not found, this function returns FALSE and @a var is untouched.
+* @param config The configuration node which includes the node with the options for this class
 * @param name Tag name in the config.
 * @param[out] var Created class.
 * @param mustSet If is MUSTSET and @a name is not found, this function throws an exception instead of returning with FALSE.
@@ -93,7 +98,7 @@ template<> Bool readConfig(Config &config, const std::string &name, SlrStationGe
 
 /***** CLASS ***********************************/
 
-// Internal class
+/** @brief Internal class, the base class for SLR station generator classes */
 class SlrStationGeneratorBase
 {
 public:

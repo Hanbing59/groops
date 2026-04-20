@@ -35,7 +35,7 @@ If \configFile{inputfileAttitude}{instrument} ist not provided an orbit referenc
 
 /***** CLASS ***********************************/
 
-/** @brief Provides a list of SLR satellites.
+/** @brief Provides a list of SLR satellites, the @p satellite type SLR satellite generator.
 * @ingroup slrSatelliteGeneratorGroup
 * @see SlrSatelliteGenerator */
 class SlrSatelliteGeneratorSatellites : public SlrSatelliteGeneratorBase
@@ -46,7 +46,9 @@ class SlrSatelliteGeneratorSatellites : public SlrSatelliteGeneratorBase
   UInt                  interpolationDegree;
 
 public:
+  /** @brief The constructor. */
   SlrSatelliteGeneratorSatellites(Config &config);
+  /** @brief Initializes a list of SLR satellites. */
   void init(const std::vector<Time> &times, std::vector<SlrSatellitePtr> &satellites) override;
 };
 

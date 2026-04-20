@@ -81,16 +81,18 @@ typedef std::shared_ptr<SlrParametrization> SlrParametrizationPtr;
 
 /***** CLASS ***********************************/
 
-/** @brief Parametrization of SLR observations.
+/** @brief Parametrizations of SLR observations.
 * An instance of this class can be created with @ref readConfig. */
 class SlrParametrization
 {
+  /// A list of parameterizations for SLR observations
   std::vector<SlrParametrizationBase*> base;
 
 public:
-  /// Constructor.
+  /** @brief Constructor. */
   SlrParametrization(Config &config, const std::string &name);
-
+  
+  /** @brief Destructor. */
  ~SlrParametrization();
 
   std::vector<const SlrParametrizationGravityField*> getParametrizationGravity() const;
@@ -101,19 +103,19 @@ public:
   /** @brief Correct observation equations/apply models. */
   void observationCorrections(SlrObservationEquation &eqn) const;
 
-  /** @brief Register parameters in @p normalEquationInfo. */
+  /** @brief Register parameters in the normal equation @p normalEquationInfo. */
   void initParameter(SlrNormalEquationInfo &normalEquationInfo);
 
-  /** @brief Total parameter vector used as priori Taylor point. */
+  /** @brief Get the total parameter vector used as a-priori Taylor point. */
   Vector aprioriParameter(const SlrNormalEquationInfo &normalEquationInfo) const;
 
-  /** @brief Design matrix for the basic observation equations @p eqn. */
+  /** @brief Form the design matrix for the basic observation equations @p eqn. */
   void designMatrix(const SlrNormalEquationInfo &normalEquationInfo, const SlrObservationEquation &eqn, SlrDesignMatrix &A) const;
 
-  /** @brief Add additional (pseudo-) observations equations to the normals. */
+  /** @brief Add constraints as additional (pseudo-) observations equations to the normals. */
   void constraints(const SlrNormalEquationInfo &normalEquationInfo, MatrixDistributed &normals, std::vector<Matrix> &n, Double &lPl, UInt &obsCount) const;
 
-  /** @brief Update the values based on the passed estimated dx. */
+  /** @brief Update the values of parameters based on the passed estimated dx. */
   Double updateParameter(const SlrNormalEquationInfo &normalEquationInfo, const_MatrixSliceRef x, const_MatrixSliceRef Wz);
 
   /** @brief Update the covariance information passed by @p covariance matrix. */
@@ -122,15 +124,15 @@ public:
   /** @brief Write the output files defined in the parametrizations. */
   void writeResults(const SlrNormalEquationInfo &normalEquationInfo, const std::string &suffix) const;
 
-  /** @brief creates an derived instance of this class. */
+  /** @brief Creates a derived instance of this class. */
   static SlrParametrizationPtr create(Config &config, const std::string &name) {return SlrParametrizationPtr(new SlrParametrization(config, name));}
 };
 
 /***** FUNCTIONS *******************************/
 
 /** @brief Creates an instance of the class SlrParametrization.
-* Search for a node with @a name in the Config node.
-* if @a name is not found the function returns FALSE and an class without points is created.
+* Search for a configurationnode with @a name in the Config node.
+* If @a name is not found, the function returns FALSE and an class without points is created.
 * @param config The config node which includes the node with the options for this class
 * @param name Tag name in the config.
 * @param[out] var Created class.
@@ -144,12 +146,13 @@ template<> Bool readConfig(Config &config, const std::string &name, SlrParametri
 
 /***** CLASS ***********************************/
 
-// Internal class
+/** @brief Internal class, the base class of different SLR parameterizations */
 class SlrParametrizationBase
 {
 public:
   virtual ~SlrParametrizationBase() {}
 
+  /** @brief Check if the parameterization @a name is enabled. */
   static Bool isEnabled(const SlrNormalEquationInfo &normalEquationInfo, const std::string &name);
 
   virtual void   getParametrizationGravity(std::vector<const SlrParametrizationGravityField*> &/*paramGravityField*/) const {}

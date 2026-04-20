@@ -39,11 +39,11 @@ typedef const MatrixSlice       &MatrixSliceRef;       //!< reason is given in @
 /***********************************************/
 
 /** @brief Readonly view of a slice of a Matrix.
-* This is a reference to a memory area of a Matrix. It is intentend to be used as parameter of a function,
+* This is a reference to a memory area of a Matrix. It is intentend to be used as a parameter of a function,
 * which operates on parts or all elements of the matrix without changing the size of the matrix.
-* Examples are copy, matMult or inverse. To store a matrix in a variable use the class Matrix instead.
+* Examples are copy, multiply or inverse. To store a matrix in an variable, use the class Matrix instead.
 *
-* The class MatrixSlice itself should be a const reference in a function parameter definition.
+* The class const_MatrixSlice itself should be a const reference in a function parameter definition.
 * Thus the function accepts temporally created const_MatrixSlice or Matrix as parameter.
 * As the following definition is a little bit confusing:
 * @code void f(const const_MatrixSlice &x); @endcode
@@ -55,47 +55,47 @@ public:
   /// Matrix types
   enum Type {GENERAL, SYMMETRIC, TRIANGULAR};
 
-  /** @brief upper or lower triangle.
-  * For SYMMETRIC or TRIANGULAR matrices.
+  /** @brief Upper- or lower-triangular for @a SYMMETRIC or @a TRIANGULAR matrices.
   * The other triangular is not accessed. */
   enum Uplo {UPPER, LOWER};
 
-  const_MatrixSlice()                          = delete;  //!< Disallow default constructor.
+  const_MatrixSlice()                          = delete;  //!< Disallows default constructor.
   const_MatrixSlice(const const_MatrixSlice &) = default; //!< Copy constructor.
   const_MatrixSlice(const_MatrixSlice &&)      = default; //!< Move constructor.
-  const_MatrixSlice &operator=(const const_MatrixSlice &) = delete; //!< Disallow copying.
+  const_MatrixSlice &operator=(const const_MatrixSlice &) = delete; //!< Disallows copying.
 
-  UInt rows()    const {return _rows;}          //!< row count.
-  UInt columns() const {return _columns;}       //!< column count.
-  UInt size()    const {return _rows*_columns;} //!< size = rows*columns.
+  UInt rows()    const {return _rows;}          //!< Returns the row count of the matrix.
+  UInt columns() const {return _columns;}       //!< Returns the column count of the matrix.
+  UInt size()    const {return _rows*_columns;} //!< Returns the element count of the matrix
 
-  inline Double operator () (UInt row, UInt column) const; /// matrix element.
+  /// Readonly access to a matrix element.
+  inline Double operator () (UInt row, UInt column) const;
 
-  /** @brief Transposed matrix.
-  * The transpose points to the same memory. */
+  /** @brief Transpose the matrix.
+  * The transposed matrix points to the same memory. */
   inline const_MatrixSlice trans() const;
 
-  /** @brief Readonly reference to a submatrix.
+  /** @brief Returns a readonly reference to a submatrix.
   * The same memory is used. No memory is copied. */
   const_MatrixSlice slice(UInt startRow, UInt startColumn, UInt height, UInt width) const;
 
-  /** @brief Readonly reference to one or more columns.
+  /** @brief Returns a readonly reference to one or more columns.
   * The same memory is used. No memory is copied.
   * @relates slice */
   inline const_MatrixSlice column(UInt column, UInt len=1) const {return slice(0,column,rows(),len);}
 
-  /** @brief Readonly reference to one or more rows.
+  /** @brief Returns a readonly reference to one or more rows.
   * The same memory is used. No memory is copied.
   * @relates slice */
   inline const_MatrixSlice row(UInt row, UInt len=1) const {return slice(row,0,len,columns());}
 
-  /** @brief Typ der Matrix.
+  /** @brief Returns the type of the matrix.
   * GENERAL, SYMMETRIC, TRIANGLUAR. */
   Type getType() const {return _type;}
 
-  /** @brief Which triangle is used?
-  * For @a getType()==GENERAL the result is meaningless.
-  * If TRUE the upper triangle is used, the lower otherwise. */
+  /** @brief Whether it is an upper-triangular matrix, only for @a SYMMETRIC or @a TRIANGULAR matrices.
+  * For @a GENERAL matrices, the result is meaningless.
+  */
   Bool isUpper() const {return _uplo==UPPER;}
 
   /** @brief Pointer to the memory.
@@ -103,14 +103,13 @@ public:
   * `ptr = (A.isRowMajorOrder()) ? (A.field() + (column + row*A.ld())) : (A.field() + (row + column*A.ld()));` */
   inline const Double *const_field() const;
 
-  /** @brief Leading Dimension.
+  /** @brief Returns the leading dimension.
   * Number of elements needed to reach the next column or row,
-  * depending whether `!isRowMajorOrder()` or `isRowMajorOrder()`.
+  * depending on the matrix is stored in the row-major or column-major order.
   * @see field() */
   UInt ld() const {return _ld;}
 
-  /** @brief Transposed view of the matrix?
-  * If `isRowMajorOrder()==TRUE` the matrix is stored rowwise, columnwise otherwise.
+  /** @brief Whether the matrix is stored in the row-major order.
   * @see field() */
   Bool isRowMajorOrder() const {return _rowMajorOrder;}
 
@@ -144,9 +143,9 @@ protected:
 /***********************************************/
 
 /** @brief Writable view of a slice of a Matrix.
-* This is a reference to a memory area of a Matrix. It is intentend to be used as parameter of a function,
+* This is a reference to a memory area of a Matrix. It is intentend to be used as a parameter of a function,
 * which operates on parts or all elements of the matrix without changing the size of the matrix.
-* Examples are copy, matMult or inverse. To store a matrix in a variable use the class Matrix instead.
+* Examples are copy, multiply or inverse. To store a matrix in an variable, use the class Matrix instead.
 *
 * The class MatrixSlice itself should be a const reference in a function parameter definition,
 * although the memory is still changeable (the elements). Thus the function accepts temporally created
@@ -157,39 +156,39 @@ protected:
 class MatrixSlice : public const_MatrixSlice
 {
 public:
-  MatrixSlice() = delete;                                                 //!< Disallow default constructor.
+  MatrixSlice() = delete;                                                 //!< Disallows default constructor.
   MatrixSlice(const MatrixSlice &) = default;                             //!< Copy constructor.
   MatrixSlice(const const_MatrixSlice &x) : const_MatrixSlice(x) {}       //!< Copy constructor.
   MatrixSlice(MatrixSlice &&) = default;                                  //!< Move constructor.
   MatrixSlice(const_MatrixSlice &&x) : const_MatrixSlice(std::move(x)) {} //!< Move constructor.
-  MatrixSlice &operator=(MatrixSlice &) = delete;                         //!< Disallow copying
+  MatrixSlice &operator=(MatrixSlice &) = delete;                         //!< Disallows copying
 
-  /// writable matrix element.
+  /// Writable access to a matrix element.
   inline Double &operator () (UInt row, UInt column) const;
 
-  /** @brief Transposed matrix.
-  * The transpose points to the same memory. */
+  /** @brief Transpose the matrix.
+  * The transposed matrix points to the same memory. */
   inline MatrixSlice trans() const;
 
-  /** @brief Writable reference to a submatrix.
+  /** @brief Returns a writable reference to a submatrix.
   * The same memory is used. No memory is copied. */
   MatrixSlice slice(UInt startRow, UInt startColumn, UInt height, UInt width) const;
 
-  /** @brief Writable reference to one or more columns.
+  /** @brief Returns a writable reference to one or more columns.
   * The same memory is used. No memory is copied.
   * @relates slice */
   MatrixSlice column(UInt column, UInt len=1) const {return slice(0,column,rows(),len);}
 
-  /** @brief Writable reference to one or more rows.
+  /** @brief Returns a writable reference to one or more rows.
   * The same memory is used. No memory is copied.
   * @relates slice */
   MatrixSlice row(UInt row, UInt len=1) const {return slice(row,0,len,columns());}
 
-  /** @brief Set type of the matrix.
+  /** @brief Sets the type of the matrix.
   * @param type GENERAL, SYMMETRIC, TRIANGLUAR. */
   void setType(Type type) {_type=type;}
 
-  /** @brief Set type of the matrix.
+  /** @brief Sets the type of the matrix, and the upper-/lower-triangle style for @a SYMMETRIC or @a TRIANGULAR matrices.
   * @param type GENERAL, SYMMETRIC, TRIANGULAR.
   * @param uplo if type is not GENERAL, only the UPPER or LOWER part of the matrix is used. */
   void setType(Type type, Uplo uplo) {_type=type; _uplo=uplo;}
@@ -199,10 +198,10 @@ public:
   * `ptr = (A.isRowMajorOrder()) ? (A.field() + (column + row*A.ld())) : (A.field() + (row + column*A.ld()));` */
   inline Double *field() const;
 
-  /// fill all matrix elements.
+  /// Fills all elements of the matrix with a given value.
   const MatrixSlice &fill(Double f) const;
 
-  /// reset all matrix elements.
+  /// Resets all elements of the matrix to zero.
   const MatrixSlice &setNull() const {return fill(0);}
 
   const MatrixSlice &operator+=(const const_MatrixSlice &x) const;
@@ -221,24 +220,24 @@ protected:
 /***********************************************/
 
 /** @brief Matrix representation.
-* With smart memmory management. The memory is only copied if needed (copy on write, late copy).
-* For parameter references use MatrixSlice or const_MatrixSlice. */
+* With smart memmory management, the memory is only copied if needed (copy on write, late copy).
+* For parameter references, use the class MatrixSlice or const_MatrixSlice. */
 class Matrix : public MatrixSlice
 {
 public:
-  /// to mark uninitialzed elements.
+  /// To mark uninitialzed elements.
   enum Fill {NOFILL};
 
   /// Default Constructor.
   Matrix() : MatrixSlice(0, 0, GENERAL, UPPER, FALSE, 0.) {}
 
-  /// Default Constructor.
+  /// Constructor with specified row and column count, and all elements filled with a given value.
   explicit Matrix(UInt rows, UInt columns, Double fill=0.) : MatrixSlice(rows, columns, GENERAL, UPPER, TRUE, fill) {}
 
-  /// Constructor with uninitialzed elements.
+  /// Constructor with specified row and column count, and uninitialized elements.
   explicit Matrix(UInt rows, UInt columns, Fill /*fill*/) : MatrixSlice(rows, columns, GENERAL, UPPER, FALSE, 0.) {}
 
-  /** @brief Constructor for quadratic matrices.
+  /** @brief Constructor with a square matrix of a specified size, type and storage style.
   * @param rows Number of rows and columns.
   * @param type GENERAL, SYMMETRIC, TRIANGULAR
   * @param uplo Only the UPPER or LOWER part of the matrix is used */
@@ -254,44 +253,44 @@ public:
   Matrix &operator=(Matrix &&x);                                     //!< Move Assignment.
   Matrix &operator=(const_MatrixSlice &&x);                          //!< Move Assignment.
 
-  /// matrix element.
+  /// Returns a readonly reference to a matrix element.
   Double operator()(UInt row, UInt column) const {return const_MatrixSlice::operator()(row,column);}
 
-  /// writable matrix element.
+  /// Returns a writable reference to a matrix element.
   Double &operator()(UInt row, UInt column) {return MatrixSlice::operator()(row,column);}
 
-  /** @brief Readonly transposed matrix.
+  /** @brief Returns a readonly reference to the transposed matrix.
   * The transpose points to the same memory. */
   const const_MatrixSlice trans() const {return const_MatrixSlice::trans();}
 
-  /** @brief Writable transposed matrix.
+  /** @brief Returns a writable reference to the transposed matrix.
   * The transpose points to the same memory. */
   MatrixSlice trans() {return MatrixSlice::trans();}
 
-  /** @brief Readonly reference to a submatrix.
+  /** @brief Returns a readonly reference to a submatrix.
   * The same memory is used. No memory is copied. */
   const_MatrixSlice slice(UInt startRow, UInt startColumn, UInt height, UInt width) const {return const_MatrixSlice::slice(startRow, startColumn, height, width);}
 
-  /** @brief Writable reference to a submatrix.
+  /** @brief Returns a writable reference to a submatrix.
   * The same memory is used. No memory is copied. */
   MatrixSlice slice(UInt startRow, UInt startColumn, UInt height, UInt width) {return MatrixSlice::slice(startRow, startColumn, height, width);}
 
-  /** @brief Readonly reference to one or more columns.
+  /** @brief Returns a readonly reference to one or more columns.
   * The same memory is used. No memory is copied.
   * @relates slice */
   const_MatrixSlice column(UInt column, UInt len=1) const {return slice(0,column,rows(),len);}
 
-  /** @brief Writable reference to one or more columns.
+  /** @brief Returns a writable reference to one or more columns.
   * The same memory is used. No memory is copied.
   * @relates slice */
   MatrixSlice column(UInt column, UInt len=1) {return slice(0,column,rows(),len);}
 
-  /** @brief Readonly reference to one or more rows.
+  /** @brief Returns a readonly reference to one or more rows.
   * The same memory is used. No memory is copied.
   * @relates slice */
   const_MatrixSlice row(UInt row, UInt len=1) const {return slice(row,0,len,columns());}
 
-  /** @brief Writable reference to one or more rows.
+  /** @brief Returns a writable reference to one or more rows.
   * The same memory is used. No memory is copied.
   * @relates slice */
   MatrixSlice row(UInt row, UInt len=1) {return slice(row,0,len,columns());}
@@ -323,19 +322,24 @@ public:
   Vector &operator=(Vector &&) = default;        //!< Move Assignment.
   Vector &operator=(const_MatrixSlice &&x);      //!< Move Assignment.
 
-  inline Double operator()(UInt row) const {return const_MatrixSlice::operator()(row,0);} //!< vector element.
-  inline Double operator[](UInt row) const {return const_MatrixSlice::operator()(row,0);} //!< vector element.
-  inline Double at(UInt row)         const {return const_MatrixSlice::operator()(row,0);} //!< vector element.
+  /// Readonly access to a vector element with @a ()
+  inline Double operator()(UInt row) const {return const_MatrixSlice::operator()(row,0);}
+  /// Readonly access to a vector element with @a []
+  inline Double operator[](UInt row) const {return const_MatrixSlice::operator()(row,0);}
+  /// Readonly access to a vector element with @a at
+  inline Double at(UInt row)         const {return const_MatrixSlice::operator()(row,0);}
+  /// Writable access to a vector element with @a ()
+  inline Double &operator()(UInt row) {return MatrixSlice::operator()(row,0);}
+  /// Writable access to a vector element with @a []
+  inline Double &operator[](UInt row) {return MatrixSlice::operator()(row,0);}
+  /// Writable access to a vector element with @a at
+  inline Double &at(UInt row)         {return MatrixSlice::operator()(row,0);}
 
-  inline Double &operator()(UInt row) {return MatrixSlice::operator()(row,0);} //!< writable vector element.
-  inline Double &operator[](UInt row) {return MatrixSlice::operator()(row,0);} //!< writable vector element.
-  inline Double &at(UInt row)         {return MatrixSlice::operator()(row,0);} //!< writable vector element.
-
-  /** @brief Writable reference to a submatrix.
+  /** @brief Returns a readonly reference to a subvector.
   * The same memory is used. No memory is copied. */
   inline const_MatrixSlice slice(UInt startRow, UInt len) const {return const_MatrixSlice::slice(startRow,0,len,columns());}
 
-  /** @brief Writable reference to a submatrix.
+  /** @brief Returns a writable reference to a subvector.
   * The same memory is used. No memory is copied. */
   inline MatrixSlice slice(UInt startRow, UInt len) {return MatrixSlice::slice(startRow,0,len,columns());}
 
@@ -367,7 +371,7 @@ inline Matrix operator*(Double c, const_MatrixSliceRef A) {return A*c;}
 * (operation is always applied to both triangles). */
 inline Matrix operator/(Double c, const_MatrixSliceRef A);
 
-/** @brief Matrix matrix multiplication.
+/** @brief Matrix multiplication.
 * The @a type of matrices are considered. */
 inline Matrix operator*(const_MatrixSliceRef A, const_MatrixSliceRef B);
 

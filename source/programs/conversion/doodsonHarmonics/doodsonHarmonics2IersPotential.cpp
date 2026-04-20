@@ -29,6 +29,7 @@ cf. \url{ftp://tai.bipm.org/iers/conv2010/chapter6/tidemodels/fes2004.dat}.
 /***** CLASS ***********************************/
 
 /** @brief Convert doodson harmonics to IERS conventions according to FES2004.
+ * This is the inverse conversion of the program \b IersPotential2DoodsonHarmonics.
 * cf. ftp://tai.bipm.org/iers/conv2010/chapter6/tidemodels/fes2004.dat
 * @ingroup programsConversionGroup */
 class DoodsonHarmonics2IersPotential

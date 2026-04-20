@@ -2,7 +2,7 @@
 /**
 * @file slrStationGeneratorStations.h
 *
-* @brief SLR ground station network.
+* @brief Provides a list of SLR stations.
 *
 * @author Torsten Mayer-Guerr
 * @date 2022-04-28
@@ -62,7 +62,7 @@ Tidal deformations typically include:
 
 /***** CLASS ***********************************/
 
-/** @brief SLR ground station network.
+/** @brief Provides a list of SLR stations, the @p station type SLR station generator.
 * @ingroup slrStationGeneratorGroup
 * @see SlrStationGenerator */
 class SlrStationGeneratorStations : public SlrStationGeneratorBase
@@ -72,17 +72,21 @@ class SlrStationGeneratorStations : public SlrStationGeneratorBase
   FileName              fileNameObs;
   Bool                  disableWithoutPosition;
   ExpressionVariablePtr accuracyExpr;
+  /// Loading deformations
   GravityfieldPtr       gravityfield;
+  /// Tidal deformations
   TidesPtr              tides;
   EphemeridesPtr        ephemerides;
+  /// Love number files
   FileName              deformationName, potentialName;
   Angle                 elevationCutOff;
   UInt                  interpolationDegree;
   std::vector<SlrStationPtr> stations;
 
 public:
+  /** @brief The constructor. */
   SlrStationGeneratorStations(Config &config);
-
+  /** @brief Initializes a list of SLR stations. */
   void init(const std::vector<Time> &times, const std::vector<SlrSatellitePtr> &satellites,
             EarthRotationPtr earthRotation, std::vector<SlrStationPtr> &stations) override;
 };

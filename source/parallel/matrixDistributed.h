@@ -20,7 +20,7 @@
 
 /***** CLASS ***********************************/
 
-/** @brief Representation of a positve definte matrix in distributed memory
+/** @brief Representation of a positve definte matrix in distributed memory.
 * All algorithms operate only on the upper triangle of the matrix.
 * @ingroup parallelGroup */
 class MatrixDistributed
@@ -29,38 +29,51 @@ class MatrixDistributed
   std::function<UInt(UInt, UInt, UInt)> calcRank;
   std::vector<UInt>                    _blockIndex;
 
-  std::vector<std::vector<std::pair<UInt, UInt>>> _row;      // each column, used row -> idx to _N and _rank
-  std::vector<std::vector<std::pair<UInt, UInt>>> _column;   // each row, used column -> idx to _N and _rank
-  std::vector<Matrix>               _N;        // unorderd list of used blocks
-  std::vector<UInt>                 _rank;     // unorderd list of rank of used blocks
+  std::vector<std::vector<std::pair<UInt, UInt>>> _row;      ///< each column, used row -> idx to _N and _rank
+  std::vector<std::vector<std::pair<UInt, UInt>>> _column;   ///< each row, used column -> idx to _N and _rank
+  std::vector<Matrix>               _N;        ///< unorderd list of used blocks
+  std::vector<UInt>                 _rank;     ///< unorderd list of rank of used blocks
 
+  /** @brief Checks if the current process is responsible for the block at index @a idx.
+   * @param idx: Index of the block.
+   * @return: TRUE if the current process is responsible for the block, FALSE otherwise. */
   Bool isMyRank(UInt idx) const {return (Parallel::myRank(comm) == _rank[idx]);}
-  UInt index(UInt row, UInt col) const;        // NULLINDEX if not set
+
+  /** @brief Gets the index of the block containing element (row, col).
+   * @param row: Row index.
+   * @param col: Column index.
+   * @return: Index of the block or NULLINDEX if not set. */
+  UInt index(UInt row, UInt col) const;
+  
   // call: loopBlockColumn({rowStart, rowPastEnd}, col, [&](UInt row, UInt idx) {_N[idx] == N(row,col)});
   void loopBlockColumn(const std::array<UInt,2> &rows, UInt col, std::function<void(UInt, UInt)> block) const;
+
   // call: loopBlockRow(row, {colStart, colPastEnd}, [&](UInt col, UInt idx) {_N[idx] == N(row,col)});
   void loopBlockRow   (UInt row, const std::array<UInt,2> &cols, std::function<void(UInt, UInt)> block) const;
 
   // parallel
   // call: usedRanks = usedRanksInColumn({rowStart, rowPastEnd}, col);
   std::vector<Bool> usedRanksInColumn(const std::array<UInt,2> &rows, UInt col) const;
+
   // call: usedRanks = usedRanksInRow(row, {colStart, colPastEnd});
   std::vector<Bool> usedRanksInRow(UInt row, const std::array<UInt,2> &cols) const;
+
   void broadCast(Matrix &x, UInt idx, const std::vector<Bool> &usedRank);
+  
   void reduceSum(Matrix &x, UInt idx, const std::vector<Bool> &usedRank, Bool free=TRUE);
 
 
-  /* @brief Solve an triangular system of equations \f$ \mathbf{W}\mathbf{y} = \mathbf{x}\f$
+  /** @brief Solve an triangular system of equations \f$ \mathbf{W}\mathbf{y} = \mathbf{x}\f$.
   * The input must be initialized at all nodes.
-  * The sum other all nodes defines the input (reduceSum is called internally)
+  * The sum over all nodes defines the input (reduceSum is called internally).
   * Output is valid at master only. */
   void triangularSolve(std::vector<Matrix> &x) {triangularSolve(x, 0, blockCount());}
   void triangularSolve(std::vector<Matrix> &x, UInt startBlock, UInt countBlock);
 
-  /* @brief Solve a part of a triangular system of equations \f$ \mathbf{W}^T\mathbf{y} = \mathbf{x}\f$
+  /** @brief Solve a part of a triangular system of equations \f$ \mathbf{W}^T\mathbf{y} = \mathbf{x}\f$.
   * This corresponds to the partly @a cholesky function.
   * The input must be initialized at all nodes.
-  * The sum other all nodes defines the input (reduceSum is called internally)
+  * The sum over all nodes defines the input (reduceSum is called internally).
   * Output is valid at master only. */
   void triangularTransSolve(std::vector<Matrix> &x) {triangularTransSolve(x, 0, blockCount(), TRUE);}
   void triangularTransSolve(std::vector<Matrix> &x, UInt startBlock, UInt countBlock, Bool collect);
@@ -118,18 +131,31 @@ public:
   Parallel::CommunicatorPtr communicator() const {return comm;}
   std::vector<UInt>         blockIndex()   const {return _blockIndex;}
 
-  UInt parameterCount()            const {return _blockIndex.at(blockCount());}          //!< Number of rows/columns (dimension) of distributed matrix
-  UInt dimension()                 const {return parameterCount();}                      //!< Number of rows/columns (dimension) of distributed matrix
-  UInt blockIndex(UInt i)          const {return _blockIndex.at(i);}                     //!< Start index of block @a i
-  UInt blockSize(UInt i)           const {return _blockIndex.at(i+1)-_blockIndex.at(i);} //!< Size of block @a i
-  UInt blockCount()                const {return _blockIndex.size()-1;}                  //!< Number of block rows/columns
-  UInt rank(UInt i, UInt k)        const;                                                //!< Rank of process holding block (@a i, @a k)
-  Bool isMyRank(UInt i, UInt k)    const {return (Parallel::myRank(comm) == rank(i,k));} //!< Returns TRUE if the calling process holds block (@a i, @a k) within the underlying communicator of the matrix
-  Bool isBlockUsed(UInt i, UInt k) const {return (rank(i,k) != NULLINDEX);}              //!< Returns TRUE if block (@a i, @a k) is assigned to a process
-  UInt index2block(UInt i)         const;                                                //!< Returns the index of the block which holds element @a i
+  /** @brief Returns the total number of parameters (rows/columns) of the distributed matrix. */
+  UInt parameterCount()            const {return _blockIndex.at(blockCount());}
+  /** @brief Returns the dimension of the distributed matrix, same as parameterCount(). */
+  UInt dimension()                 const {return parameterCount();}
+  /** @brief Returns the start index of block @a i. */
+  UInt blockIndex(UInt i)          const {return _blockIndex.at(i);}
+  /** @brief Returns the size of block @a i. */
+  UInt blockSize(UInt i)           const {return _blockIndex.at(i+1)-_blockIndex.at(i);}
+  /** @brief Returns the number of blocks. */
+  UInt blockCount()                const {return _blockIndex.size()-1;}
+  /** @brief Returns the rank of the process holding block (@a i, @a k). */
+  UInt rank(UInt i, UInt k)        const;
+  /** @brief Returns TRUE if the calling process holds block (@a i, @a k) within the underlying communicator of the matrix. */
+  Bool isMyRank(UInt i, UInt k)    const {return (Parallel::myRank(comm) == rank(i,k));}
+  /** @brief Returns TRUE if block (@a i, @a k) is assigned to a process. */
+  Bool isBlockUsed(UInt i, UInt k) const {return (rank(i,k) != NULLINDEX);}
+  /** @brief Returns the index of the block which holds element @a i. */
+  UInt index2block(UInt i)         const;
 
-  Matrix       &N(UInt i, UInt k);       //!< Returns a writable reference to block (@a i, @a k). Throws an exception if the block is not assigned to a process.
-  const Matrix &N(UInt i, UInt k) const; //!< Returns a read only reference to block (@a i, @a k). Throws an exception if the block is not assigned to a process.
+  /** @brief Returns a writable reference to block (@a i, @a k). 
+   * Throws an exception if the block is not assigned to a process. */
+  Matrix       &N(UInt i, UInt k);
+  /** @brief Returns a read-only reference to block (@a i, @a k). 
+   * Throws an exception if the block is not assigned to a process. */  
+  const Matrix &N(UInt i, UInt k) const;
 
   /// Fill all matrix blocks with zero.
   void setNull();
@@ -146,23 +172,27 @@ public:
   void cholesky(Bool timing=TRUE) {cholesky(timing, 0, blockCount(), TRUE);}
 
   /** @brief Performs a part of the Cholesky decomposition.
+   * @param timing Whether to measure the execution time of the function.
+   * @param startBlock Index of the first block to decompose.
+   * @param countBlock Number of blocks to decompose starting from startBlock.
+   * @param collect Whether to collect the right row elements from the top block after the decomposition of the diagonal block. 
+   * If not collect, @a reduceSum must be called afterwards for these blocks.
+   * 
   * The Cholesky decomposition must be already performed for the blocks before @p startBlock.
   * The blocks after @p startBlock + @p countBlock contain at ouput the normal matrix where all parameters before
-  * are eliminated. If not @p collect, @a reduceSum must be called afterwards for these blocks. */
+  * are eliminated. */
   void cholesky(Bool timing, UInt startBlock, UInt countBlock, Bool collect);
 
-  /** @brief Solve the system of equations \f$ \mathbf{N}\mathbf{x} = \mathbf{n}\f$
+  /** @brief Solve the system of equations \f$ \mathbf{N}\mathbf{x} = \mathbf{n}\f$.
   * Performs @a cholesky, @a triangularTransSolve, and @a triangularSolve.
   * The input must be valid at master only. Output is valid at master only. */
   Matrix solve(const_MatrixSliceRef n, Bool timing=TRUE);
 
-  /** @brief Solve a triangular system of equations \f$ \mathbf{W}\mathbf{y} = \mathbf{x}\f$
-  * \f$ \mathbf{W} \f$ is assumed to be an upper triangular matrix.
+  /** @brief Solve a triangular system of equations \f$ \mathbf{W}\mathbf{y} = \mathbf{x}\f$, where \f$ \mathbf{W} \f$ is assumed to be an upper triangular matrix.
   * The input must be valid at master only. Output is valid at master only. */
   void triangularSolve(MatrixSliceRef x);
 
-  /** @brief Solve a triangular system of equations \f$ \mathbf{W}^T\mathbf{y} = \mathbf{x}\f$
-  * \f$ \mathbf{W} \f$ is assumed to be an upper triangular matrix.
+  /** @brief Solve a triangular system of equations \f$ \mathbf{W}^T\mathbf{y} = \mathbf{x}\f$, where \f$ \mathbf{W} \f$ is assumed to be an upper triangular matrix.
   * The input must be valid at master only. Output is valid at master only. */
   void triangularTransSolve(MatrixSliceRef x) {triangularTransSolve(x, 0, blockCount());}
   void triangularTransSolve(MatrixSliceRef x, UInt startBlock, UInt countBlock);

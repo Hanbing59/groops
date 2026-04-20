@@ -2,7 +2,7 @@
 /**
 * @file slrStationGeneratorStations.cpp
 *
-* @brief SLR ground station network.
+* @brief Provides a list of SLR stations.
 *
 * @author Torsten Mayer-Guerr
 * @date 2022-04-28

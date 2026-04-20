@@ -52,44 +52,78 @@ typedef std::shared_ptr<SlrProcessingStep> SlrProcessingStepPtr;
 
 /***** CLASS ***********************************/
 
-/** @brief Provides a list of stations.
-* An Instance of this class can be created by @ref readConfig. */
+/** @brief Provides a list of SLR processing steps.
+* An Instance of this class can be created by the function @ref readConfig(). */
 class SlrProcessingStep
 {
+  /// The list of configured SLR processing steps
   std::vector<SlrProcessingStepBase*> bases;
 
 public:
+  /** @brief Stores and manages the state of the SLR processing. */
   class State
   {
   public:
     SlrPtr                 slr;
+    /// Information about the normal equations, e.g. parameter names and block structure.
     SlrNormalEquationInfo  normalEquationInfo;
+    /// Whether the normal equation info has changed and the normal equations need to be rebuilt.
     Bool                   changedNormalEquationInfo;
+    /// Normal equations matrix.
     MatrixDistributed      normals;
-    std::vector<Matrix>    n;           // at master (after solve)
-    Vector                 lPl;         // at master (after solve)
-    UInt                   obsCount;    // at master (after solve)
-    Vector                 sigmaFactor; // for each station
+    /// Right hand side of the normal equations, stored at master after solution.
+    std::vector<Matrix>    n;
+    /// lPl value, stored at master after solution.
+    Vector                 lPl;
+    /// Number of observations, stored at master after solution.
+    UInt                   obsCount;
+    /// Sigma factor for each station
+    Vector                 sigmaFactor;
 
     /** @brief Constructor. */
     State(SlrPtr slr);
 
+    /** @brief Regularize unused parameters by setting their corresponding diagonal elements in the normal matrix to 1. 
+     * @param[in] blockStart Index of the first block to regularize.
+     * @param[in] blockCount Number of blocks to regularize starting from blockStart.
+    */
     void   regularizeNotUsedParameters(UInt blockStart, UInt blockCount);
+
+    /** @brief Accumulate the normal equations
+     * @param constraintsOnly Whether consider only constranits
+     */
     void   buildNormals(Bool constraintsOnly);
+
+    /** @brief Do the solution estimation.
+     * @param computeResiduals
+     * @param computeWeights
+     * @param adjustSigma0
+     * @param huber
+     * @param huberPower
+     */
     Double estimateSolution(Bool computeResiduals,  Bool computeWeights, Bool adjustSigma0, Double huber, Double huberPower);
+
+    /** @brief Do the statistics for residuals of a station-satellite pair.
+     * @param[in] idStat
+     * @param[in] idSat
+     * @param[out] ePe
+     * @param[out] redundancy
+     * @param[out] obsCount
+     * @param[out] outlierCount
+     */
     void   residualsStatistics(UInt idStat, UInt idSat, Double &ePe, Double &redundancy, UInt &obsCount, UInt &outlierCount);
   };
 
-  /** @brief Constructor from config. */
+  /** @brief Constructor from configuration node @a config. */
   SlrProcessingStep(Config &config, const std::string &name);
 
-  /// Destructor.
+  /** @brief Destructor. */
  ~SlrProcessingStep();
 
-  /** @brief Perform the processing steps. */
+  /** @brief Performs those configured processing steps one by one. */
   void process(State &state);
 
-  /** @brief creates an derived instance of this class. */
+  /** @brief Creates a derived instance of this class. */
   static SlrProcessingStepPtr create(Config &config, const std::string &name) {return SlrProcessingStepPtr(new SlrProcessingStep(config, name));}
 };
 
@@ -111,14 +145,15 @@ template<> Bool readConfig(Config &config, const std::string &name, SlrProcessin
 
 /***** CLASS ***********************************/
 
-// Internal class
+/** @brief Internal class, the base class for different SLR processing steps. */
 class SlrProcessingStepBase
 {
 public:
   virtual ~SlrProcessingStepBase() {}
 
-  /** @brief Execute the processing step. */
+  /** @brief Execute this processing step. */
   virtual void process(SlrProcessingStep::State &state) = 0;
+  /** @brief Whether this processing step expects the parameters to be initialized. */
   virtual Bool expectInitializedParameters() const {return TRUE;}
 };
 
