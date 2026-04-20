@@ -1,0 +1,100 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "cmake-clean-build-dir",
+            "detail": "Delete and recreate source/build.",
+            "type": "shell",
+            "command": "rm -rf ${workspaceFolder}/source/build && mkdir -p ${workspaceFolder}/source/build",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "cmake-prepare-build-dir",
+            "detail": "Ensure source/build exists.",
+            "type": "shell",
+            "command": "mkdir -p ${workspaceFolder}/source/build",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "cmake-configure-debug",
+            "detail": "Run CMake configure with Debug build type.",
+            "type": "shell",
+            "command": "cmake .. -DCMAKE_BUILD_TYPE=Debug",
+            "options": {
+                "cwd": "${workspaceFolder}/source/build"
+            },
+            "problemMatcher": "$gcc",
+            "dependsOn": "cmake-prepare-build-dir"
+        },
+        {
+            "label": "cmake-build-groops-debug",
+            "detail": "Build groops in Debug mode (configure first if needed).",
+            "type": "shell",
+            "command": "make -j4",
+            "options": {
+                "cwd": "${workspaceFolder}/source/build"
+            },
+            "problemMatcher": "$gcc",
+            "dependsOn": "cmake-configure-debug",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "cmake-clean-rebuild-groops",
+            "detail": "Clean build dir, then configure and build groops (Debug).",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "cmake-clean-build-dir",
+                "cmake-build-groops-debug"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "run-groops",
+            "detail": "Build (Debug) then run groops with prompted config/run directory.",
+            "type": "shell",
+            "command": "${workspaceFolder}/source/build/groops ${input:groopsConfigFile}",
+            "options": {
+                "cwd": "${input:groopsRunDir}"
+            },
+            "dependsOn": "cmake-build-groops-debug",
+            "problemMatcher": []
+        },
+        {
+            "label": "run-groops-fast",
+            "detail": "Run existing groops binary without building.",
+            "type": "shell",
+            "command": "${workspaceFolder}/source/build/groops ${input:groopsConfigFile}",
+            "options": {
+                "cwd": "${input:groopsRunDir}"
+            },
+            "problemMatcher": []
+        }
+    ],
+    "inputs": [
+        {
+            "id": "groopsConfigFile",
+            "type": "promptString",
+            "description": "Config XML file (relative to run dir or absolute)",
+            "default": "05PlotMap.xml"
+        },
+        {
+            "id": "groopsRunDir",
+            "type": "promptString",
+            "description": "Run directory (absolute)",
+            "default": "/home/hanbing/GROOPS/scenario/LeoKinematicOrbit"
+        }
+    ]
+}
