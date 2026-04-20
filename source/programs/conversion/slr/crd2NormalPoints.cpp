@@ -101,7 +101,10 @@ void Crd2NormalPoints::run(Config &config, Parallel::CommunicatorPtr /*comm*/)
       std::string type = String::upperCase(line.substr(0,2));
       std::stringstream ss(line.substr(2));
 
-      if(type == "H2") // station header
+      if(type == "H1") // Format Header
+      {
+      }
+      else if(type == "H2") // Station Header
       {
         std::string stationName;
         ss>>stationName>>stationMonumentNumber;
@@ -143,10 +146,39 @@ void Crd2NormalPoints::run(Config &config, Parallel::CommunicatorPtr /*comm*/)
         continue;
 
       }
+      else if(type == "H9") // End of File (EOF) Footer
+      {
+        // A complete CRD file should end after this record. Otherwise, the file may have been 
+        // truncated or corrupted.
+      }
       else if(type == "C0") // System Configuration Record
       {
         Int detailType;
         ss>>detailType>>transmitWavelength;
+      }
+      else if(type == "C1") // Laser Configuration Record
+      {
+      }
+      else if(type == "C2") // Detector Configuration Record
+      {
+      }
+      else if(type == "C3") // Timing System Configuration Record
+      {
+      }
+      else if(type == "C4") // Transponder (Clock) Configuration Record
+      {
+      }
+      else if(type == "C5") // Software Configuration Record
+      {
+      }
+      else if(type == "C6") // Meteorological Instrumentation Configuration Record
+      {
+      }
+      else if(type == "C7") // Calibration Target Configuration Record
+      {
+      }
+      else if(type == "10") // Range Record (Full rate, Sampled Engineering/Quicklook)
+      {
       }
       else if(type == "11") // Range Record (Normal Point)
       {
@@ -188,6 +220,9 @@ void Crd2NormalPoints::run(Config &config, Parallel::CommunicatorPtr /*comm*/)
 
         normalPointEpoch.push_back(nPointEpoch);
       }
+      else if(type == "12") // Range Supplement Record
+      {
+      }
       else if(type == "20") // Meteorological Record
       {
         Double seconds, surfacePressure, surfaceTemperature, relativeHumidity;
@@ -225,6 +260,21 @@ void Crd2NormalPoints::run(Config &config, Parallel::CommunicatorPtr /*comm*/)
       {
         // Angles are not considered in the moment.
         logStatus<<"Record 30 available" <<Log::endl;
+      }
+      else if(type == "40") // Calibration Record
+      {
+      }
+      else if(type == "41") // Calibration Detail Record
+      {
+      }
+      else if(type == "42") // Calibration “Shot” Record (Full Rate)
+      {
+      }
+      else if(type == "50") // Session (Pass) Statistics Record
+      {
+      }
+      else if(type == "60") // Compatibility Record
+      {
       }
       else
       {
