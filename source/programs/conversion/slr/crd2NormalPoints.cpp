@@ -234,6 +234,7 @@ void Crd2NormalPoints::run(Config &config, Parallel::CommunicatorPtr /*comm*/)
 
     // write results
     // -------------
+    std::sort(stationMonumentNumbers.begin(), stationMonumentNumbers.end());
     for(auto stationMonumentNr : stationMonumentNumbers)
     {
       SatelliteLaserRangingArc arcSlr;
