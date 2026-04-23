@@ -24,6 +24,7 @@ A priori satellite range bias value for \configClass{selectSatellites}{platformS
 
 /***********************************************/
 
+#include "inputOutput/system.h"
 #include "classes/platformSelector/platformSelector.h"
 #include "slr/slrParametrization/slrParametrization.h"
 
@@ -75,6 +76,11 @@ inline void SlrParametrizationRangeBiasSatelliteApriori::init(Slr *slr, const st
       if(selectedSatellites.at(idSat))
       {
         varList.setVariable("satellite", slr->satellites.at(idSat)->name());
+        if(!System::exists(fileNameRangeBias(varList)))
+        {
+          logWarningOnce<<"File doesn't exist: <"<<fileNameRangeBias(varList)<<">"<<Log::endl;
+          continue;
+        }
         try
         {
           MiscValueArc arc = InstrumentFile::read(fileNameRangeBias(varList));
@@ -91,8 +97,7 @@ inline void SlrParametrizationRangeBiasSatelliteApriori::init(Slr *slr, const st
 
     if(!found)
     {
-      varList.setVariable("satellite", "****");
-      logWarningOnce<<"Initialization of all range bias failed. Wrong file name <"<<fileNameRangeBias(varList)<<">?"<<Log::endl;
+      logWarningOnce<<"Initialization of all satellite range bias!"<<Log::endl;
     }
   }
   catch(std::exception &e)

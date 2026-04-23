@@ -30,6 +30,7 @@ biases from the \href{https://ilrs.gsfc.nasa.gov/network/site_information/data_c
 /***********************************************/
 
 #include "classes/platformSelector/platformSelector.h"
+#include "inputOutput/system.h"
 #include "slr/slrParametrization/slrParametrization.h"
 
 /***** CLASS ***********************************/
@@ -85,6 +86,11 @@ inline void SlrParametrizationRangeBiasStationSatelliteApriori::init(Slr *slr, c
           {
             varList.setVariable("station",   slr->stations.at(idStat)->name());
             varList.setVariable("satellite", slr->satellites.at(idSat)->name());
+            if(!System::exists(fileNameRangeBias(varList)))
+            {
+              logWarningOnce<<"File doesn't exist: <"<<fileNameRangeBias(varList)<<">"<<Log::endl;
+              continue;
+            }
             try
             {
               MiscValueArc arc = InstrumentFile::read(fileNameRangeBias(varList));
@@ -103,9 +109,7 @@ inline void SlrParametrizationRangeBiasStationSatelliteApriori::init(Slr *slr, c
 
     if(!found)
     {
-      varList.setVariable("station",   "****");
-      varList.setVariable("satellite", "****");
-      logWarningOnce<<"Initialization of all range bias failed. Wrong file name <"<<fileNameRangeBias(varList)<<">?"<<Log::endl;
+      logWarningOnce<<"Initialization of all station-satellite range bias failed!"<<Log::endl;
     }
   }
   catch(std::exception &e)

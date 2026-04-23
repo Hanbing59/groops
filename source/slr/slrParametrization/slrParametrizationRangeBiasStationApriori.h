@@ -29,6 +29,7 @@ Use \program{SlrSinexDataHandling2Files} to convert the range biases from
 
 /***********************************************/
 
+#include "inputOutput/system.h"
 #include "classes/platformSelector/platformSelector.h"
 #include "slr/slrParametrization/slrParametrization.h"
 
@@ -80,6 +81,11 @@ inline void SlrParametrizationRangeBiasStationApriori::init(Slr *slr, const std:
       if(selectedStations.at(idStat))
       {
         varList.setVariable("station", slr->stations.at(idStat)->name());
+        if(!System::exists(fileNameRangeBias(varList)))
+        {
+          logWarningOnce<<"File doesn't exist: <"<<fileNameRangeBias(varList)<<">"<<Log::endl;
+          continue;
+        }
         try
         {
           MiscValueArc arc = InstrumentFile::read(fileNameRangeBias(varList));
@@ -96,8 +102,7 @@ inline void SlrParametrizationRangeBiasStationApriori::init(Slr *slr, const std:
 
     if(!found)
     {
-      varList.setVariable("station", "****");
-      logWarningOnce<<"Initialization of all range bias failed. Wrong file name <"<<fileNameRangeBias(varList)<<">?"<<Log::endl;
+      logWarningOnce<<"Initialization of all station range bias failed!"<<Log::endl;
     }
   }
   catch(std::exception &e)

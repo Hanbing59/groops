@@ -29,6 +29,7 @@ Use \program{SlrSinexDataHandling2Files} to convert the time biases from
 
 /***********************************************/
 
+#include "inputOutput/system.h"
 #include "classes/parametrizationTemporal/parametrizationTemporal.h"
 #include "classes/platformSelector/platformSelector.h"
 #include "slr/slrParametrization/slrParametrization.h"
@@ -80,6 +81,11 @@ inline void SlrParametrizationTimeBiasApriori::init(Slr *slr, const std::vector<
       {
         auto station = slr->stations.at(idStat);
         varList.setVariable("station", station->name());
+        if(!System::exists(fileNameTimeBias(varList)))
+        {
+          logWarningOnce<<"File doesn't exist: <"<<fileNameTimeBias(varList)<<">"<<Log::endl;
+          continue;
+        }
         try
         {
           MiscValuesArc arc = InstrumentFile::read(fileNameTimeBias(varList));
@@ -110,8 +116,7 @@ inline void SlrParametrizationTimeBiasApriori::init(Slr *slr, const std::vector<
 
     if(!found)
     {
-      varList.setVariable("station", "****");
-      logWarningOnce<<"Initialization of all time bias failed. Wrong file name <"<<fileNameTimeBias(varList)<<">?"<<Log::endl;
+      logWarningOnce<<"Initialization of all station time bias failed!"<<Log::endl;
     }
   }
   catch(std::exception &e)

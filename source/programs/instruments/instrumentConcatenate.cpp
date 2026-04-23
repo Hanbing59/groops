@@ -28,6 +28,7 @@ invalid epochs containing NaNs.
 
 #include "programs/program.h"
 #include "files/fileInstrument.h"
+#include "inputOutput/system.h"
 
 /***** CLASS ***********************************/
 
@@ -73,6 +74,11 @@ void InstrumentConcatenate::run(Config &config, Parallel::CommunicatorPtr /*comm
     Arc arc;
     for(UInt i=0; i<inName.size(); i++)
     {
+      if(!System::exists(inName.at(i)))
+      {
+        logWarningOnce<<"File doesn't exist: <"<<inName.at(i)<<">"<<Log::endl;
+        continue;
+      }
       try
       {
         logStatus<<"read instrument file <"<<inName.at(i)<<">"<<Log::endl;
