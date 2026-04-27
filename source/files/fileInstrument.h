@@ -398,8 +398,8 @@ typedef std::shared_ptr<InstrumentFile> InstrumentFilePtr;
 /***** CLASS ***********************************/
 
 /** @brief File with arbitrary satellite instrument data.
-* A File consists of a list of arcs (Arc).
-* Each arc consists of a list of Epoch of a specific instrument
+* A file consists of a list of arcs (class Arc).
+* Each arc consists of a list of epochs (class Epoch) of a specific instrument
 * (Only one instrument type per file is allowed).
 * The file is not read at once, but only read arc by arc.
 *
@@ -437,10 +437,10 @@ public:
   /** @brief Close the file. */
   void  close();
 
-  /** @brief Number of Arc in file. */
+  /** @brief Returns the number of arcs in this file. */
   UInt arcCount() const {return arcCount_;}
 
-  /** @brief Instrument type. */
+  /** @brief Returns the instrument type. */
   Epoch::Type getType()  const {return type;}
 
   /** @brief Name of data type (e.g. ORBIT, ACCELEROMETER). */

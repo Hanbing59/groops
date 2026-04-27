@@ -2,7 +2,7 @@
 /**
 * @file constants.cpp
 *
-* @brief Define constants.
+* @brief Define some constants used by GROOPS.
 *
 * Constants are only valid after call of main().
 * New constants must be set in inputOutput/settings.cpp.
@@ -59,8 +59,8 @@ std::vector<Double> DELTA_UTC_GPS;
 
 /***** CLASS ***********************************/
 
-// class for constants initialization,
-// will be initialized before main()
+/** Class for constants initialization.
+ * It will be initialized before main()*/ 
 class InitConstants
 {
 public:
