@@ -76,7 +76,7 @@ inline void SlrProcessingStepPrintResidualStatistics::process(SlrProcessingStep:
     constexpr Double huberPower = 1.5;
 
     logInfo<<"  station    sigma     redundancy obsCount outlier"<<Log::endl;
-    logInfo<<"  ---------- --------- ---------- -------- ----------------"<<Log::endl;
+    logInfo<<"  ---------- --------- ---------- -------- ------------------"<<Log::endl;
     for(UInt idStat=0; idStat<state.slr->stations.size(); idStat++)
       if(state.normalEquationInfo.estimateStation.at(idStat))
       {
@@ -89,13 +89,13 @@ inline void SlrProcessingStepPrintResidualStatistics::process(SlrProcessingStep:
           name.resize(10, ' ');
           logInfo<<"  "<<name.substr(0, 10)
                  <<state.sigmaFactor(idStat) * Vce::standardDeviation(ePe, redundancy, huber, huberPower)%" %9.2f"s<<(redundancy/obsCount)%" %10.5f"s
-                 <<obsCount%" %8i"s<<outlierCount%" %7i ("s<<(100.*outlierCount/obsCount)%"%4.2f %%)"s<<Log::endl;
+                 <<obsCount%" %8i"s<<outlierCount%" %7i ("s<<(100.*outlierCount/obsCount)%"%6.2f %%)"s<<Log::endl;
         }
       }
 
-    logInfo<<"  ---------- --------- ---------- -------- ----------------"<<Log::endl;
+    logInfo<<"  ---------- --------- ---------- -------- ------------------"<<Log::endl;
     logInfo<<"  satellite  sigma     redundancy obsCount outlier"<<Log::endl;
-    logInfo<<"  ---------- --------- ---------- -------- ----------------"<<Log::endl;
+    logInfo<<"  ---------- --------- ---------- -------- ------------------"<<Log::endl;
     for(UInt idSat=0; idSat<state.slr->satellites.size(); idSat++)
       if(state.normalEquationInfo.estimateSatellite.at(idSat))
       {
@@ -108,10 +108,10 @@ inline void SlrProcessingStepPrintResidualStatistics::process(SlrProcessingStep:
           name.resize(10, ' ');
           logInfo<<"  "<<name.substr(0, 10)
                  <<Vce::standardDeviation(ePe, redundancy, huber, huberPower)%" %9.2f"s<<(redundancy/obsCount)%" %10.5f"s
-                 <<obsCount%" %8i"s<<outlierCount%" %7i ("s<<(100.*outlierCount/obsCount)%" %4.2f %%)"s<<Log::endl;
+                 <<obsCount%" %8i"s<<outlierCount%" %7i ("s<<(100.*outlierCount/obsCount)%" %6.2f %%)"s<<Log::endl;
         }
       }
-    logInfo<<"  ---------- --------- ---------- -------- ----------------"<<Log::endl;
+    logInfo<<"  ---------- --------- ---------- -------- ------------------"<<Log::endl;
   }
   catch(std::exception &e)
   {
