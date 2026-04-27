@@ -1,6 +1,6 @@
 /***********************************************/
 /**
-* @file programTemplate.cpp
+* @file gnssGriddedDataTimeSeries2Ionex.cpp
 *
 * @brief Converts TEC maps from GROOPS GriddedDataTimeSeries format to IGS IONEX file format.
 *
