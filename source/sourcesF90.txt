@@ -4,6 +4,13 @@ if((NOT ${DISABLE_HWM14}) OR (NOT DEFINED DISABLE_HWM14))
     )
 endif()
 
+if((NOT ${DISABLE_DTM2020}) OR (NOT DEFINED DISABLE_DTM2020))
+    set(SOURCES ${SOURCES}
+    external/dtm2020/dtm2020_F107_Kp-subr.f90
+    external/dtm2020/dtm2020Wrapper.F90
+    )
+endif()
+
 if((NOT ${DISABLE_NRLMSIS}) OR (NOT DEFINED DISABLE_NRLMSIS))
     set(SOURCES ${SOURCES}
     external/nrlmsis2/alt2gph.F90

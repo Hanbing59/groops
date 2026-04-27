@@ -16,6 +16,7 @@
 #include "base/import.h"
 #include "external/hwm/hwm.h"
 #include "config/configRegister.h"
+#include "classes/thermosphere/thermosphereDTM2020.h"
 #include "classes/thermosphere/thermosphereJB2008.h"
 #include "classes/thermosphere/thermosphereNRLMSIS2.h"
 #include "classes/thermosphere/thermosphere.h"
@@ -25,6 +26,7 @@
 
 GROOPS_REGISTER_CLASS(Thermosphere, "thermosphereType",
                       ThermosphereJB2008,
+                      ThermosphereDTM2020,
                       ThermosphereNRLMSIS2)
 
 GROOPS_READCONFIG_CLASS(Thermosphere, "thermosphereType")
@@ -43,6 +45,8 @@ ThermospherePtr Thermosphere::create(Config &config, const std::string &name)
       thermosphere = ThermospherePtr(new ThermosphereJB2008(config));
     if(readConfigChoiceElement(config, "nrlmsis2",  choice, "NRLMSIS 2.0 Empirical Thermospheric Density Model"))
       thermosphere = ThermospherePtr(new ThermosphereNRLMSIS2(config));
+    if(readConfigChoiceElement(config, "dtm2020", choice, "Drag Temperature Model DTM-2020"))
+      thermosphere = ThermospherePtr(new ThermosphereDTM2020(config));
     endChoice(config);
 
     return thermosphere;
