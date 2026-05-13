@@ -106,7 +106,7 @@ void PreprocessingVariationalEquationOrbitFit::run(Config &config, Parallel::Com
   {
     FileName fileNameOutVariational, fileNameOutOrbit, fileNameOutSolution;
     FileName fileNameInVariational;
-    FileName podName, covPodEpochName;
+    FileName fileNameInOrbit, fileNameInOrbitCov;
     UInt              integrationDegree;
     UInt              iterCount;
     std::vector<Time> stochasticPulse;
@@ -119,8 +119,8 @@ void PreprocessingVariationalEquationOrbitFit::run(Config &config, Parallel::Com
     readConfig(config, "outputfileOrbit",             fileNameOutOrbit,       Config::OPTIONAL, "",    "integrated orbit");
     readConfig(config, "outputfileSolution",          fileNameOutSolution,    Config::OPTIONAL, "",    "estimated calibration and state parameters");
     readConfig(config, "inputfileVariational",        fileNameInVariational,  Config::MUSTSET,  "",    "approximate position and integrated state matrix");
-    readConfig(config, "inputfileOrbit",              podName,                Config::MUSTSET,  "",    "kinematic positions of satellite as observations");
-    readConfig(config, "inputfileCovariancePodEpoch", covPodEpochName,        Config::OPTIONAL, "",    "3x3 epoch wise covariances");
+    readConfig(config, "inputfileOrbit",              fileNameInOrbit,        Config::MUSTSET,  "",    "kinematic positions of satellite as observations");
+    readConfig(config, "inputfileCovariancePodEpoch", fileNameInOrbitCov,     Config::OPTIONAL, "",    "3x3 epoch wise covariances");
     readConfig(config, "ephemerides",                 ephemerides,            Config::OPTIONAL, "jpl", "may be needed by parametrizationAcceleration");
     readConfig(config, "parametrizationGravity",      parameterGravity,       Config::DEFAULT,  "",    "gravity field parametrization");
     readConfig(config, "parametrizationAcceleration", parameterAcceleration,  Config::DEFAULT,  "",    "orbit force parameters");
@@ -138,8 +138,8 @@ void PreprocessingVariationalEquationOrbitFit::run(Config &config, Parallel::Com
 
     // init
     // ----
-    podFile.open(podName);
-    covPodEpochFile.open(covPodEpochName);
+    podFile.open(fileNameInOrbit);
+    covPodEpochFile.open(fileNameInOrbitCov);
     InstrumentFile::checkArcCount({podFile, covPodEpochFile});
     variationalEquationFromFile.open(fileNameInVariational, parameterGravity, parameterAcceleration, stochasticPulse, ephemerides, integrationDegree);
 
