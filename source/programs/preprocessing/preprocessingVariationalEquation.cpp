@@ -111,10 +111,10 @@ void PreprocessingVariationalEquation::run(Config &config, Parallel::Communicato
 
     renameDeprecatedConfig(config, "satelliteModel", "inputfileSatelliteModel", date2time(2020, 8, 19));
 
-    readConfig(config, "outputfileVariational",       fileNameOutVariational, Config::MUSTSET,   "", "approximate position and integrated state matrix");
+    readConfig(config, "outputfileVariational",       fileNameOutVariational, Config::MUSTSET,   "", "integrated orbit and state transition matrix");
     readConfig(config, "outputfileOrbit",             fileNameOutOrbit,       Config::OPTIONAL,  "", "integrated orbit");
     readConfig(config, "inputfileSatelliteModel",     fileNameSatellite,      Config::OPTIONAL,  "{groopsDataDir}/satelliteModel/", "satellite macro model");
-    readConfig(config, "inputfileOrbit",              orbitName,              Config::MUSTSET,   "", "approximate position, used to evaluate the force");
+    readConfig(config, "inputfileOrbit",              orbitName,              Config::MUSTSET,   "", "approximate orbit, used to evaluate the force");
     readConfig(config, "inputfileStarCamera",         starCameraName,         Config::MUSTSET,   "", "rotation from body frame to CRF");
     readConfig(config, "inputfileAccelerometer",      accName,                Config::OPTIONAL,  "", "non-gravitational forces in satellite reference frame");
     readConfig(config, "forces",                      forces,                 Config::MUSTSET,   "", "");
@@ -129,7 +129,7 @@ void PreprocessingVariationalEquation::run(Config &config, Parallel::Communicato
     readConfig(config, "earthRotation",     earthRotation,     Config::MUSTSET,  "",    "");
     readConfig(config, "ephemerides",       ephemerides,       Config::OPTIONAL, "jpl", "");
     readConfig(config, "gradientfield",     gradientfield,     Config::MUSTSET,  "",    "low order field to estimate the change of the gravity by position adjustement");
-    readConfig(config, "integrationDegree", integrationDegree, Config::DEFAULT,  "7",   "integration of forces by polynomial approximation of degree n");
+    readConfig(config, "integrationDegree", integrationDegree, Config::DEFAULT,  "7",   "degree of the approximation polynomial used for integration of forces, must be odd");
     if(readConfigSequence(config, "useEnke", Config::OPTIONAL, "1", "integrate differential forces to an elliptical reference trajectory"))
     {
       readConfig(config, "GM", GM, Config::DEFAULT,  STRING_DEFAULT_GM, "geocentric gravitational constant used for elliptical reference orbit");
