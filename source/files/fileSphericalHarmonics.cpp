@@ -2,7 +2,7 @@
 /**
 * @file fileSphericalHarmonics.cpp
 *
-* @brief Read/write SphericalHarmonics.
+* @brief Read/Write a spherical harmonics coefficients file.
 *
 * @author Torsten Mayer-Guerr
 * @date 2005-01-14

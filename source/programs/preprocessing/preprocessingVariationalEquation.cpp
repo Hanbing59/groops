@@ -13,36 +13,39 @@
 // Latex documentation
 #define DOCSTRING docstring
 static const char *docstring = R"(
-This program integrates an orbit dynamically using the given forces and set up the state transition matrix
+This program integrates an orbit dynamically using the given forces and sets up the state transition matrix
 for each time step. These are the prerequisites for a least squares adjustment (e.g. gravity field determination) using
 the variational equation approach. The variational equations are computed arc-wise as defined by \configFile{inputfileOrbit}{instrument}.
-This means for each arc new initial state parameters are set up.
+This means for each arc a new set of initial state parameters are set up.
 
-In a first step the \configClass{forces}{forcesType} acting on the satellite are evaluated at the apriori positions given
+In the first step, the \configClass{forces}{forcesType} acting on the satellite are evaluated at the apriori positions given
 by \configFile{inputfileOrbit}{instrument}. Non-conservative forces like solar radiation pressure need the orientation of the
-satellite (\configFile{inputfileStarCamera}{instrument}) and additionally, a satellite macro model (\config{satelliteModel})
-with the surface properties. Furthermore \configFile{inputfileAccelerometer}{instrument} observations are also considered.
+satellite (given by \configFile{inputfileStarCamera}{instrument}) and additionally, a satellite macro model (given by \config{satelliteModel})
+with the satellite surface properties. Furthermore, \configFile{inputfileAccelerometer}{instrument} observations are also considered.
 
-In a second step the accelerations are integrated twice to a dynamic orbit using a moving polynomial with the degree
+In the second step, these accelerations are integrated twice to generate a dynamic orbit using a moving polynomial with the degree
 \config{integrationDegree}. The orbit is corrected to be self-consistent. This means the forces should be evaluated
 at the new integrated positions instead of the apriori ones. This correction is computed in a linear approximation
-using the gradient of the forces with respect to the positions (\config{gradientfield}). As this term is small generally
+using the gradient of the forces with respect to the positions (\config{gradientfield}). As this term is small generally,
 only the largest force components have to be considered. A low degree spherical harmonic expansion of the static gravity
-field (about up to degree 5) is sufficient in almost all cases. In this step also the state transition matrix (the partial
-derivatives of the current state, position and velocity) with respect to the initial state is computed.
-The integrated orbit together with the state transitions are stored in \configFile{outputfileVariational}{variationalEquation},
-the integrated orbit only in \configFile{outputfileOrbit}{instrument}.
+field (about up to degree 5) is sufficient in almost all cases. In this step also, the state transition matrixes (the partial
+derivatives of the current state, position and velocity) with respect to the initial states are computed.
+The integrated orbit together with the state transition matrixes are stored in \configFile{outputfileVariational}{variationalEquation},
+while in \configFile{outputfileOrbit}{instrument} only the integrated orbit are stored.
 
-To improve the numerical stability a reference ellipse can be reduced beforehand using Enke's method (\config{useEnke}).
+To improve the numerical stability, a reference ellipse can be reduced beforehand using the Enke's method (\config{useEnke}).
 Mathematically the result is the same, but as the large central term is removed before and restored
-afterwards more digits are available for the computation.
+afterwards, more digits are available for the computation.
 
-The integrated orbit should be fitted to observations afterwards by the programs
+The integrated orbit should be fitted to orbit/position observations afterwards by the programs
 \program{PreprocessingVariationalEquationOrbitFit} and/or \program{PreprocessingVariationalEquationSstFit}.
 They apply a least squares adjustment by estimating some satellite parameters (e.g. an accelerometer bias).
-If the fitted orbit is too far away from the original \configFile{inputfileOrbit}{instrument} the linearization may not be
-accurate enough. In this case \program{PreprocessingVariationalEquation} should be run again with the fitted orbit
-as \configFile{inputfileOrbit}{instrument} and introducing the \config{estimatedParameters} as additional forces.
+If the fitted orbit is too far away from the original \configFile{inputfileOrbit}{instrument}(i.e., the orbit observations), it means the linearization may not be
+accurate enough. In this case, \program{PreprocessingVariationalEquation} should be run again with the fitted orbit 
+(e.g., \configFile{outputfileOrbit}{instrument} from \program{PreprocessingVariationalEquationOrbitFit})
+served as \configFile{inputfileOrbit}{instrument} and introducing the \config{estimatedParameters} 
+estimated during the orbit fitting (e.g., \configFile{outputfileSolution}{matrix} from \program{PreprocessingVariationalEquationOrbitFit})
+as additional forces.
 )";
 
 /***********************************************/
@@ -527,10 +530,10 @@ Matrix PreprocessingVariationalEquation::integrate2Velocity(Double deltaT, const
 
 /***********************************************/
 
-// indirect effect (dependency of gravity due to position change)
-// x = (I-integrate(T))^-1 l
-// with the iterative solver BiCGSTAB
-// BiCGSTAB (http://en.wikipedia.org/wiki/Biconjugate_gradient_stabilized_method)
+/** @brief Indirect effect (dependency of gravity due to position change)
+ * \f$ x = (I-integrate(T))^{-1} l \f$ with the iterative solver BiCGSTAB.
+ * 
+ * BiCGSTAB (http://en.wikipedia.org/wiki/Biconjugate_gradient_stabilized_method) */
 Matrix PreprocessingVariationalEquation::solve(Double deltaT, const std::vector<Tensor3d> &tensor, const_MatrixSliceRef l) const
 {
   try
@@ -598,7 +601,8 @@ Matrix PreprocessingVariationalEquation::solve(Double deltaT, const std::vector<
 
 /***********************************************/
 
-// y = (I-K*T)x = x - integrate(T*x)
+/** @brief \f$ y = (I-K*T)x = x - integrate(T*x) \f$
+ */
 Matrix PreprocessingVariationalEquation::refine(Double deltaT, const std::vector<Tensor3d> &tensor, const_MatrixSliceRef x) const
 {
   try
@@ -618,7 +622,8 @@ Matrix PreprocessingVariationalEquation::refine(Double deltaT, const std::vector
 
 /***********************************************/
 
-// y = (I-K*T)^-1 x
+/** @brief \f$ y = (I-K*T)^{-1} x \f$
+ */
 Matrix PreprocessingVariationalEquation::approxInverse(Double deltaT, const std::vector<Tensor3d> &tensor, const_MatrixSliceRef x) const
 {
   try

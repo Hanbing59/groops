@@ -29,7 +29,7 @@ The observation equations (parameter sensitivity matrix) are computed by integra
 (\configFile{inputfileVariational}{variationalEquation}) using a polynomial with \config{integrationDegree} and interpolated to the
 observation epochs using a polynomial with \config{interpolationDegree}.
 
-All parameters used here must be reestimated in the full least squares adjustment
+All parameters used here must be re-estimated in the full least squares adjustment
 for the gravity field determination to get a solution which is not biased towards the reference field.
 The solutions of additional estimations are relative (deltas) as the parameters are already used as Taylor point
 in the reference orbit.
@@ -66,21 +66,33 @@ public:
   ParametrizationAccelerationPtr parameterAcceleration;
   ParametrizationGravityPtr      parameterGravity;
   UInt                           interpolationDegree;
+  /// Number of arcs
   UInt                           arcCount;
 
   // normal equations
   // ----------------
-  Matrix N;           // =A'PA, Normal matrix
-  Vector n;           // =A'Pl, right hand side
-  Double lPl;         // =l'Pl, weighted norm of the observations
-  UInt   obsCount;    // number of observations
+  /// \f$ A^TPA \f$, Normal matrix
+  Matrix N;
+  /// \f$ A^TPl \f$, right hand side
+  Vector n;
+  /// \f$ l^TPl \f$, weighted norm of the observations
+  Double lPl;
+  /// number of observations
+  UInt   obsCount;
+  /// number of outliers detected in all iterations
   UInt   outlierCount;
+  /// number of outliers detected in the current iteration
+  UInt   outlierCountNew;
+  /// the solution vector
   Vector x;
+  /// the post-fit standard deviation of unit weight
   Double sigma0;
 
   void run(Config &config, Parallel::CommunicatorPtr comm);
 
-  void buildNormals(UInt arcNo);
+  /** @brief Build normal equations for a specific arc
+   * @param arcNo arc number
+   */
 };
 
 GROOPS_REGISTER_PROGRAM(PreprocessingVariationalEquationOrbitFit, PARALLEL, "fit variational equations to orbit observations", Preprocessing, VariationalEquation)
@@ -265,6 +277,7 @@ void PreprocessingVariationalEquationOrbitFit::buildNormals(UInt arcNo)
     {
       const Double huber = 2.5;
       Vector e = l;
+      // compute residuals, e = l - A*x
       matMult(-1, A, x, e);
       for(UInt k=0; k<pod.size(); k++)
       {

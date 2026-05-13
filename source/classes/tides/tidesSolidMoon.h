@@ -19,7 +19,7 @@
 #ifdef DOCSTRING_Tides
 static const char *docstringTidesSolidMoon = R"(
 \subsection{SolidMoonTide}
-This class computes the solid moon tide according to the IERS2010 conventions.
+This class computes the solid Moon tide according to the IERS2010 conventions.
 The values of solid Moon tide external potential Love numbers are given and
 there are no frequency dependent corrections of these values.
 The computed result is multiplied with \config{factor}.

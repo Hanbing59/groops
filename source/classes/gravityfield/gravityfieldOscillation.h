@@ -19,7 +19,7 @@
 static const char *docstringGravityfieldOscillation = R"(
 \subsection{Oscillation}\label{gravityfieldType:oscillation}
 The given \configClass{gravityfield}{gravityfieldType} is interpreted
-as oscillation function and the result is computed at time $t$ as follows
+as an oscillation function and the result is computed at time $t$ as follows
 \begin{equation}
 V(\M x,t) = \cos(\omega)V_{cos}(\M x)+\sin(\omega)V_{sin}(\M x),
 \end{equation}

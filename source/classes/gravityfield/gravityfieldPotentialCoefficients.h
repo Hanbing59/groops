@@ -19,15 +19,15 @@
 #ifdef DOCSTRING_Gravityfield
 static const char *docstringGravityfieldPotentialCoefficients = R"(
 \subsection{PotentialCoefficients}\label{gravityfieldType:potentialCoefficients}
-Reads coefficients of a spherical harmonics expansion from file.
+Reads coefficients of a spherical harmonics expansion from a file.
 The potential is given by
 \begin{equation}
 V(\lambda,\vartheta,r) = \frac{GM}{R}\sum_{n=0}^\infty \sum_{m=0}^n \left(\frac{R}{r}\right)^{n+1}
   \left(c_{nm} C_{nm}(\lambda,\vartheta) + s_{nm} S_{nm}(\lambda,\vartheta)\right).
 \end{equation}
-If set the expansion is limited in the range between \config{minDegree}
-and \config{maxDegree} inclusivly. The computed result
-is multiplied with \config{factor}. If \config{setSigmasToZero} is true
+If set, the expansion is limited in the range between \config{minDegree}
+and \config{maxDegree} inclusively. The computed result
+is multiplied with \config{factor}. If \config{setSigmasToZero} is true,
 the variances are set to zero. This option is only important for variance propagation
 and does not change the result of the gravity field functionals.
 )";
@@ -45,10 +45,14 @@ and does not change the result of the gravity field functionals.
 * @see Gravityfield */
 class GravityfieldPotentialCoefficients : public GravityfieldBase
 {
+  /// the spherical harmonics
   SphericalHarmonics harmonics;
 
 public:
+  /** @brief Constructor. */
   GravityfieldPotentialCoefficients(Config &config);
+
+  /** @brief Adds on anothet spherical harmonics  */
   void addPotentialCoefficients(const SphericalHarmonics &harm) {harmonics += harm;}
 
   Double   potential      (const Time &time, const Vector3d &point) const;
@@ -60,6 +64,7 @@ public:
   void     deformation    (const std::vector<Time> &time, const std::vector<Vector3d> &point, const std::vector<Double> &gravity,
                            const Vector &hn, const Vector &ln, std::vector<std::vector<Vector3d>> &disp) const;
 
+  /** @brief Gets a spherical harmonics. */
   SphericalHarmonics sphericalHarmonics(const Time &time, UInt maxDegree=INFINITYDEGREE, UInt minDegree=0, Double GM=0.0, Double R=0.0) const;
 
   void   variance(const Time &time, const std::vector<Vector3d> &point, const Kernel &kernel, Matrix &D) const;

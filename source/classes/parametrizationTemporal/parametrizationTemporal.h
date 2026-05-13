@@ -19,10 +19,10 @@ static const char *docstringParametrizationTemporal = R"(
 \section{ParametrizationTemporal}\label{parametrizationTemporalType}
 This class gives a parametrization of time depending parameters (gravity field, positions, ...).
 It will be used to set up the design matrix in a least squares adjustment.
-If multiple parametrizations are given the coefficients in the parameter vector
+If multiple parametrizations are given, the coefficients in the parameter vector
 are sequently appended.
 
-Useally time intervals are defined half open meaning the last time belongs not to the interval.
+Useally time intervals are defined as half-open, meaning the end time of the interval does not belong to it but the next interval if it exists.
 This behaviour can be changed for the last interval with \config{includeLastTime}.
 )";
 #endif

@@ -24,9 +24,9 @@ The time variable potential of ocean tides is given by a fourier expansion
 V(\M x,t) = \sum_{f} V_f^c(\M x)\cos(\theta_f(t)) + V_f^s(\M x)\sin(\theta_f(t)),
 \end{equation}
 where $V_f^c(\M x)$ and $V_f^s(\M x)$ are spherical harmonics expansions and are
-read from the file \configFile{inputfileDoodsonHarmonic}{doodsonHarmonic}.
-If set the expansion is limited in the range between \config{minDegree}
-and \config{maxDegree} inclusivly.
+read from the file \configFile{inputfileTides}{doodsonHarmonic}.
+If set, the expansion is limited in the range between \config{minDegree}
+and \config{maxDegree} inclusively.
 $\theta_f(t)$ are the arguments of the tide constituents~$f$:
 \begin{equation}
 \theta_f(t) = \sum_{i=1}^6 n_f^i\beta_i(t),
@@ -38,10 +38,10 @@ The major constituents given by \configFile{inputfileTides}{doodsonHarmonic} can
 interpolate minor tidal constituents using the file \configFile{inputfileAdmittance}{admittance}.
 This file can be created with \program{DoodsonHarmonicsCalculateAdmittance}.
 
-After the interpolation step a selection of the computed constituents can be
+After the interpolation step, a selection of the computed constituents can be
 choosen by \configClass{selectDoodson}{doodson}. Only these constiuents are considered for the results.
-If no \configClass{selectDoodson}{doodson} is set all constituents will be used. The constituents can
-be coded as Doodson number (e.g. 255.555) or as names intoduced by Darwin (e.g. M2).
+If no \configClass{selectDoodson}{doodson} is set, all constituents will be used. The constituents can
+be coded as Doodson number (e.g. 255.555) or as names introduced by Darwin (e.g. M2).
 
 The computed result is multiplied with \config{factor}.
 )";

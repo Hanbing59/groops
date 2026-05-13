@@ -80,7 +80,7 @@ constexpr UInt    FILE_INSTRUMENT_VERSION = std::max(UInt(20200123), FILE_BASE_V
 /***** CLASS ***********************************/
 
 /** @brief Epoch with satellite instrument data.
-* An Epoch contain instrument data given at a specific @a time.
+* An Epoch contains instrument data given at a specific @a time.
 * This is an abstract class. */
 class Epoch
 {
@@ -158,7 +158,7 @@ public:
 /***** CLASS ***********************************/
 
 /** @brief Arc with satellite instrument data.
-* An Arc consists of a list of Epochs of an arbitrary instrument. */
+* An Arc consists of a list of epochs of an arbitrary instrument. */
 class Arc
 {
 protected:
@@ -228,11 +228,17 @@ public:
   Arc(Arc &&) = default;    //!< Move constructor
   virtual ~Arc() = default; //!< Destructor
 
-  /// Constructor from matrix (first column is MJD)
+  /** @brief Constructor from matrix @a A, the first column of which is time in MJD. 
+   * @param A data matrix for epochs. The first column of @a A must contain time in MJD. 
+   * @param type data type of epochs. 
+  */
   explicit Arc(const_MatrixSliceRef A, Epoch::Type type=Epoch::EMPTY);
 
-  /** @brief Constructor from matrix (first column is MJD)
-  First columns of @a A is ignored, instead @a times is used. */
+  /** @brief Constructor from matrix @a A, the first column of which will be ignored and the time is specified by @a times.
+   * @param times time series for epochs. 
+   * @param A data matrix for epochs. The first column of @a A will be ignored.
+   * @param type data type of epochs.
+   * */
   explicit Arc(const std::vector<Time> &times, const_MatrixSliceRef A, Epoch::Type type=Epoch::EMPTY);
 
   Arc &operator=(const Arc &x);     //!< Assignement
@@ -375,17 +381,17 @@ public:
   ArcTemplate &operator=(ArcTemplate<EpochType> &&arc)      {Arc::operator=(std::move(arc)); return *this;}                       //!< Move assignment
   ArcTemplate &operator=(Arc &&arc)                         {Arc::operator=(std::move(arc)); checkType(getType()); return *this;} //!< Move assignment
 
-  /** @brief Instrument specific epoch at index @a i. */
+  /** @brief Returns instrument specific epoch at index @a i. */
   const EpochType &at(UInt i) const  {return *dynamic_cast<EpochType*>(epoch.at(i).get());}
 
-  /** @brief Instrument specific writable epoch at index @a i. */
+  /** @brief Returns instrument specific writable epoch at index @a i. */
   EpochType &at(UInt i) {return *dynamic_cast<EpochType*>(epoch.at(i).get());}
 
-  /** @brief First epoch in arc */
+  /** @brief Returns first epoch in arc */
   const EpochType &front() const {return at(0);}
         EpochType &front()       {return at(0);}
 
-  /** @brief Last epoch in arc */
+  /** @brief Returns last epoch in arc */
   const EpochType &back() const {return at(size()-1);}
         EpochType &back()       {return at(size()-1);}
 };
@@ -585,7 +591,7 @@ typedef ArcTemplate<MiscValueEpoch> MiscValueArc;
 
 /***********************************************/
 
-/** @brief Epoch with a vector of values. */
+/** @brief Epoch with a 3D vector. */
 class Vector3dEpoch : public Epoch
 {
 public:
@@ -623,7 +629,7 @@ typedef ArcTemplate<Covariance3dEpoch> Covariance3dArc;
 
 /***********************************************/
 
-/** @brief Epoch with orbit data. */
+/** @brief Epoch with orbit data, position, velocity, and acceleration. */
 class OrbitEpoch : public Epoch
 {
 public:

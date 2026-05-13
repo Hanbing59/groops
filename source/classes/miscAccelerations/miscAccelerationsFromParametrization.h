@@ -22,7 +22,7 @@ Reads a solution vector from file \configFile{inputfileSolution}{matrix}
 which may be computed by a least squares adjustment (e.g. by \program{NormalsSolverVCE}).
 The coefficients of the vector are interpreted from position \config{indexStart}
 (counting from zero) with help of \configClass{parametrization}{parametrizationAccelerationType}.
-If the solution file contains solution of several right hand sides you can choose
+If the solution file contains solution of several right hand sides, you can choose
 one with number \config{rightSide} (counting from zero).
 
 The computed result is multiplied with \config{factor}.

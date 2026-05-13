@@ -19,9 +19,9 @@
 #ifdef DOCSTRING_Tides
 static const char *docstringTidesAstronomical = R"(
 \subsection{AstronomicalTide}\label{tidesType:astronomicalTide}
-This class computes the tide generating potential (TGP) of sun, moon
+This class computes the tide generating potential (TGP) of the Sun, Moon
 and planets (Mercury, Venus, Mars, Jupiter, Saturn).
-It takes into account the flattening of the Earth (At the moment only at the acceleration level).
+It takes into account the flattening of the Earth (At the moment, only at the acceleration level).
 
 The computed result is multiplied with \config{factor}.
 )";

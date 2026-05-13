@@ -20,7 +20,7 @@ static const char *docstringGravityfieldInInterval = R"(
 \subsection{InInterval}
 A \configClass{gravityfield}{gravityfieldType} is only evaluated in the interval between
 \config{timeStart} inclusively and \config{timeEnd} exclusively.
-Outside the interval the result is zero.
+Outside the interval, the result is zero.
 
 This class is useful to get a time series of monthly mean GRACE gravity field solutions.
 In each month another file of potentialCoefficients is valid.

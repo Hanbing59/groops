@@ -26,7 +26,7 @@ with the (spatial) coefficients $f_i(x)$ as parameters and the temporal basis fu
 Basis splines are defined as polynomials of degree~$n$ in intervals between nodal points in time $t_i$,
 for details see~\reference{basis splines}{fundamentals.basisSplines}.
 
-The parameters are ordered timewise. First all parameters of $f_{i=1}(x)$ then
+The parameters are ordered time-wisely, i.e., first all parameters of $f_{i=1}(x)$ then those of
 $f_{i=2}(x)$ and so on. The total parameter count in each \config{interval} is $N=N_t+n-1$,
 where $N_t$ is the count of time points from \configClass{timeSeries}{timeSeriesType} in each interval and $n$
 is the \config{degree}.

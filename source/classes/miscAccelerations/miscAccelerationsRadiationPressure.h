@@ -18,8 +18,8 @@
 #ifdef DOCSTRING_MiscAccelerations
 static const char *docstringMiscAccelerationsRadiationPressure = R"(
 \subsection{RadiationPressure}\label{miscAccelerationsType:RadiationPressure}
-This class computes acceleration acting on a satellite caused by Solar and Earth radiation pressure
-and thermal radiation.
+This class computes accelerations acting on a satellite caused by Solar and Earth radiation pressures
+and the thermal radiation.
 
 Solar radiation pressure: The solar constant at 1~AU can be set via \config{solarFlux}.
 The \config{factorSolarRadation} can be used to scale the computed acceleration of the direct solar radiation.

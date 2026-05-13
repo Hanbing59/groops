@@ -17,10 +17,10 @@
 #ifdef DOCSTRING_ParametrizationAcceleration
 static const char *docstringParametrizationAccelerationPerRevolution = R"(
 \subsection{PerRevolution}\label{parametrizationAccelerationType:perRevolution}
-Oscillation once, twice, ... per revolution in Satellite Reference Frame (SRF)
+Oscillations of once, twice, ... cycles per revolution in Satellite Reference Frame (SRF)
 with the argument of latitude as input angle.  If the attitude of the satellite
-is not provided the Celestial Reference Frame (CRF) is used instead.
-Paramters are estimated in $[nm/s^2=10^{-9}\,m/s^2]$.
+is not provided, the Celestial Reference Frame (CRF) is used instead.
+Paramters are estimated in unit of $[nm/s^2=10^{-9}\,m/s^2]$.
 
 The \file{parameter names}{parameterName} are
 \begin{itemize}

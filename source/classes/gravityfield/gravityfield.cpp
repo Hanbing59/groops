@@ -64,8 +64,10 @@ Gravityfield::Gravityfield(Config &config, const std::string &name)
       if(readConfigChoiceElement(config, "potentialCoefficients", type, "file with potential coefficients"))
       {
         if(!coeff)
+          // the first one
           gravityfield.push_back(coeff = new GravityfieldPotentialCoefficients(config));
         else
+          // the following ones
           coeff->addPotentialCoefficients(GravityfieldPotentialCoefficients(config).sphericalHarmonics(Time()));
       }
       if(readConfigChoiceElement(config, "potentialCoefficientsInterior", type, "file with potential coefficients"))

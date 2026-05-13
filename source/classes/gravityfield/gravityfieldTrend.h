@@ -19,7 +19,7 @@
 static const char *docstringGravityfieldTrend = R"(
 \subsection{Trend}\label{gravityfieldType:trend}
 The given \configClass{gravityfield}{gravityfieldType} is interpreted
-as trend function and the result is computed at time $t$ as follows
+as a trend function and the result is computed at time $t$ as follows
 \begin{equation}
 V(\M x,t) = \frac{t-t_0}{\Delta t}V(\M x),
 \end{equation}

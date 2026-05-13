@@ -19,10 +19,10 @@
 #ifdef DOCSTRING_Gravityfield
 static const char *docstringGravityfieldPotentialCoefficientsInterior = R"(
 \subsection{PotentialCoefficientsInterior}
-Reads coefficients of a spherical harmonics expansion (for inner space) from file.
-If set the expansion is limited in the range between \config{minDegree}
-and \config{maxDegree} inclusivly. The computed result is multiplied with \config{factor}.
-If \config{setSigmasToZero} is true the variances are set to zero.
+Reads coefficients of a spherical harmonics expansion (for inner space) from a file.
+If set, the expansion is limited in the range between \config{minDegree}
+and \config{maxDegree} inclusively. The computed result is multiplied with \config{factor}.
+If \config{setSigmasToZero} is true, the variances are set to zero.
 This option is only important for error propagation
 and does not change the result of the gravity field functionals.
 )";

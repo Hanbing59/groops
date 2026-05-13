@@ -19,7 +19,7 @@
 static const char *docstringGravityfieldTopography = R"(
 \subsection{Topography}\label{gravityfieldType:topography}
 The gravity is integrated from a topographic mass distribution.
-For each grid point in \configFile{inputfileGridRectangular}{griddedData} a prisma with
+For each grid point in \configFile{inputfileGridRectangular}{griddedData}, a prisma with
 \config{density} is assumed. The horizontal extension is computed from the grid spacing
 and the vertical extension is given by \config{radialLowerBound}
 and \config{radialUpperBound} above ellipsoid. All values are expressions and computed
@@ -35,10 +35,10 @@ column. In this case the following settings should be used:
 \item \config{density} = \verb|data2|.
 \end{itemize}
 
-As the prim computation is time consuming a maximum distance around the evaluation point
-can defined with \config{distancePrism}. Afterwards a simplified radial line
+As the prim computation is time consuming, a maximum distance around the evaluation point
+can be defined with \config{distancePrism}. Afterwards, a simplified radial line
 (the prism mass is concentrated to a line in the center) is used up to
-a distance of \config{distanceLine}. At last the prim is approximated by a point mass
+a distance of \config{distanceLine}. At last, the prim is approximated by a point mass
 in the center up to a distance \config{distanceMax} (if set). Prisms nearby the evaluation
 point can be excluded with \config{distanceMin}.
 )";

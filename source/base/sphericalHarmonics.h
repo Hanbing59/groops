@@ -168,6 +168,3 @@ inline SphericalHarmonics operator* (const SphericalHarmonics &t, Double c)     
 /***********************************************/
 
 #endif /* __GROOPS_SPHERICALHARMONICS__ */
-
-
-

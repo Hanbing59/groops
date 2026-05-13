@@ -2,7 +2,7 @@
 /**
 * @file fileSphericalHarmonics.h
 *
-* @brief Read/write SphericalHarmonics.
+* @brief Read/Write a spherical harmonics coefficients file.
 *
 * @author Torsten Mayer-Guerr
 * @date 2005-01-14
@@ -16,9 +16,9 @@
 // Latex documentation
 #ifdef DOCSTRING_FILEFORMAT_PotentialCoefficients
 static const char *docstringPotentialCoefficients = R"(
-The standard \verb|.gfc| format as defined by the ICGEM is used in ASCII the format.
+The standard \verb|.gfc| format as defined by the ICGEM is used in the ASCII format.
 Only the static part is used and temporal variations (e.g. trend) are ignored.
-To write additional information and temporal variations use \program{PotentialCoefficients2Icgem}.
+To write additional information and temporal variations, use \program{PotentialCoefficients2Icgem}.
 )";
 #endif
 
@@ -38,10 +38,10 @@ constexpr UInt    FILE_POTENTIALCOEFFICIENTS_VERSION = std::max(UInt(20200123), 
 
 /***** FUNCTIONS *******************************/
 
-/** @brief Write into a SphericalHarmonics file. */
+/** @brief Writes an SphericalHarmonics instance into a file. */
 void writeFileSphericalHarmonics(const FileName &fileName, const SphericalHarmonics &x);
 
-/** @brief Read from a SphericalHarmonics file. */
+/** @brief Reads an SphericalHarmonics instance from a file. */
 void readFileSphericalHarmonics(const FileName &fileName, SphericalHarmonics &x);
 
 /// @}

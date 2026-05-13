@@ -21,10 +21,10 @@ static const char *docstringTides = R"(
 This class computes functionals of the time depending tide potential,
 e.g potential, acceleration or gravity gradients.
 
-If several instances of the class are given the results are summed up.
-Before summation every single result is multiplicated by a \config{factor}.
-To get the difference between two ocean tide models you must choose one factor by 1
-and the other by -1. To get the mean of two models just set each factor to 0.5.
+If several instances of this class are given, the results are summed up.
+Before summation, every single result is multiplicated by a \config{factor}.
+To get the difference between two ocean tide models, you must choose one factor by 1
+and the other by -1. To get the mean of two models, just set each factor to 0.5.
 )";
 #endif
 

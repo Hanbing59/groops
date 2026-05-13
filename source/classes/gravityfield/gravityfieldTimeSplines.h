@@ -18,11 +18,11 @@
 #ifdef DOCSTRING_Gravityfield
 static const char *docstringGravityfieldTimeSplines = R"(
 \subsection{TimeSplines}\label{gravityfieldType:timeSplines}
-Read a time variable gravity field from file
+Reads a time variable gravity field from file
 \configFile{inputfileTimeSplinesGravityfield}{timeSplinesGravityField}
 represented by a spherical harmonics expansion in the spatial domain and spline functions
-in the time domain. If set the expansion is limited in the range between
-\config{minDegree} and \config{maxDegree} inclusivly.
+in the time domain. If set, the expansion is limited in the range between
+\config{minDegree} and \config{maxDegree} inclusively.
 
 This file can be created for example by \program{Gravityfield2TimeSplines} or
 \program{PotentialCoefficients2BlockMeanTimeSplines}.

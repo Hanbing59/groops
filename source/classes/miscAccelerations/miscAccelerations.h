@@ -17,7 +17,7 @@
 #ifdef DOCSTRING_MiscAccelerations
 static const char *docstringMiscAccelerations = R"(
 \section{MiscAccelerations}\label{miscAccelerationsType}
-This class gives the non conservative forces acting on satellites.
+This class gives the non-conservative forces acting on satellites.
 )";
 #endif
 

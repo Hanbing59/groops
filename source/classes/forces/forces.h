@@ -55,20 +55,20 @@ public:
   /// Constructor.
   Forces(Config &config, const std::string &name);
 
-  /** @brief Compute full acceleration in TRF
-  * @param satellite model for misc accelerations
+  /** @brief Computes the satellite's acceleration in TRF.
+  * @param satellite satellite macro model for misc accelerations
   * @param time Time.
-  * @param position in CRF [m].
-  * @param velocity in CRF [m/s].
-  * @param rotSat   Sat -> CRF
-  * @param rotEarth CRF -> TRF
-  * @param rotation need for computation of polar motion.
-  * @param ephemerides Position of Sun and Moon.
-  * @return acceleration in TRF(!) [m/s^2] */
+  * @param position satellite position in CRF [m].
+  * @param velocity satellite velocity in CRF [m/s].
+  * @param rotSat   rotation matrix Sat -> CRF
+  * @param rotEarth rotation matrix CRF -> TRF
+  * @param rotation Earth rotation, needed for computation of polar motion.
+  * @param ephemerides Planet ephemerids, e.g. position of Sun and Moon.
+  * @return Satellite accelerations in TRF(!) [m/s^2] */
   Vector3d acceleration(SatelliteModelPtr satellite, const Time &time, const Vector3d &position, const Vector3d &velocity,
                         const Rotary3d &rotSat, const Rotary3d &rotEarth, EarthRotationPtr rotation, EphemeridesPtr ephemerides) const;
 
-  /** @brief creates an derived instance of this class. */
+  /** @brief Creates an derived instance of this class. */
   static ForcesPtr create(Config &config, const std::string &name) {return ForcesPtr(new Forces(config, name));}
 
 private:
@@ -81,7 +81,7 @@ private:
 
 /** @brief Creates an instance of the class Forces.
 * Search for a node with @a name in the Config node.
-* if @a name is not found the function returns FALSE and @a forces is untouched.
+* If @a name is not found, the function returns FALSE and @a forces is untouched.
 * @param config The config node which includes the node with the options for this class
 * @param name Tag name in the config.
 * @param[out] forces Created class.
