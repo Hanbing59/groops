@@ -72,23 +72,23 @@
             
 <h1 id="gravityfieldType">Gravityfield</h1><p>
 This class computes functionals of the time depending gravity field,
-e.g potential, gravity anomalies or gravity gradients.</p><p>If several instances of the class are given the results are summed up.
-Before summation every single result is multiplicated by a <strong class="groops-config-element">factor</strong>.
+e.g potential, gravity anomalies or gravity gradients.</p><p>If several instances of the class are given, the results are summed up.
+Before summation, every single result is multiplicated by a <strong class="groops-config-element">factor</strong>.
 To subtract a normal field like GRS80 from a potential
-to get the disturbance potential you must choose one factor by 1
-and the other by -1. To get the mean of two fields just set each factor to 0.5.</p><p>Some of the instances gives also information about the accuracy.
-The variance of the result (sum) is computed by means of variance propagation.
+to get the disturbance potential, you must choose one factor by 1
+and the other by -1. To get the mean of two fields, just set each factor to 0.5.</p><p>Some of the instances give also information about the accuracy.
+The variance of the result (sum) is computed by the means of variance propagation.
 </p>
 
 <h2 id="potentialCoefficients">PotentialCoefficients</h2><p>
-Reads coefficients of a spherical harmonics expansion from file.
+Reads coefficients of a spherical harmonics expansion from a file.
 The potential is given by
 \[
 V(\lambda,\vartheta,r) = \frac{GM}{R}\sum_{n=0}^\infty \sum_{m=0}^n \left(\frac{R}{r}\right)^{n+1}
   \left(c_{nm} C_{nm}(\lambda,\vartheta) + s_{nm} S_{nm}(\lambda,\vartheta)\right).
-\]If set the expansion is limited in the range between <strong class="groops-config-element">minDegree</strong>
-and <strong class="groops-config-element">maxDegree</strong> inclusivly. The computed result
-is multiplied with <strong class="groops-config-element">factor</strong>. If <strong class="groops-config-element">setSigmasToZero</strong> is true
+\]If set, the expansion is limited in the range between <strong class="groops-config-element">minDegree</strong>
+and <strong class="groops-config-element">maxDegree</strong> inclusively. The computed result
+is multiplied with <strong class="groops-config-element">factor</strong>. If <strong class="groops-config-element">setSigmasToZero</strong> is true,
 the variances are set to zero. This option is only important for variance propagation
 and does not change the result of the gravity field functionals.
 </p>
@@ -102,10 +102,10 @@ and does not change the result of the gravity field functionals.
 </table>
 
 <h2>PotentialCoefficientsInterior</h2><p>
-Reads coefficients of a spherical harmonics expansion (for inner space) from file.
-If set the expansion is limited in the range between <strong class="groops-config-element">minDegree</strong>
-and <strong class="groops-config-element">maxDegree</strong> inclusivly. The computed result is multiplied with <strong class="groops-config-element">factor</strong>.
-If <strong class="groops-config-element">setSigmasToZero</strong> is true the variances are set to zero.
+Reads coefficients of a spherical harmonics expansion (for inner space) from a file.
+If set, the expansion is limited in the range between <strong class="groops-config-element">minDegree</strong>
+and <strong class="groops-config-element">maxDegree</strong> inclusively. The computed result is multiplied with <strong class="groops-config-element">factor</strong>.
+If <strong class="groops-config-element">setSigmasToZero</strong> is true, the variances are set to zero.
 This option is only important for error propagation
 and does not change the result of the gravity field functionals.
 </p>
@@ -139,11 +139,11 @@ containing the accuracies of the coefficients.</p><p>The computed result is mult
 </table>
 
 <h2 id="timeSplines">TimeSplines</h2><p>
-Read a time variable gravity field from file
+Reads a time variable gravity field from file
 <a class="groops-class" href="fileFormat_timeSplinesGravityField.html">inputfileTimeSplinesGravityfield</a>
 represented by a spherical harmonics expansion in the spatial domain and spline functions
-in the time domain. If set the expansion is limited in the range between
-<strong class="groops-config-element">minDegree</strong> and <strong class="groops-config-element">maxDegree</strong> inclusivly.</p><p>This file can be created for example by <a class="groops-program" href="Gravityfield2TimeSplines.html">Gravityfield2TimeSplines</a> or
+in the time domain. If set, the expansion is limited in the range between
+<strong class="groops-config-element">minDegree</strong> and <strong class="groops-config-element">maxDegree</strong> inclusively.</p><p>This file can be created for example by <a class="groops-program" href="Gravityfield2TimeSplines.html">Gravityfield2TimeSplines</a> or
 <a class="groops-program" href="PotentialCoefficients2BlockMeanTimeSplines.html">PotentialCoefficients2BlockMeanTimeSplines</a>.</p><p>The computed result is multiplied with <strong class="groops-config-element">factor</strong>.
 </p>
 <table class="table table-hover">
@@ -157,7 +157,7 @@ in the time domain. If set the expansion is limited in the range between
 
 <h2 id="trend">Trend</h2><p>
 The given <a class="groops-class" href="gravityfieldType.html">gravityfield</a> is interpreted
-as trend function and the result is computed at time $t$ as follows
+as a trend function and the result is computed at time $t$ as follows
 \[
 V(\M x,t) = \frac{t-t_0}{\Delta t}V(\M x),
 \]with $t_0$ is <strong class="groops-config-element">timeStart</strong> and $\Delta t$ is <strong class="groops-config-element">timeStep</strong>.
@@ -171,7 +171,7 @@ V(\M x,t) = \frac{t-t_0}{\Delta t}V(\M x),
 
 <h2 id="oscillation">Oscillation</h2><p>
 The given <a class="groops-class" href="gravityfieldType.html">gravityfield</a> is interpreted
-as oscillation function and the result is computed at time $t$ as follows
+as an oscillation function and the result is computed at time $t$ as follows
 \[
 V(\M x,t) = \cos(\omega)V_{cos}(\M x)+\sin(\omega)V_{sin}(\M x),
 \]with $\omega=\frac{2\pi}{T}(t-t_0)$.
@@ -187,7 +187,7 @@ V(\M x,t) = \cos(\omega)V_{cos}(\M x)+\sin(\omega)V_{sin}(\M x),
 <h2>InInterval</h2><p>
 A <a class="groops-class" href="gravityfieldType.html">gravityfield</a> is only evaluated in the interval between
 <strong class="groops-config-element">timeStart</strong> inclusively and <strong class="groops-config-element">timeEnd</strong> exclusively.
-Outside the interval the result is zero.</p><p>This class is useful to get a time series of monthly mean GRACE gravity field solutions.
+Outside the interval, the result is zero.</p><p>This class is useful to get a time series of monthly mean GRACE gravity field solutions.
 In each month another file of potentialCoefficients is valid.
 This can easily be created with <a class="groops-class" href="loopType.html">loop</a>.
 </p>
@@ -214,7 +214,7 @@ It also needs <a class="groops-class" href="ephemeridesType.html">ephemerides</a
 
 <h2 id="topography">Topography</h2><p>
 The gravity is integrated from a topographic mass distribution.
-For each grid point in <a class="groops-class" href="fileFormat_griddedData.html">inputfileGridRectangular</a> a prisma with
+For each grid point in <a class="groops-class" href="fileFormat_griddedData.html">inputfileGridRectangular</a>, a prisma with
 <strong class="groops-config-element">density</strong> is assumed. The horizontal extension is computed from the grid spacing
 and the vertical extension is given by <strong class="groops-config-element">radialLowerBound</strong>
 and <strong class="groops-config-element">radialUpperBound</strong> above ellipsoid. All values are expressions and computed
@@ -230,10 +230,10 @@ column. In this case the following settings should be used:
 </li><li>
 <strong class="groops-config-element">density</strong> = <code>data2</code>.
 </li></ul>
-</p><p>As the prim computation is time consuming a maximum distance around the evaluation point
-can defined with <strong class="groops-config-element">distancePrism</strong>. Afterwards a simplified radial line
+</p><p>As the prim computation is time consuming, a maximum distance around the evaluation point
+can be defined with <strong class="groops-config-element">distancePrism</strong>. Afterwards, a simplified radial line
 (the prism mass is concentrated to a line in the center) is used up to
-a distance of <strong class="groops-config-element">distanceLine</strong>. At last the prim is approximated by a point mass
+a distance of <strong class="groops-config-element">distanceLine</strong>. At last, the prim is approximated by a point mass
 in the center up to a distance <strong class="groops-config-element">distanceMax</strong> (if set). Prisms nearby the evaluation
 point can be excluded with <strong class="groops-config-element">distanceMin</strong>.
 </p>

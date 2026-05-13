@@ -6652,36 +6652,39 @@ This program is \reference{parallelized}{general.parallelization}.
 \clearpage
 %==================================
 \subsection{PreprocessingVariationalEquation}\label{PreprocessingVariationalEquation}
-This program integrates an orbit dynamically using the given forces and set up the state transition matrix
+This program integrates an orbit dynamically using the given forces and sets up the state transition matrix
 for each time step. These are the prerequisites for a least squares adjustment (e.g. gravity field determination) using
 the variational equation approach. The variational equations are computed arc-wise as defined by \configFile{inputfileOrbit}{instrument}.
-This means for each arc new initial state parameters are set up.
+This means for each arc a new set of initial state parameters are set up.
 
-In a first step the \configClass{forces}{forcesType} acting on the satellite are evaluated at the apriori positions given
+In the first step, the \configClass{forces}{forcesType} acting on the satellite are evaluated at the apriori positions given
 by \configFile{inputfileOrbit}{instrument}. Non-conservative forces like solar radiation pressure need the orientation of the
-satellite (\configFile{inputfileStarCamera}{instrument}) and additionally, a satellite macro model (\config{satelliteModel})
-with the surface properties. Furthermore \configFile{inputfileAccelerometer}{instrument} observations are also considered.
+satellite (given by \configFile{inputfileStarCamera}{instrument}) and additionally, a satellite macro model (given by \config{satelliteModel})
+with the satellite surface properties. Furthermore, \configFile{inputfileAccelerometer}{instrument} observations are also considered.
 
-In a second step the accelerations are integrated twice to a dynamic orbit using a moving polynomial with the degree
+In the second step, these accelerations are integrated twice to generate a dynamic orbit using a moving polynomial with the degree
 \config{integrationDegree}. The orbit is corrected to be self-consistent. This means the forces should be evaluated
 at the new integrated positions instead of the apriori ones. This correction is computed in a linear approximation
-using the gradient of the forces with respect to the positions (\config{gradientfield}). As this term is small generally
+using the gradient of the forces with respect to the positions (\config{gradientfield}). As this term is small generally,
 only the largest force components have to be considered. A low degree spherical harmonic expansion of the static gravity
-field (about up to degree 5) is sufficient in almost all cases. In this step also the state transition matrix (the partial
-derivatives of the current state, position and velocity) with respect to the initial state is computed.
-The integrated orbit together with the state transitions are stored in \configFile{outputfileVariational}{variationalEquation},
-the integrated orbit only in \configFile{outputfileOrbit}{instrument}.
+field (about up to degree 5) is sufficient in almost all cases. In this step also, the state transition matrixes (the partial
+derivatives of the current state, position and velocity) with respect to the initial states are computed.
+The integrated orbit together with the state transition matrixes are stored in \configFile{outputfileVariational}{variationalEquation},
+while in \configFile{outputfileOrbit}{instrument} only the integrated orbit are stored.
 
-To improve the numerical stability a reference ellipse can be reduced beforehand using Enke's method (\config{useEnke}).
+To improve the numerical stability, a reference ellipse can be reduced beforehand using the Enke's method (\config{useEnke}).
 Mathematically the result is the same, but as the large central term is removed before and restored
-afterwards more digits are available for the computation.
+afterwards, more digits are available for the computation.
 
-The integrated orbit should be fitted to observations afterwards by the programs
+The integrated orbit should be fitted to orbit/position observations afterwards by the programs
 \program{PreprocessingVariationalEquationOrbitFit} and/or \program{PreprocessingVariationalEquationSstFit}.
 They apply a least squares adjustment by estimating some satellite parameters (e.g. an accelerometer bias).
-If the fitted orbit is too far away from the original \configFile{inputfileOrbit}{instrument} the linearization may not be
-accurate enough. In this case \program{PreprocessingVariationalEquation} should be run again with the fitted orbit
-as \configFile{inputfileOrbit}{instrument} and introducing the \config{estimatedParameters} as additional forces.
+If the fitted orbit is too far away from the original \configFile{inputfileOrbit}{instrument}(i.e., the orbit observations), it means the linearization may not be
+accurate enough. In this case, \program{PreprocessingVariationalEquation} should be run again with the fitted orbit 
+(e.g., \configFile{outputfileOrbit}{instrument} from \program{PreprocessingVariationalEquationOrbitFit})
+served as \configFile{inputfileOrbit}{instrument} and introducing the \config{estimatedParameters} 
+estimated during the orbit fitting (e.g., \configFile{outputfileSolution}{matrix} from \program{PreprocessingVariationalEquationOrbitFit})
+as additional forces.
 
 
 \keepXColumns
@@ -6689,10 +6692,10 @@ as \configFile{inputfileOrbit}{instrument} and introducing the \config{estimated
 \hline
 Name & Type & Annotation\\
 \hline
-\hfuzz=500pt\includegraphics[width=1em]{element-mustset.pdf}~outputfileVariational & \hfuzz=500pt filename & \hfuzz=500pt approximate position and integrated state matrix\\
+\hfuzz=500pt\includegraphics[width=1em]{element-mustset.pdf}~outputfileVariational & \hfuzz=500pt filename & \hfuzz=500pt integrated orbit and state transition matrix\\
 \hfuzz=500pt\includegraphics[width=1em]{element.pdf}~outputfileOrbit & \hfuzz=500pt filename & \hfuzz=500pt integrated orbit\\
 \hfuzz=500pt\includegraphics[width=1em]{element.pdf}~inputfileSatelliteModel & \hfuzz=500pt filename & \hfuzz=500pt satellite macro model\\
-\hfuzz=500pt\includegraphics[width=1em]{element-mustset.pdf}~inputfileOrbit & \hfuzz=500pt filename & \hfuzz=500pt approximate position, used to evaluate the force\\
+\hfuzz=500pt\includegraphics[width=1em]{element-mustset.pdf}~inputfileOrbit & \hfuzz=500pt filename & \hfuzz=500pt approximate orbit, used to evaluate the force\\
 \hfuzz=500pt\includegraphics[width=1em]{element-mustset.pdf}~inputfileStarCamera & \hfuzz=500pt filename & \hfuzz=500pt rotation from body frame to CRF\\
 \hfuzz=500pt\includegraphics[width=1em]{element.pdf}~inputfileAccelerometer & \hfuzz=500pt filename & \hfuzz=500pt non-gravitational forces in satellite reference frame\\
 \hfuzz=500pt\includegraphics[width=1em]{element-mustset.pdf}~forces & \hfuzz=500pt \hyperref[forcesType]{forces} & \hfuzz=500pt \\
@@ -6702,7 +6705,7 @@ Name & Type & Annotation\\
 \hfuzz=500pt\includegraphics[width=1em]{element-mustset.pdf}~earthRotation & \hfuzz=500pt \hyperref[earthRotationType]{earthRotation} & \hfuzz=500pt \\
 \hfuzz=500pt\includegraphics[width=1em]{element.pdf}~ephemerides & \hfuzz=500pt \hyperref[ephemeridesType]{ephemerides} & \hfuzz=500pt \\
 \hfuzz=500pt\includegraphics[width=1em]{element-mustset-unbounded.pdf}~gradientfield & \hfuzz=500pt \hyperref[gravityfieldType]{gravityfield} & \hfuzz=500pt low order field to estimate the change of the gravity by position adjustement\\
-\hfuzz=500pt\includegraphics[width=1em]{element.pdf}~integrationDegree & \hfuzz=500pt uint & \hfuzz=500pt integration of forces by polynomial approximation of degree n\\
+\hfuzz=500pt\includegraphics[width=1em]{element.pdf}~integrationDegree & \hfuzz=500pt uint & \hfuzz=500pt degree of the approximation polynomial used for integration of forces, must be odd\\
 \hfuzz=500pt\includegraphics[width=1em]{element.pdf}~useEnke & \hfuzz=500pt sequence & \hfuzz=500pt integrate differential forces to an elliptical reference trajectory\\
 \hfuzz=500pt\includegraphics[width=1em]{connector.pdf}\includegraphics[width=1em]{element.pdf}~GM & \hfuzz=500pt double & \hfuzz=500pt geocentric gravitational constant used for elliptical reference orbit\\
 \hline
@@ -6728,7 +6731,7 @@ The observation equations (parameter sensitivity matrix) are computed by integra
 (\configFile{inputfileVariational}{variationalEquation}) using a polynomial with \config{integrationDegree} and interpolated to the
 observation epochs using a polynomial with \config{interpolationDegree}.
 
-All parameters used here must be reestimated in the full least squares adjustment
+All parameters used here must be re-estimated in the full least squares adjustment
 for the gravity field determination to get a solution which is not biased towards the reference field.
 The solutions of additional estimations are relative (deltas) as the parameters are already used as Taylor point
 in the reference orbit.
@@ -6744,6 +6747,7 @@ Name & Type & Annotation\\
 \hfuzz=500pt\includegraphics[width=1em]{element-mustset.pdf}~outputfileVariational & \hfuzz=500pt filename & \hfuzz=500pt approximate position and integrated state matrix\\
 \hfuzz=500pt\includegraphics[width=1em]{element.pdf}~outputfileOrbit & \hfuzz=500pt filename & \hfuzz=500pt integrated orbit\\
 \hfuzz=500pt\includegraphics[width=1em]{element.pdf}~outputfileSolution & \hfuzz=500pt filename & \hfuzz=500pt estimated calibration and state parameters\\
+\hfuzz=500pt\includegraphics[width=1em]{element.pdf}~outputfileResiduals & \hfuzz=500pt filename & \hfuzz=500pt post-fit residuals of orbit fit\\
 \hfuzz=500pt\includegraphics[width=1em]{element-mustset.pdf}~inputfileVariational & \hfuzz=500pt filename & \hfuzz=500pt approximate position and integrated state matrix\\
 \hfuzz=500pt\includegraphics[width=1em]{element-mustset.pdf}~inputfileOrbit & \hfuzz=500pt filename & \hfuzz=500pt kinematic positions of satellite as observations\\
 \hfuzz=500pt\includegraphics[width=1em]{element.pdf}~inputfileCovariancePodEpoch & \hfuzz=500pt filename & \hfuzz=500pt 3x3 epoch wise covariances\\

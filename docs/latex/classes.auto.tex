@@ -2858,26 +2858,26 @@ Examples:
 This class computes functionals of the time depending gravity field,
 e.g potential, gravity anomalies or gravity gradients.
 
-If several instances of the class are given the results are summed up.
-Before summation every single result is multiplicated by a \config{factor}.
+If several instances of the class are given, the results are summed up.
+Before summation, every single result is multiplicated by a \config{factor}.
 To subtract a normal field like GRS80 from a potential
-to get the disturbance potential you must choose one factor by 1
-and the other by -1. To get the mean of two fields just set each factor to 0.5.
+to get the disturbance potential, you must choose one factor by 1
+and the other by -1. To get the mean of two fields, just set each factor to 0.5.
 
-Some of the instances gives also information about the accuracy.
-The variance of the result (sum) is computed by means of variance propagation.
+Some of the instances give also information about the accuracy.
+The variance of the result (sum) is computed by the means of variance propagation.
 
 
 \subsection{PotentialCoefficients}\label{gravityfieldType:potentialCoefficients}
-Reads coefficients of a spherical harmonics expansion from file.
+Reads coefficients of a spherical harmonics expansion from a file.
 The potential is given by
 \begin{equation}
 V(\lambda,\vartheta,r) = \frac{GM}{R}\sum_{n=0}^\infty \sum_{m=0}^n \left(\frac{R}{r}\right)^{n+1}
   \left(c_{nm} C_{nm}(\lambda,\vartheta) + s_{nm} S_{nm}(\lambda,\vartheta)\right).
 \end{equation}
-If set the expansion is limited in the range between \config{minDegree}
-and \config{maxDegree} inclusivly. The computed result
-is multiplied with \config{factor}. If \config{setSigmasToZero} is true
+If set, the expansion is limited in the range between \config{minDegree}
+and \config{maxDegree} inclusively. The computed result
+is multiplied with \config{factor}. If \config{setSigmasToZero} is true,
 the variances are set to zero. This option is only important for variance propagation
 and does not change the result of the gravity field functionals.
 
@@ -2897,10 +2897,10 @@ Name & Type & Annotation\\
 
 
 \subsection{PotentialCoefficientsInterior}
-Reads coefficients of a spherical harmonics expansion (for inner space) from file.
-If set the expansion is limited in the range between \config{minDegree}
-and \config{maxDegree} inclusivly. The computed result is multiplied with \config{factor}.
-If \config{setSigmasToZero} is true the variances are set to zero.
+Reads coefficients of a spherical harmonics expansion (for inner space) from a file.
+If set, the expansion is limited in the range between \config{minDegree}
+and \config{maxDegree} inclusively. The computed result is multiplied with \config{factor}.
+If \config{setSigmasToZero} is true, the variances are set to zero.
 This option is only important for error propagation
 and does not change the result of the gravity field functionals.
 
@@ -2948,11 +2948,11 @@ Name & Type & Annotation\\
 
 
 \subsection{TimeSplines}\label{gravityfieldType:timeSplines}
-Read a time variable gravity field from file
+Reads a time variable gravity field from file
 \configFile{inputfileTimeSplinesGravityfield}{timeSplinesGravityField}
 represented by a spherical harmonics expansion in the spatial domain and spline functions
-in the time domain. If set the expansion is limited in the range between
-\config{minDegree} and \config{maxDegree} inclusivly.
+in the time domain. If set, the expansion is limited in the range between
+\config{minDegree} and \config{maxDegree} inclusively.
 
 This file can be created for example by \program{Gravityfield2TimeSplines} or
 \program{PotentialCoefficients2BlockMeanTimeSplines}.
@@ -2976,7 +2976,7 @@ Name & Type & Annotation\\
 
 \subsection{Trend}\label{gravityfieldType:trend}
 The given \configClass{gravityfield}{gravityfieldType} is interpreted
-as trend function and the result is computed at time $t$ as follows
+as a trend function and the result is computed at time $t$ as follows
 \begin{equation}
 V(\M x,t) = \frac{t-t_0}{\Delta t}V(\M x),
 \end{equation}
@@ -2997,7 +2997,7 @@ Name & Type & Annotation\\
 
 \subsection{Oscillation}\label{gravityfieldType:oscillation}
 The given \configClass{gravityfield}{gravityfieldType} is interpreted
-as oscillation function and the result is computed at time $t$ as follows
+as an oscillation function and the result is computed at time $t$ as follows
 \begin{equation}
 V(\M x,t) = \cos(\omega)V_{cos}(\M x)+\sin(\omega)V_{sin}(\M x),
 \end{equation}
@@ -3020,7 +3020,7 @@ Name & Type & Annotation\\
 \subsection{InInterval}
 A \configClass{gravityfield}{gravityfieldType} is only evaluated in the interval between
 \config{timeStart} inclusively and \config{timeEnd} exclusively.
-Outside the interval the result is zero.
+Outside the interval, the result is zero.
 
 This class is useful to get a time series of monthly mean GRACE gravity field solutions.
 In each month another file of potentialCoefficients is valid.
@@ -3061,7 +3061,7 @@ Name & Type & Annotation\\
 
 \subsection{Topography}\label{gravityfieldType:topography}
 The gravity is integrated from a topographic mass distribution.
-For each grid point in \configFile{inputfileGridRectangular}{griddedData} a prisma with
+For each grid point in \configFile{inputfileGridRectangular}{griddedData}, a prisma with
 \config{density} is assumed. The horizontal extension is computed from the grid spacing
 and the vertical extension is given by \config{radialLowerBound}
 and \config{radialUpperBound} above ellipsoid. All values are expressions and computed
@@ -3077,10 +3077,10 @@ column. In this case the following settings should be used:
 \item \config{density} = \verb|data2|.
 \end{itemize}
 
-As the prim computation is time consuming a maximum distance around the evaluation point
-can defined with \config{distancePrism}. Afterwards a simplified radial line
+As the prim computation is time consuming, a maximum distance around the evaluation point
+can be defined with \config{distancePrism}. Afterwards, a simplified radial line
 (the prism mass is concentrated to a line in the center) is used up to
-a distance of \config{distanceLine}. At last the prim is approximated by a point mass
+a distance of \config{distanceLine}. At last, the prim is approximated by a point mass
 in the center up to a distance \config{distanceMax} (if set). Prisms nearby the evaluation
 point can be excluded with \config{distanceMin}.
 
@@ -4619,12 +4619,12 @@ Name & Type & Annotation\\
 %==================================
 
 \section{MiscAccelerations}\label{miscAccelerationsType}
-This class gives the non conservative forces acting on satellites.
+This class gives the non-conservative forces acting on satellites.
 
 
 \subsection{Relativistic effect}\label{miscAccelerationsType:relativisticEffect}
-The relativistic effect to the acceleration of an artificial Earth satellite
-according to IERS2010 conventions.
+The relativistic effect on the acceleration of an artificial Earth satellite
+according to the IERS2010 conventions.
 
 The macro model and the attitude of the satellite is not needed.
 
@@ -4644,8 +4644,8 @@ Name & Type & Annotation\\
 
 
 \subsection{RadiationPressure}\label{miscAccelerationsType:RadiationPressure}
-This class computes acceleration acting on a satellite caused by Solar and Earth radiation pressure
-and thermal radiation.
+This class computes accelerations acting on a satellite caused by Solar and Earth radiation pressures
+and the thermal radiation.
 
 Solar radiation pressure: The solar constant at 1~AU can be set via \config{solarFlux}.
 The \config{factorSolarRadation} can be used to scale the computed acceleration of the direct solar radiation.
@@ -4743,7 +4743,7 @@ Name & Type & Annotation\\
 
 
 \subsection{Antenna thrust}\label{miscAccelerationsType:antennaThrust}
-The thrust (acceleration) in the opposite direction the antenna is facing
+The thrust (acceleration) in the opposite direction the antenna is facing,
 which is generated by satellite antenna broadcasts.
 The thrust is defined in the satellite macro model.
 
@@ -4763,7 +4763,7 @@ Reads a solution vector from file \configFile{inputfileSolution}{matrix}
 which may be computed by a least squares adjustment (e.g. by \program{NormalsSolverVCE}).
 The coefficients of the vector are interpreted from position \config{indexStart}
 (counting from zero) with help of \configClass{parametrization}{parametrizationAccelerationType}.
-If the solution file contains solution of several right hand sides you can choose
+If the solution file contains solution of several right hand sides, you can choose
 one with number \config{rightSide} (counting from zero).
 
 The computed result is multiplied with \config{factor}.
@@ -6233,15 +6233,15 @@ Name & Type & Annotation\\
 \section{ParametrizationAcceleration}\label{parametrizationAccelerationType}
 This class defines parameters of satellite accelerations.
 It will be used to set up the design matrix in a least squares adjustment.
-If multiple parametrizations are given the coefficients in the parameter vector
+If multiple parametrizations are given, the coefficients in the parameter vector
 are sequently appended.
 
 
 \subsection{PerRevolution}\label{parametrizationAccelerationType:perRevolution}
-Oscillation once, twice, ... per revolution in Satellite Reference Frame (SRF)
+Oscillations of once, twice, ... cycles per revolution in Satellite Reference Frame (SRF)
 with the argument of latitude as input angle.  If the attitude of the satellite
-is not provided the Celestial Reference Frame (CRF) is used instead.
-Paramters are estimated in $[nm/s^2=10^{-9}\,m/s^2]$.
+is not provided, the Celestial Reference Frame (CRF) is used instead.
+Paramters are estimated in unit of $[nm/s^2=10^{-9}\,m/s^2]$.
 
 The \file{parameter names}{parameterName} are
 \begin{itemize}
@@ -6271,7 +6271,7 @@ Name & Type & Annotation\\
 
 \subsection{AccBias}\label{parametrizationAccelerationType:accBias}
 Temporal changing accelerometer bias per axis in $[m/s^2]$ in Satellite Reference Frame (SRF).
-If the attitude of the satellite is not provided the Celestial Reference Frame (CRF) is used instead.
+If the attitude of the satellite is not provided, the Celestial Reference Frame (CRF) is used instead.
 
 The \file{parameter names}{parameterName} are
 \begin{itemize}
@@ -6821,10 +6821,10 @@ Name & Type & Annotation\\
 \section{ParametrizationTemporal}\label{parametrizationTemporalType}
 This class gives a parametrization of time depending parameters (gravity field, positions, ...).
 It will be used to set up the design matrix in a least squares adjustment.
-If multiple parametrizations are given the coefficients in the parameter vector
+If multiple parametrizations are given, the coefficients in the parameter vector
 are sequently appended.
 
-Useally time intervals are defined half open meaning the last time belongs not to the interval.
+Useally time intervals are defined as half-open, meaning the end time of the interval does not belong to it but the next interval if it exists.
 This behaviour can be changed for the last interval with \config{includeLastTime}.
 
 
@@ -6851,7 +6851,7 @@ A time variable function is given by a linear trend
 f(x,t) = \frac{1}{T}(t-t_0) \cdot f_t(x),
 \end{equation}
 with $t_0$ is \config{timeStart} and $T$ is \config{timeStep} in days.
-A constant term is not included and must added separately.
+A constant term is not included and thus must be added separately.
 
 The \file{parameter name}{parameterName} is \verb|*:*:trend.<timeStep(days)>*(t-<timeStart>):*|.
 
@@ -6876,7 +6876,7 @@ with the (spatial) coefficients $f_i(x)$ as parameters and the temporal basis fu
 Basis splines are defined as polynomials of degree~$n$ in intervals between nodal points in time $t_i$,
 for details see~\reference{basis splines}{fundamentals.basisSplines}.
 
-The parameters are ordered timewise. First all parameters of $f_{i=1}(x)$ then
+The parameters are ordered time-wisely, i.e., first all parameters of $f_{i=1}(x)$ then those of
 $f_{i=2}(x)$ and so on. The total parameter count in each \config{interval} is $N=N_t+n-1$,
 where $N_t$ is the count of time points from \configClass{timeSeries}{timeSeriesType} in each interval and $n$
 is the \config{degree}.
@@ -9033,6 +9033,30 @@ Name & Type & Annotation\\
 \end{tabularx}
 
 
+\subsection{DTM2020}
+Thermosphere parameters from the DTM2020 operational model:
+
+Documentation of the model can be found at https://swami-h2020-eu.github.io/mcm/
+and in
+
+Sean Bruinsma, Claude Boniface.
+The operational and research DTM-2020 thermosphere models.
+Journal of Space Weather and Space Climate, EDP sciences, 2021. 10.1051/swsc/2021032
+
+
+\keepXColumns
+\begin{tabularx}{\textwidth}{N T A}
+\hline
+Name & Type & Annotation\\
+\hline
+\hfuzz=500pt\includegraphics[width=1em]{element-mustset.pdf}~inputfileDtm2020Data & \hfuzz=500pt filename & \hfuzz=500pt \\
+\hfuzz=500pt\includegraphics[width=1em]{element.pdf}~inputfileFluxAndAp & \hfuzz=500pt filename & \hfuzz=500pt \\
+\hfuzz=500pt\includegraphics[width=1em]{element.pdf}~inputfileMagnetic3hAp & \hfuzz=500pt filename & \hfuzz=500pt indicies for wind model\\
+\hfuzz=500pt\includegraphics[width=1em]{element.pdf}~hwm14DataDirectory & \hfuzz=500pt filename & \hfuzz=500pt directory containing dwm07b104i.dat, gd2qd.dat, hwm123114.bin\\
+\hline
+\end{tabularx}
+
+
 \subsection{NRLMSIS2}
 Thermosphere parameters from the NRLMSIS2 model:
 
@@ -9060,16 +9084,16 @@ Name & Type & Annotation\\
 This class computes functionals of the time depending tide potential,
 e.g potential, acceleration or gravity gradients.
 
-If several instances of the class are given the results are summed up.
-Before summation every single result is multiplicated by a \config{factor}.
-To get the difference between two ocean tide models you must choose one factor by 1
-and the other by -1. To get the mean of two models just set each factor to 0.5.
+If several instances of this class are given, the results are summed up.
+Before summation, every single result is multiplicated by a \config{factor}.
+To get the difference between two ocean tide models, you must choose one factor by 1
+and the other by -1. To get the mean of two models, just set each factor to 0.5.
 
 
 \subsection{AstronomicalTide}\label{tidesType:astronomicalTide}
-This class computes the tide generating potential (TGP) of sun, moon
+This class computes the tide generating potential (TGP) of the Sun, Moon
 and planets (Mercury, Venus, Mars, Jupiter, Saturn).
-It takes into account the flattening of the Earth (At the moment only at the acceleration level).
+It takes into account the flattening of the Earth (At the moment, only at the acceleration level).
 
 The computed result is multiplied with \config{factor}.
 
@@ -9163,8 +9187,8 @@ Name & Type & Annotation\\
 
 \subsection{OceanPoleTide}\label{tidesType:oceanPoleTide}
 The ocean pole tide is generated by the centrifugal effect of polar motion on the oceans.
-The potential coefficients of this effect is given by
-IERS2003 conventions are given by
+The potential coefficients of this effect given by the
+IERS2003 convention are
 \begin{equation}
 \begin{Bmatrix}
 \Delta c_{nm}  \\
@@ -9219,9 +9243,9 @@ The time variable potential of ocean tides is given by a fourier expansion
 V(\M x,t) = \sum_{f} V_f^c(\M x)\cos(\theta_f(t)) + V_f^s(\M x)\sin(\theta_f(t)),
 \end{equation}
 where $V_f^c(\M x)$ and $V_f^s(\M x)$ are spherical harmonics expansions and are
-read from the file \configFile{inputfileDoodsonHarmonic}{doodsonHarmonic}.
-If set the expansion is limited in the range between \config{minDegree}
-and \config{maxDegree} inclusivly.
+read from the file \configFile{inputfileTides}{doodsonHarmonic}.
+If set, the expansion is limited in the range between \config{minDegree}
+and \config{maxDegree} inclusively.
 $\theta_f(t)$ are the arguments of the tide constituents~$f$:
 \begin{equation}
 \theta_f(t) = \sum_{i=1}^6 n_f^i\beta_i(t),
@@ -9233,10 +9257,10 @@ The major constituents given by \configFile{inputfileTides}{doodsonHarmonic} can
 interpolate minor tidal constituents using the file \configFile{inputfileAdmittance}{admittance}.
 This file can be created with \program{DoodsonHarmonicsCalculateAdmittance}.
 
-After the interpolation step a selection of the computed constituents can be
+After the interpolation step, a selection of the computed constituents can be
 choosen by \configClass{selectDoodson}{doodson}. Only these constiuents are considered for the results.
-If no \configClass{selectDoodson}{doodson} is set all constituents will be used. The constituents can
-be coded as Doodson number (e.g. 255.555) or as names intoduced by Darwin (e.g. M2).
+If no \configClass{selectDoodson}{doodson} is set, all constituents will be used. The constituents can
+be coded as Doodson number (e.g. 255.555) or as names introduced by Darwin (e.g. M2).
 
 The computed result is multiplied with \config{factor}.
 
@@ -9283,7 +9307,7 @@ Name & Type & Annotation\\
 
 
 \subsection{SolidMoonTide}
-This class computes the solid moon tide according to the IERS2010 conventions.
+This class computes the solid Moon tide according to the IERS2010 conventions.
 The values of solid Moon tide external potential Love numbers are given and
 there are no frequency dependent corrections of these values.
 The computed result is multiplied with \config{factor}.

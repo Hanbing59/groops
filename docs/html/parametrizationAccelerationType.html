@@ -73,15 +73,15 @@
 <h1 id="parametrizationAccelerationType">ParametrizationAcceleration</h1><p>
 This class defines parameters of satellite accelerations.
 It will be used to set up the design matrix in a least squares adjustment.
-If multiple parametrizations are given the coefficients in the parameter vector
+If multiple parametrizations are given, the coefficients in the parameter vector
 are sequently appended.
 </p>
 
 <h2 id="perRevolution">PerRevolution</h2><p>
-Oscillation once, twice, ... per revolution in Satellite Reference Frame (SRF)
+Oscillations of once, twice, ... cycles per revolution in Satellite Reference Frame (SRF)
 with the argument of latitude as input angle.  If the attitude of the satellite
-is not provided the Celestial Reference Frame (CRF) is used instead.
-Paramters are estimated in $[nm/s^2=10^{-9}\,m/s^2]$.</p><p>The <a class="groops-file" href="fileFormat_parameterName.html">parameter names</a> are
+is not provided, the Celestial Reference Frame (CRF) is used instead.
+Paramters are estimated in unit of $[nm/s^2=10^{-9}\,m/s^2]$.</p><p>The <a class="groops-file" href="fileFormat_parameterName.html">parameter names</a> are
 <ul>
 
 <li><code>*:perRevolution.cos(&lt;order>*u).x::&lt;interval></code>,
@@ -110,7 +110,7 @@ Paramters are estimated in $[nm/s^2=10^{-9}\,m/s^2]$.</p><p>The <a class="groops
 
 <h2 id="accBias">AccBias</h2><p>
 Temporal changing accelerometer bias per axis in $[m/s^2]$ in Satellite Reference Frame (SRF).
-If the attitude of the satellite is not provided the Celestial Reference Frame (CRF) is used instead.</p><p>The <a class="groops-file" href="fileFormat_parameterName.html">parameter names</a> are
+If the attitude of the satellite is not provided, the Celestial Reference Frame (CRF) is used instead.</p><p>The <a class="groops-file" href="fileFormat_parameterName.html">parameter names</a> are
 <ul>
 
 <li><code>*:accBias.x:*:*</code>,
