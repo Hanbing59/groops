@@ -69,6 +69,28 @@ public:
   /// Number of arcs
   UInt                           arcCount;
 
+  /// indexes of all outliers detected in each arc
+  std::vector<std::vector<UInt>> outlierIndexes;
+  struct ArcResult
+  {
+    /// post-fit residuals
+    OrbitArc          residualArc;
+    /// indexes of outliers detected in this arc
+    std::vector<UInt> outlierIndexesArc;
+
+    void save(OutArchive &oa) const
+    {
+      oa << nameValue("residualArc", residualArc);
+      oa << nameValue("outlierIndexesArc", outlierIndexesArc);
+    }
+
+    void load(InArchive &ia)
+    {
+      ia >> nameValue("residualArc", residualArc);
+      ia >> nameValue("outlierIndexesArc", outlierIndexesArc);
+    }
+  };
+  
   // normal equations
   // ----------------
   /// \f$ A^TPA \f$, Normal matrix
@@ -87,12 +109,15 @@ public:
   Vector x;
   /// the post-fit standard deviation of unit weight
   Double sigma0;
+  /// the post-fit standard deviation of unit weight from the previous iteration
+  Double sigma0Last;
 
   void run(Config &config, Parallel::CommunicatorPtr comm);
 
   /** @brief Build normal equations for a specific arc
    * @param arcNo arc number
    */
+  ArcResult buildNormals(UInt arcNo);
 };
 
 GROOPS_REGISTER_PROGRAM(PreprocessingVariationalEquationOrbitFit, PARALLEL, "fit variational equations to orbit observations", Preprocessing, VariationalEquation)
@@ -104,7 +129,7 @@ void PreprocessingVariationalEquationOrbitFit::run(Config &config, Parallel::Com
 {
   try
   {
-    FileName fileNameOutVariational, fileNameOutOrbit, fileNameOutSolution;
+    FileName fileNameOutVariational, fileNameOutOrbit, fileNameOutSolution, fileNameOutResiduals;
     FileName fileNameInVariational;
     FileName fileNameInOrbit, fileNameInOrbitCov;
     UInt              integrationDegree;
@@ -118,6 +143,7 @@ void PreprocessingVariationalEquationOrbitFit::run(Config &config, Parallel::Com
     readConfig(config, "outputfileVariational",       fileNameOutVariational, Config::MUSTSET,  "",    "approximate position and integrated state matrix");
     readConfig(config, "outputfileOrbit",             fileNameOutOrbit,       Config::OPTIONAL, "",    "integrated orbit");
     readConfig(config, "outputfileSolution",          fileNameOutSolution,    Config::OPTIONAL, "",    "estimated calibration and state parameters");
+    readConfig(config, "outputfileResiduals",         fileNameOutResiduals,   Config::OPTIONAL, "",    "post-fit residuals of orbit fit");
     readConfig(config, "inputfileVariational",        fileNameInVariational,  Config::MUSTSET,  "",    "approximate position and integrated state matrix");
     readConfig(config, "inputfileOrbit",              fileNameInOrbit,        Config::MUSTSET,  "",    "kinematic positions of satellite as observations");
     readConfig(config, "inputfileCovariancePodEpoch", fileNameInOrbitCov,     Config::OPTIONAL, "",    "3x3 epoch wise covariances");
@@ -147,24 +173,39 @@ void PreprocessingVariationalEquationOrbitFit::run(Config &config, Parallel::Com
 
     x = Vector(variationalEquationFromFile.parameterCount());
     sigma0 = 1;
+    outlierIndexes.resize(podFile.arcCount());
+    std::vector<ArcResult> arcResults(podFile.arcCount());
     for(UInt iter=0; iter<iterCount; iter++)
     {
       // build normals
       // -------------
-      logStatus<<"accumulate normal equations"<<Log::endl;
+      logStatus<<"  "<<iter+1<<"-th iteration of "<<iterCount<<" (maximum), accumulate normal equations"<<Log::endl;
+
       N            = Matrix(variationalEquationFromFile.parameterCount(), Matrix::SYMMETRIC);
       n            = Vector(variationalEquationFromFile.parameterCount());
       lPl          = 0;
       obsCount     = 0;
       outlierCount = 0;
+      outlierCountNew = 0;
 
-      Parallel::forEach(podFile.arcCount(), [this](UInt arcNo) {buildNormals(arcNo);}, comm);
+      Parallel::forEach(arcResults, [this](UInt arcNo) {return buildNormals(arcNo);}, comm);
 
       Parallel::reduceSum(N,            0, comm);
       Parallel::reduceSum(n,            0, comm);
       Parallel::reduceSum(lPl,          0, comm);
       Parallel::reduceSum(obsCount,     0, comm);
       Parallel::reduceSum(outlierCount, 0, comm);
+      Parallel::reduceSum(outlierCountNew, 0, comm);
+      Parallel::broadCast(outlierCountNew, 0, comm);
+
+      if(Parallel::isMaster(comm))
+      {
+        /// gather the indexes of detected outliers from each arc
+        for(UInt arcNo=0; arcNo<podFile.arcCount(); arcNo++)
+          outlierIndexes.at(arcNo) = arcResults[arcNo].outlierIndexesArc;
+      }
+      Parallel::broadCast(outlierIndexes, 0, comm);
+      
 
       // Estimate parameters
       // -------------------
@@ -175,30 +216,39 @@ void PreprocessingVariationalEquationOrbitFit::run(Config &config, Parallel::Com
           if(N(i,i) == 0)
             N(i,i) = 1.0;
 
-        logStatus<<"solve system of normal equations"<<Log::endl;
         x = solve(N,n);
+        sigma0Last = sigma0;
         sigma0 = Vce::standardDeviation(lPl-inner(n,x), obsCount-x.rows(), 2.5/*huber*/, 1./*huberPower*/);
-        logInfo<<"  aposteriori sigma: "<<sigma0<<Log::endl;
-        logInfo<<"  outlier "<<outlierCount<<" of "<<obsCount<<" ("<<100.*outlierCount/obsCount<<"%)"<<Log::endl;
+        logInfo<<"  "<<variationalEquationFromFile.parameterCount()%"%8i"s<<" par, "
+               <<"last sigma0="<<sigma0Last%"%12.8f"s<<", "<<"this sigma0="<<sigma0%"%12.8f"s<<", "
+               <<"delta sigma0="<<(sigma0Last-sigma0)%"%12.8f"s<<", "
+               <<outlierCount%"%8i"s<<" ("<<outlierCountNew%"%8i"s<<" new) outliers among "
+               <<obsCount%"%10i"s<<" obs ("<<(100.*outlierCount/obsCount)%"%6.2f"s<<"%)"<<Log::endl;
       }
-
-      Parallel::broadCast(outlierCount, 0, comm);
-      if((iter>0) && (outlierCount==0))
-        break;
-
-      logInfo<<"  parameter count = "<<variationalEquationFromFile.parameterCount()<<Log::endl;
       Parallel::broadCast(x, 0, comm);
       Parallel::broadCast(sigma0, 0, comm);
-    } // for(iter)
+      Parallel::broadCast(sigma0Last, 0, comm);
+      if((iter>0) && (outlierCount==0))
+        break;
+    }
 
     if(Parallel::isMaster(comm) && !fileNameOutSolution.empty())
     {
-      logStatus<<"write solution to <"<<fileNameOutSolution<<">"<<Log::endl;
+      logStatus<<"  write solution to file <"<<fileNameOutSolution<<">"<<Log::endl;
       writeFileMatrix(fileNameOutSolution, x);
 
       std::vector<ParameterName> parameterName;
       variationalEquationFromFile.parameterName(parameterName);
       writeFileParameterName(fileNameOutSolution.replaceFullExtension(".parameterName.txt"), parameterName);
+    }
+
+    if(Parallel::isMaster(comm) && !fileNameOutResiduals.empty())
+    {
+      logStatus<<"  write residuals to file <"<<fileNameOutResiduals<<">"<<Log::endl;
+      std::list<OrbitArc> arcList;
+      for(const ArcResult &arcResult : arcResults)
+        arcList.push_back(arcResult.residualArc);
+      InstrumentFile::write(fileNameOutResiduals, arcList);
     }
 
     // =============================================================================
@@ -212,7 +262,7 @@ void PreprocessingVariationalEquationOrbitFit::run(Config &config, Parallel::Com
 
     if(Parallel::isMaster(comm) && !fileNameOutVariational.empty())
     {
-      logStatus<<"write variational equation to file <"<<fileNameOutVariational<<">"<<Log::endl;
+      logStatus<<"  write variational equation to file <"<<fileNameOutVariational<<">"<<Log::endl;
       writeFileVariationalEquation(fileNameOutVariational, variationalEquationFromFile.satellite(), arcs);
     }
 
@@ -220,7 +270,7 @@ void PreprocessingVariationalEquationOrbitFit::run(Config &config, Parallel::Com
 
     if(Parallel::isMaster(comm) && !fileNameOutOrbit.empty())
     {
-      logStatus<<"write orbit to file <"<<fileNameOutOrbit<<">"<<Log::endl;
+      logStatus<<"  write orbit to file <"<<fileNameOutOrbit<<">"<<Log::endl;
       std::list<Arc> arcList;
       for(UInt arcNo=0; arcNo<arcs.size(); arcNo++)
         arcList.push_back( arcs.at(arcNo).orbitArc() );
@@ -237,13 +287,14 @@ void PreprocessingVariationalEquationOrbitFit::run(Config &config, Parallel::Com
 
 /***********************************************/
 
-void PreprocessingVariationalEquationOrbitFit::buildNormals(UInt arcNo)
+PreprocessingVariationalEquationOrbitFit::ArcResult PreprocessingVariationalEquationOrbitFit::buildNormals(UInt arcNo)
 {
   try
   {
+    ArcResult arcResult;
     OrbitArc pod = podFile.readArc(arcNo);
     if(pod.size() == 0)
-      return;
+      return arcResult;
 
     Vector l(3*pod.size());
     for(UInt k=0; k<pod.size(); k++)
@@ -281,20 +332,36 @@ void PreprocessingVariationalEquationOrbitFit::buildNormals(UInt arcNo)
       matMult(-1, A, x, e);
       for(UInt k=0; k<pod.size(); k++)
       {
+        // store residuals for output
+        OrbitEpoch epoch = pod.at(k);
+        epoch.position = Vector3d(e(3*k), e(3*k+1), e(3*k+2));
+        epoch.velocity = Vector3d();
+        epoch.acceleration = Vector3d();
+        arcResult.residualArc.push_back(epoch);
+
         Double s = sqrt(quadsum(e.row(3*k,3))/3);
         if(s>huber*sigma0)
         {
           l.row(3*k,3) *= huber*sigma0/s;
           A.row(3*k,3) *= huber*sigma0/s;
           outlierCount += 3;
+          /// Check if this is a new outlier
+          if(std::find(outlierIndexes.at(arcNo).begin(), outlierIndexes.at(arcNo).end(), k) == outlierIndexes.at(arcNo).end())
+          {
+            outlierIndexes.at(arcNo).push_back(k);
+            outlierCountNew += 3;
+          }
         }
       }
     }
-
+    
     lPl += quadsum(l);
     obsCount += l.rows();
     rankKUpdate(1., A, N);
     matMult(1., A.trans(), l, n);
+
+    arcResult.outlierIndexesArc = outlierIndexes.at(arcNo);
+    return arcResult;
   }
   catch(std::exception &e)
   {
