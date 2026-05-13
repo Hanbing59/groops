@@ -153,7 +153,7 @@ void PreprocessingVariationalEquationOrbitFit::run(Config &config, Parallel::Com
     readConfig(config, "stochasticPulse",             stochasticPulsePtr,     Config::DEFAULT,  "",    "");
     readConfig(config, "integrationDegree",           integrationDegree,      Config::DEFAULT,  "7",   "integration of forces by polynomial approximation of degree n");
     readConfig(config, "interpolationDegree",         interpolationDegree,    Config::DEFAULT,  "7",   "orbit interpolation by polynomial approximation of degree n");
-    readConfig(config, "iterationCount",              iterCount,              Config::DEFAULT,  "10",  "for the estimation of calibration parameter and error PSD");
+    readConfig(config, "iterationCount",              iterCount,              Config::DEFAULT,  "10",  "maximum number of iterations for outlier downweighting");
     if(isCreateSchema(config)) return;
 
     if(integrationDegree%2 == 0)
