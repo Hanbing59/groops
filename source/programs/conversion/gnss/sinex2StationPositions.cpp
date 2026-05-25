@@ -118,6 +118,8 @@ void Sinex2StationPositions::run(Config &config, Parallel::CommunicatorPtr /*com
         std::string name = String::lowerCase(String::trim(line.substr(1, 4)));
         if(stationNames.size() && std::find(stationNames.begin(), stationNames.end(), name) == stationNames.end())
           continue;
+        if(stations.find(name) != stations.end())
+          logWarning<<"multiple SITE/ID for same station: "<<line<<Log::endl;
         const Double longitude   = String::toDouble(line.substr(44, 3)) + String::toDouble(line.substr(48, 2))/60 + String::toDouble(line.substr(51, 4))/3600;
         const Double latitude    = String::toDouble(line.substr(56, 3)) + (String::startsWith(String::trim(line.substr(56, 3)), "-") ? -1 : 1) * std::fabs(String::toDouble(line.substr(60, 2))/60 + String::toDouble(line.substr(62, 5))/3600);
         const Double height      = String::toDouble(line.substr(68, 7));
@@ -134,6 +136,11 @@ void Sinex2StationPositions::run(Config &config, Parallel::CommunicatorPtr /*com
         std::string name = String::lowerCase(String::trim(line.substr(1, 4)));
         if(stationNames.size() && std::find(stationNames.begin(), stationNames.end(), name) == stationNames.end())
           continue;
+        if(stations.find(name) == stations.end())
+        {
+          logWarning<<"SOLUTION/EPOCHS without SITE/ID: "<<line<<Log::endl;
+          continue;
+        }
         Interval interval;
         interval.pointCode  = String::trim(line.substr(6, 2));
         interval.solutionId = String::trim(line.substr(9, 4));
@@ -163,6 +170,11 @@ void Sinex2StationPositions::run(Config &config, Parallel::CommunicatorPtr /*com
         if((parameterType != "STAX") && (parameterType != "STAY") && (parameterType != "STAZ") &&
            (parameterType != "VELX") && (parameterType != "VELY") && (parameterType != "VELZ"))
           continue;
+        if(stations.find(name) == stations.end())
+        {
+          logWarning<<"SOLUTION/ESTIMATE without SITE/ID: "<<line<<Log::endl;
+          continue;
+        }
 
         auto interval = std::find_if(stations[name].intervals.begin(), stations[name].intervals.end(),
                                      [&](const Interval &i) {return (i.solutionId == solutionId) && (i.pointCode == pointCode);});
@@ -367,9 +379,9 @@ void Sinex2StationPositions::run(Config &config, Parallel::CommunicatorPtr /*com
         for(auto &interval : stations[name].intervals)
           for(UInt i=0; i<interval.arc.size(); i++)
           {
-            used = TRUE;
             if(interval.arc.at(i).time >= time0)
             {
+              used = TRUE;
               if(isLog)
                 interval.arc.at(i).vector3d += ampl3d * std::log(1.+(interval.arc.at(i).time-time0).mjd()/tau);
               else
@@ -426,7 +438,10 @@ void Sinex2StationPositions::run(Config &config, Parallel::CommunicatorPtr /*com
         const std::string pointCode  = String::trim(line.substr(19, 2));
         const std::string solutionId = String::trim(line.substr(22, 4));
         if(std::none_of(stations[name].intervals.begin(), stations[name].intervals.end(), [&](auto &x) {return x.pointCode == pointCode;}))
+        {
+          logWarning<<"Unused: "<<line<<Log::endl;
           continue;
+        }
 
         // parameter type
         std::string para = String::upperCase(line.substr(7, 5));
@@ -502,12 +517,19 @@ void Sinex2StationPositions::run(Config &config, Parallel::CommunicatorPtr /*com
     for(auto &station : stations)
     {
       fileNameVariableList.setVariable(variableLoopStation, station.first);
-      std::vector<Arc> arcs;
+      std::vector<Vector3dArc> arcs;
       for(auto &interval : station.second.intervals)
         if(interval.arc.size())
           arcs.push_back(interval.arc);
       if(arcs.size())
       {
+        Double dist = 0;
+        for(auto &arc : arcs)
+          for(auto &epoch : arc)
+            dist = std::max(dist, (epoch.vector3d-station.second.position).r());
+        if(dist > 10)
+          logWarning<<station.first<<": approx position differ "<<dist<<" m"<<Log::endl;
+
         InstrumentFile::write(fileNameInstrument(fileNameVariableList), arcs);
         count++;
       }
