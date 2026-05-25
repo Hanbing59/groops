@@ -22,7 +22,7 @@ A list of satellite PRNs (i.e for GPS: G01, G02, G03, ...) must be provided via
 \configFile{inputfileTransmitterList}{stringList}. Satellite system codes follow the
 \href{https://files.igs.org/pub/data/format/rinex305.pdf}{RINEX 3 definition}, see \reference{GnssType}{gnssType}.
 All input files except \configFile{inputfileAntennaDefinition}{gnssAntennaDefinition},
-and \configFile{inputfileReceiverDefinition}{gnssReceiverDefinition} are read for each satellite.
+and \configFile{inputfileSignalDefinition}{gnssReceiverDefinition} are read for each satellite.
 The file name is interpreted as a template with the variable \verb|{prn}| being replaced by the satellite PRN.
 
 Metadata input files (marked with \textbf{*} below) are provided in GROOPS file formats at
@@ -34,7 +34,7 @@ Metadata input files (marked with \textbf{*} below) are provided in GROOPS file 
   \item \configFile{inputfileAntennaDefinition}{gnssAntennaDefinition}\textbf{*}:
         Antenna center variations.
         Created via \program{GnssAntex2AntennaDefinition} or \program{GnssAntennaDefinitionCreate}.
-  \item \configFile{inputfileSignalDefintion}{gnssReceiverDefinition}\textbf{*}:
+  \item \configFile{inputfileSignalDefinition}{gnssReceiverDefinition}\textbf{*}:
         Transmitted signal types.
         Created via \program{GnssReceiverDefinitionCreate} in case you want to define which signal
         types a satellite transmits.
