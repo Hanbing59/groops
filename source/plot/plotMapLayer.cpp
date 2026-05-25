@@ -1119,7 +1119,7 @@ std::string PlotMapLayer::scriptStatisticsInfo(UInt fontSize, Double width, cons
     FileName fileNameStatistics("statistics"+idxLayer%"%i.txt"s);
 
     OutFile statisticsFile(workingDirectory.append(fileNameStatistics));
-    statisticsFile<<"0.5 0.0 "<<fontSize<<"p CB min="<<vmin<<", max="<<vmax<<", mean="<<mean<<", rms="<<rms;
+    statisticsFile<<"0.5 0.0 "<<fontSize<<"p,Courier CB min="<<vmin%"%7.2f"s<<", max="<<vmax%"%7.2f"s<<", mean="<<mean%"%7.2f"s<<", rms="<<rms%"%6.2f"s;
 
     std::stringstream ss;
     ss<<"gmt pstext "<<fileNameStatistics<<" -F+f+j -Y-"<<fontSize<<"p -JX"<<width<<"c/"<<fontSize<<"p -R0/1/0/1 -N -O -K >> groopsPlot.ps "<<PlotBasics::scriptError2Null()<<std::endl;
