@@ -95,8 +95,10 @@ void ViennaMappingFunctionGrid2File::run(Config &config, Parallel::CommunicatorP
         while(std::getline(file, line) && line.size() && (line.at(0) == '!' || line.at(0) == '#')); // skip header/comment lines
         std::stringstream ss(line);
         ss>>lat>>lon;
-        ss>>data.at(i)(k, 0)>>data.at(i)(k, 1)>>data.at(i)(k, 2)>>data.at(i)(k, 3); // ah, aw, zhd, zwd
-        ss>>data.at(i)(k, 4)>>data.at(i)(k, 5)>>data.at(i)(k, 6)>>data.at(i)(k, 7); // gradients
+        // in VMF3/V3GR data, hydrostatic and wet "a" coefficients, zenith hydrostatic and wet delays [m]
+        ss>>data.at(i)(k, 0)>>data.at(i)(k, 1)>>data.at(i)(k, 2)>>data.at(i)(k, 3);
+        // in V3GR data, hydrostatic north, east and wet north, east gradients [mm]
+        ss>>data.at(i)(k, 4)>>data.at(i)(k, 5)>>data.at(i)(k, 6)>>data.at(i)(k, 7);
       }
       data.at(i).column(4, 4) *= 0.001; // gradients mm --> m
     });

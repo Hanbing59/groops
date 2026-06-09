@@ -77,7 +77,7 @@ inline void GnssProcessingStepWriteResiduals::process(GnssProcessingStep::State 
         for(UInt idEpoch : state.normalEquationInfo.idEpochs)
           if(recv->useable(idEpoch))
           {
-            // get types
+            // Get the list of observation types without PRN and frequency number
             std::vector<GnssType> types;
             for(UInt idTrans=0; idTrans<recv->idTransmitterSize(idEpoch); idTrans++)
               if(recv->observation(idTrans, idEpoch) && state.gnss->transmitters.at(idTrans)->useable(idEpoch))
@@ -94,6 +94,7 @@ inline void GnssProcessingStepWriteResiduals::process(GnssProcessingStep::State 
             {
               if(types.at(idType) != system)
               {
+                // Observation type from a new system
                 system = types.at(idType) & GnssType::SYSTEM;
                 epoch.obsType.push_back( GnssType::AZIMUT    + GnssType::L1 + system );
                 epoch.obsType.push_back( GnssType::ELEVATION + GnssType::L1 + system );
@@ -101,7 +102,7 @@ inline void GnssProcessingStepWriteResiduals::process(GnssProcessingStep::State 
                 epoch.obsType.push_back( GnssType::ELEVATION + GnssType::L2 + system );
                 epoch.obsType.push_back( GnssType::IONODELAY + system );
               }
-              // residuals, redundancy, sigma
+              // residuals, redundancy, sigma are coded as the same type as the observation 
               epoch.obsType.insert(epoch.obsType.end(), {types.at(idType), types.at(idType), types.at(idType)});
             }
 
@@ -112,6 +113,7 @@ inline void GnssProcessingStepWriteResiduals::process(GnssProcessingStep::State 
                 const GnssObservationEquation eqn(obs, *recv, *state.gnss->transmitters.at(idTrans),
                                                   state.gnss->funcRotationCrf2Trf, state.gnss->funcReduceModels, idEpoch, FALSE, {});
                 const GnssType prn = obs.at(0).type & (GnssType::SYSTEM + GnssType::PRN + GnssType::FREQ_NO);
+                // Find the index of the first observation type of the current satellite system
                 UInt idType = std::distance(epoch.obsType.begin(), std::find(epoch.obsType.begin(), epoch.obsType.end(), prn));
                 if(idType >= epoch.obsType.size())
                   continue;
@@ -123,6 +125,7 @@ inline void GnssProcessingStepWriteResiduals::process(GnssProcessingStep::State 
 
                 for(; (idType<epoch.obsType.size()) && (epoch.obsType.at(idType) == prn); idType+=3)
                 {
+                  // Default values for residuals, redundancy and sigma
                   epoch.observation.insert(epoch.observation.end(), {0., 0., 1.});
                   for(UInt i=0; i<obs.size(); i++)
                     if(obs.at(i).type == epoch.obsType.at(idType))

@@ -115,9 +115,9 @@ void InstrumentGnssReceiver2TimeSeries::run(Config &config, Parallel::Communicat
               else if(typeSat == GnssType::QZSS)    epochNew.values(1) = static_cast<Double>('J');
               else if(typeSat == GnssType::IRNSS)   epochNew.values(1) = static_cast<Double>('I');
 
-              // loop over all obs for this satellite
               Bool                  found    = FALSE;
               std::vector<GnssType> typesTmp = types;
+              // loop over all obs types for this satellite
               while((idType<epoch.obsType.size()) && (idObs<epoch.observation.size()) && (epoch.obsType.at(idType) == typeSat))
               {
                 const GnssType type  = epoch.obsType.at(idType++) + typeSat;
