@@ -2,7 +2,7 @@
 /**
 * @file gnssType.h
 *
-* @brief Defines a GNSS observation type according to the RINEX 3 definition.
+* @brief Defines a GNSS observation type according to the RINEX 3/4 definition.
 *
 * Due to the strict weak ordering requirement, wildcard matching is not supported for e.g. sets or maps.
 *
@@ -40,9 +40,9 @@ represented by seven characters.
 \end{itemize}
 
 Each part of a GnssType string can be replaced by a wildcard '\verb|*|', enabling the use of these strings as patterns,
-for example to select a subset of observations (e.g. \verb|C**G**| matches all GPS code/range observations).
+for example, to select a subset of observations (e.g. \verb|C**G**| matches all GPS code/range observations).
 Trailing wildcards are optional, meaning \verb|L1*R| is automatically expanded to \verb|L1*R***|.
-For some RINEX 2 types (e.g. Galileo L5) the RINEX 3 attribute is unknown/undefined and can be replaced by \verb|?|,
+For some RINEX 2 observation types (e.g. Galileo L5), the RINEX 3 attribute is unknown/undefined and can be replaced by \verb|?|,
 for example \verb|L5?E01|.
 
 Examples:
@@ -61,7 +61,7 @@ Examples:
 /***** CLASS ***********************************/
 
 /**
-* @brief Defines a GNSS observation type according to the RINEX 3 definition.
+* @brief Defines a GNSS observation type according to the RINEX 3/4 definition.
 * @ingroup base
 *
 * Due to the strict weak ordering requirement, wildcard matching is not supported for e.g. sets or maps. */
@@ -280,15 +280,20 @@ public:
   constexpr GnssType() : type(0) {}
   constexpr explicit GnssType(UInt64 t) : type(t) {}
   constexpr GnssType(const GnssType &t) : type(t.type) {}
+  /** @brief Constructs a GnssType from a string representation. */
   explicit GnssType(const std::string &str);
   GnssType &operator=(const GnssType &t) {type = t.type; return *this;}
 
+  /** @brief Returns the frequency of the GnssType. */
   Double      frequency() const;
+  /** @brief Returns the wavelength of the GnssType. */
   Double      wavelength() const;
+  /** @brief Returns the string representation of the GnssType. */
   std::string str() const;
   std::string prnStr() const {return str().substr(3,3);}
   UInt        prn() const    {return type & PRN.type;}
-  Int         frequencyNumber() const; ///< GLONASS frequency number (9999 if not set).
+  /** @brief Returns the GLONASS frequency number (9999 if not set). */
+  Int         frequencyNumber() const;
   void        setFrequencyNumber(Int number);
 
   /** @brief First order STEC influence [m/TECU]. */
@@ -304,17 +309,29 @@ public:
   /** @brief Returns the index of types vector. If not found NULLINDEX is returned. */
   static UInt index(const std::vector<GnssType> &types, GnssType type);
 
-  /** @brief Returns true if both vectors are of the same size and contain only the same types, independent of sorting. */
+  /** @brief Returns true if both vectors are of the same size and contain only the same types, independent of sorting. 
+   * @param mask If given, only the parts of the types defined by the mask are compared, 
+   * for example, to check if two lists contain the same observation types independent 
+   * of frequency and satellite system, use mask=GnssType::TYPE.
+  */
   static Bool allEqual(const std::vector<GnssType> &types1, const std::vector<GnssType> &types2, GnssType mask=GnssType::ALL);
 
   /** @brief Replaces observed (composed) types by original transmitted types.
-  * Codes replaced e.g. C2DG = C1CG - C1WG + C2CW.
-  * Phase types returned without tracking attribute and all other observations are removed. */
+  * Code types are replaced according to a set of rules, e.g. C2DG = C1CG - C1WG + C2CW.
+  * Phase types are returned with tracking attributes removed. All other types are removed. */
   static std::vector<GnssType> replaceCompositeSignals(const std::vector<GnssType> &types);
 
-  /** @brief Returns true if a wildcard (*) is used in the parts given by @a mask. */
+  /** @brief Returns true if a wildcard (*) is used in parts specified by @a mask. 
+   * A wildcard used in a part means that this part is not set and has all zeros in the bit representation.
+   * @param mask If given, only the parts defined by the mask are checked for wildcards, for example, 
+   * to check for wildcards in the frequency part, use mask=GnssType::FREQUENCY. 
+  */
   Bool hasWildcard(GnssType mask=GnssType::ALL) const;
 
+  /** @brief Combines two GnssType instances if they are compatible. 
+   * Two GnssType instances are compatible if they are equal or 
+   * if one of them has a wildcard in all parts where they differ.
+  */
   GnssType &operator+=(const GnssType &t);
   GnssType &operator&=(const GnssType &t);
   GnssType  operator+ (const GnssType &t) const {GnssType t1(*this); t1+=t; return t1;}
@@ -324,7 +341,9 @@ public:
   /** @brief Returns true if all parts are either the same or match a wildcard. */
   Bool operator==(const GnssType &t) const;
 
-  /** @brief Returns true if @a this is smaller than @a other or @a other is a wildcard. When used for sorting, wildcards are at the end. */
+  /** @brief Returns true if both @a this and @a t have the field set and @a this is smaller than @a t or 
+   * only @a t has a wildcard in the field being compared. 
+   * When used for sorting, wildcards are at the end. */
   Bool operator< (const GnssType &t) const;
 
   /** @brief Returns true if any part is neither the same nor matches a wildcard. */

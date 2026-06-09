@@ -354,7 +354,6 @@ std::string GnssType::str() const
     else if((type & TYPE.type) == 0)              ss<<'*';
     else ss<<'?';
 
-
     if     ((type & FREQUENCY.type) == L1.type)   ss<<'1';
     else if((type & FREQUENCY.type) == L2.type)   ss<<'2';
     else if((type & FREQUENCY.type) == L5.type)   ss<<'5';
