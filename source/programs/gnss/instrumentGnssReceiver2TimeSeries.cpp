@@ -80,10 +80,15 @@ void InstrumentGnssReceiver2TimeSeries::run(Config &config, Parallel::Communicat
 
     readConfig(config, "outputfileTimeSeries",  fileNameOut, Config::MUSTSET, "",  "Instrument (MISCVALUES): prn, system, values for each type");
     readConfig(config, "inputfileGnssReceiver", fileNamesIn, Config::MUSTSET, "",  "GNSS receiver observations or residuals");
-    readConfig(config, "type",                  types,       Config::MUSTSET, "",  "");
+    readConfig(config, "type",                  types,       Config::OPTIONAL, "",  "");
     if(isCreateSchema(config)) return;
 
     // ============================
+    if(types.empty())
+    {
+      logWarning<<"No valid GNSS observation type defined."<<Log::endl;
+      return;
+    }
 
     std::vector<MiscValuesArc> arcList;
     for(auto &fileName : fileNamesIn)
