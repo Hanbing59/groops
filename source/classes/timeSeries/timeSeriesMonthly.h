@@ -20,7 +20,7 @@ static const char *docstringTimeSeriesMonthly = R"(
 \subsection{Monthly}
 If \config{useMonthMiddle} is set, time points are generated at mid of each month inclusively
 the \config{monthStart} in \config{yearStart} and \config{monthEnd} in \config{yearEnd}.
-Otherwise times are given at the first of each month and a time point after the last month.
+Otherwise times are given at the first of each month and a time point after the last month, i.e., the 1st of the next month.
 )";
 #endif
 

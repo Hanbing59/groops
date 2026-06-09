@@ -14,7 +14,8 @@
 #define DOCSTRING docstring
 static const char *docstring = R"(
 This program converts the gridded time series of the Vienna Mapping Functions (VMF) into
-the \file{GROOPS file format}{griddedDataTimeSeries}.
+the \file{GROOPS file format}{griddedDataTimeSeries}. Both the VMF data with (V3GR) or 
+without gradients (VMF3) can be processed. 
 
 Gridded VMF data is available at: \url{https://vmf.geo.tuwien.ac.at/trop_products/GRID/}
 )";

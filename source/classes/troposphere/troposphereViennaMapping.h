@@ -25,7 +25,7 @@ Tropospheric delays based on the Vienna Mapping Functions 3 (VMF3) model
 Hydrostatic and wet mapping function coefficients ($a_h$, $a_w$) and zenith delays (ZHD, ZWD) have to be provided
 via \configFile{inputfileVmfCoefficients}{griddedDataTimeSeries}. This file can contain either station-specific data
 (see \program{ViennaMappingFunctionStation2File}) or data on a regular global grid
-(see \program{ViennaMappingFunctionGrid2File}). In the second case mapping coefficients and zenith delays are
+(see \program{ViennaMappingFunctionGrid2File}). In the second case, mapping coefficients and zenith delays are
 interpolated to the requested coordinates. This includes a height correction that requires approximate meteorological
 data provided via \configFile{inputfileGpt}{griddedData}.
 )";
