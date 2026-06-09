@@ -124,7 +124,7 @@ void InstrumentGnssReceiver2TimeSeries::run(Config &config, Parallel::Communicat
                 const Double   value = epoch.observation.at(idObs++);
 
                 const UInt     idx   = GnssType::index(typesTmp, type);
-                if((idx != NULLINDEX) && value)
+                if(idx != NULLINDEX)
                 {
                   epochNew.values(2+idx) = value;
                   typesTmp.at(idx) = GnssType(static_cast<UInt64>(-1));
