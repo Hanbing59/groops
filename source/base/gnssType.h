@@ -134,19 +134,29 @@ public:
   static const GnssType Y;         ///< military
   static const GnssType M;         ///< military
   static const GnssType E;
+  static const GnssType N;         ///< codeless
+  static const GnssType R;         ///< M (RMP antenna)
   static const GnssType UNKNOWN_ATTRIBUTE;
 
   static const GnssType C1CG;
   static const GnssType C1SG;
   static const GnssType C1LG;
   static const GnssType C1XG;
+  static const GnssType C1PG;
   static const GnssType C1WG;
+  static const GnssType C1YG;
+  static const GnssType C1MG;
+  static const GnssType C1RG;
   static const GnssType C2CG;
   static const GnssType C2DG;
   static const GnssType C2SG;
   static const GnssType C2LG;
   static const GnssType C2XG;
+  static const GnssType C2PG;
   static const GnssType C2WG;
+  static const GnssType C2YG;
+  static const GnssType C2MG;
+  static const GnssType C2RG;
   static const GnssType C2UG;      ///< unknown attribute (RINEX 2)
   static const GnssType C5IG;
   static const GnssType C5QG;

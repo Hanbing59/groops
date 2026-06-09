@@ -83,6 +83,8 @@ const GnssType GnssType::P         = GnssType(static_cast<UInt64>(12) << 24);
 const GnssType GnssType::Y         = GnssType(static_cast<UInt64>(13) << 24);
 const GnssType GnssType::M         = GnssType(static_cast<UInt64>(14) << 24);
 const GnssType GnssType::E         = GnssType(static_cast<UInt64>(15) << 24);
+const GnssType GnssType::N         = GnssType(static_cast<UInt64>(16) << 24);
+const GnssType GnssType::R         = GnssType(static_cast<UInt64>(17) << 24);
 const GnssType GnssType::UNKNOWN_ATTRIBUTE = GnssType(static_cast<UInt64>(99) << 24);
 
 // some codes
@@ -90,13 +92,21 @@ const GnssType GnssType::C1CG      = GnssType::RANGE + GnssType::L1  + GnssType:
 const GnssType GnssType::C1SG      = GnssType::RANGE + GnssType::L1  + GnssType::S + GnssType::GPS;
 const GnssType GnssType::C1LG      = GnssType::RANGE + GnssType::L1  + GnssType::L + GnssType::GPS;
 const GnssType GnssType::C1XG      = GnssType::RANGE + GnssType::L1  + GnssType::X + GnssType::GPS;
+const GnssType GnssType::C1PG      = GnssType::RANGE + GnssType::L1  + GnssType::P + GnssType::GPS;
 const GnssType GnssType::C1WG      = GnssType::RANGE + GnssType::L1  + GnssType::W + GnssType::GPS;
+const GnssType GnssType::C1YG      = GnssType::RANGE + GnssType::L1  + GnssType::Y + GnssType::GPS;
+const GnssType GnssType::C1MG      = GnssType::RANGE + GnssType::L1  + GnssType::M + GnssType::GPS;
+const GnssType GnssType::C1RG      = GnssType::RANGE + GnssType::L1  + GnssType::R + GnssType::GPS;
 const GnssType GnssType::C2CG      = GnssType::RANGE + GnssType::L2  + GnssType::C + GnssType::GPS;
 const GnssType GnssType::C2DG      = GnssType::RANGE + GnssType::L2  + GnssType::D + GnssType::GPS;
 const GnssType GnssType::C2SG      = GnssType::RANGE + GnssType::L2  + GnssType::S + GnssType::GPS;
 const GnssType GnssType::C2LG      = GnssType::RANGE + GnssType::L2  + GnssType::L + GnssType::GPS;
 const GnssType GnssType::C2XG      = GnssType::RANGE + GnssType::L2  + GnssType::X + GnssType::GPS;
+const GnssType GnssType::C2PG      = GnssType::RANGE + GnssType::L2  + GnssType::P + GnssType::GPS;
 const GnssType GnssType::C2WG      = GnssType::RANGE + GnssType::L2  + GnssType::W + GnssType::GPS;
+const GnssType GnssType::C2YG      = GnssType::RANGE + GnssType::L2  + GnssType::Y + GnssType::GPS;
+const GnssType GnssType::C2MG      = GnssType::RANGE + GnssType::L2  + GnssType::M + GnssType::GPS;
+const GnssType GnssType::C2RG      = GnssType::RANGE + GnssType::L2  + GnssType::R + GnssType::GPS;
 const GnssType GnssType::C2UG      = GnssType::RANGE + GnssType::L2  + GnssType::UNKNOWN_ATTRIBUTE + GnssType::GPS;
 const GnssType GnssType::C5IG      = GnssType::RANGE + GnssType::L5  + GnssType::I + GnssType::GPS;
 const GnssType GnssType::C5QG      = GnssType::RANGE + GnssType::L5  + GnssType::Q + GnssType::GPS;
@@ -279,6 +289,8 @@ GnssType::GnssType(const std::string &str)
       case 'Y': type += Y.type; break;
       case 'M': type += M.type; break;
       case 'E': type += E.type; break;
+      case 'N': type += N.type; break;
+      case 'R': type += R.type; break;
       case '?': type += UNKNOWN_ATTRIBUTE.type; break;
       case '*': break;
       default:
@@ -370,6 +382,8 @@ std::string GnssType::str() const
     else if((type & ATTRIBUTE.type) == Y.type) ss<<'Y';
     else if((type & ATTRIBUTE.type) == M.type) ss<<'M';
     else if((type & ATTRIBUTE.type) == E.type) ss<<'E';
+    else if((type & ATTRIBUTE.type) == N.type) ss<<'N';
+    else if((type & ATTRIBUTE.type) == R.type) ss<<'R'; 
     else if((type & ATTRIBUTE.type) == UNKNOWN_ATTRIBUTE.type) ss<<'?';
     else if((type & ATTRIBUTE.type) == 0)      ss<<'*';
     else ss<<'?';
