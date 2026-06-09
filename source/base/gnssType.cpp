@@ -631,7 +631,7 @@ GnssType &GnssType::operator+=(const GnssType &t)
 {
   try
   {
-    if(((type & TYPE.type)      && (t.type & TYPE.type)      && (type & TYPE.type)       != (t.type & TYPE.type))       ||
+    if(((type & TYPE.type)      && (t.type & TYPE.type)      && ((type & TYPE.type)      != (t.type & TYPE.type)))      ||
        ((type & FREQUENCY.type) && (t.type & FREQUENCY.type) && ((type & FREQUENCY.type) != (t.type & FREQUENCY.type))) ||
        ((type & SYSTEM.type)    && (t.type & SYSTEM.type)    && ((type & SYSTEM.type)    != (t.type & SYSTEM.type)))    ||
        ((type & ATTRIBUTE.type) && (t.type & ATTRIBUTE.type) && ((type & ATTRIBUTE.type) != (t.type & ATTRIBUTE.type))) ||
