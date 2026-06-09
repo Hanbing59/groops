@@ -34,6 +34,7 @@ See also: \program{PlotDegreeAmplitudes}, \program{PlotMap}, \program{PlotMatrix
 /***********************************************/
 
 #include "programs/program.h"
+#include "inputOutput/system.h"
 #include "inputOutput/file.h"
 #include "plot/plotMisc.h"
 #include "plot/plotAxis.h"
@@ -69,7 +70,7 @@ void PlotGraph::run(Config &config, Parallel::CommunicatorPtr /*comm*/)
 
     readConfig(config, "outputfile", fileNamePlot, Config::MUSTSET,  "",  "*.png, *.jpg, *.eps, ...");
     readConfig(config, "title",      title,        Config::OPTIONAL, "",  "");
-    readConfig(config, "layer",      layer,        Config::MUSTSET,  "",  "");
+    readConfig(config, "layer",      layer,        Config::OPTIONAL, "",  "");
     readConfig(config, "axisX",      axisX,        Config::MUSTSET,  "",  "");
     readConfig(config, "axisY",      axisY,        Config::MUSTSET,  "",  "");
     readConfig(config, "axisY2",     axisY2,       Config::OPTIONAL, "",  "Second y-axis on right hand side");
@@ -79,6 +80,12 @@ void PlotGraph::run(Config &config, Parallel::CommunicatorPtr /*comm*/)
     if(isCreateSchema(config)) return;
 
     // ===========================================================
+    if(layer.empty())
+    {
+      logWarning<<"No valid layer defined."<<Log::endl;
+      System::remove(plotBasics.fileNameScript().directory());
+      return;
+    }
 
     // colorbar needed?
     // ----------------
