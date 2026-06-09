@@ -36,6 +36,7 @@ See also: \program{PlotDegreeAmplitudes}, \program{PlotGraph}, \program{PlotMatr
 /***********************************************/
 
 #include "programs/program.h"
+#include "inputOutput/system.h"
 #include "inputOutput/file.h"
 #include "plot/plotColorbar.h"
 #include "plot/plotMapLayer.h"
@@ -78,7 +79,7 @@ void PlotMap::run(Config &config, Parallel::CommunicatorPtr /*comm*/)
     readConfig(config, "outputfile",        fileNamePlot,   Config::MUSTSET,  "",  "*.png, *.jpg, *.eps, ...");
     readConfig(config, "title",             title,          Config::OPTIONAL, "",  "");
     readConfig(config, "statisticInfos",    statisticInfos, Config::DEFAULT,  "0", "");
-    readConfig(config, "layer",             layer,          Config::MUSTSET,  "",  "");
+    readConfig(config, "layer",             layer,          Config::OPTIONAL,  "",  "");
     readConfig(config, "R",                 a,              Config::DEFAULT,  STRING_DEFAULT_GRS80_a, "reference radius for ellipsoidal coordinates on output");
     readConfig(config, "inverseFlattening", f,              Config::DEFAULT,  STRING_DEFAULT_GRS80_f, "reference flattening for ellipsoidal coordinates on output, 0: spherical coordinates");
     readConfig(config, "minLambda",         minL,           Config::OPTIONAL, "-180", "min. longitude (default: compute from input data)");
@@ -94,6 +95,12 @@ void PlotMap::run(Config &config, Parallel::CommunicatorPtr /*comm*/)
     if(isCreateSchema(config)) return;
 
     // ===========================================================
+    if(layer.empty())
+    {
+      logWarning<<"No valid layer defined."<<Log::endl;
+      System::remove(plotBasics.fileNameScript().directory());
+      return;
+    }
 
     // calculate boundary
     // ------------------
