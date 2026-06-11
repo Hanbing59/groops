@@ -51,6 +51,7 @@ and the second being the equivalent RINEX v3 type.
 /***********************************************/
 
 #include "programs/program.h"
+#include "inputOutput/system.h"
 #include "base/string.h"
 #include "inputOutput/file.h"
 #include "files/filePlatform.h"
@@ -158,41 +159,47 @@ void RinexObservation2GnssReceiver::run(Config &config, Parallel::CommunicatorPt
     {
       try
       {
-      logStatus<<"read RINEX observation file <"<<fileName<<">"<<Log::endl;
-      InFile file(fileName);
-      file.exceptions(std::ios::badbit|std::ios::failbit);
+        logStatus<<"process file <"<<fileName<<">"<<Log::endl;
+        // Expand wildcards
+        const std::vector<FileName> fileList = System::fileList(fileName);
+        for(const auto &fileOne : fileList)
+        {
+          logStatus<<"   read file <"<<fileOne<<">"<<Log::endl;
+          InFile file(fileOne);
+          file.exceptions(std::ios::badbit|std::ios::failbit);
 
-      // read header
-      std::string line, label;
-      getLine(file, line, label);
-      compactRinexVersion = 0;
-      if(testLabel(label, "CRINEX VERS   / TYPE"))
-      {
-        compactRinexVersion = String::toDouble(line.substr(0, 20));
-        getLine(file, line, label);
-        testLabel(label, "CRINEX PROG / DATE", FALSE);
-        getLine(file, line, label);
-      }
+          // read header
+          std::string line, label;
+          getLine(file, line, label);
+          compactRinexVersion = 0;
+          if(testLabel(label, "CRINEX VERS   / TYPE"))
+          {
+            compactRinexVersion = String::toDouble(line.substr(0, 20));
+            getLine(file, line, label);
+            testLabel(label, "CRINEX PROG / DATE", FALSE);
+            getLine(file, line, label);
+          }
 
-      testLabel(label, "RINEX VERSION / TYPE", FALSE);
-      rinexVersion = String::toDouble(line.substr(0, 9));
-      if(rinexVersion<2)
-        throw(Exception("Can only read RINEX files starting from RINEX version 2.0"));
-      if(line.at(20)!='O')
-        throw(Exception("File must contain observation data"));
+          testLabel(label, "RINEX VERSION / TYPE", FALSE);
+          rinexVersion = String::toDouble(line.substr(0, 9));
+          if(rinexVersion<2)
+            throw(Exception("Can only read RINEX files starting from RINEX version 2.0"));
+          if(line.at(20)!='O')
+            throw(Exception("File must contain observation data"));
 
-      // clean up data from previous file
-      system2ObsTypes.clear();
-      stationInfoRinex = Platform();
-      antennaRinex     = PlatformGnssAntenna();
-      receiverRinex    = PlatformGnssReceiver();
+          // clean up data from previous file
+          system2ObsTypes.clear();
+          stationInfoRinex = Platform();
+          antennaRinex     = PlatformGnssAntenna();
+          receiverRinex    = PlatformGnssReceiver();
 
-      readHeader(file);
-      checkStationInfo();
-      if(compactRinexVersion > 0)
-        readCompactObservationData(file);
-      else
-        readObservationData(file);
+          readHeader(file);
+          checkStationInfo();
+          if(compactRinexVersion > 0)
+            readCompactObservationData(file);
+          else
+            readObservationData(file);
+        }
       }
       catch(std::exception &e)
       {
