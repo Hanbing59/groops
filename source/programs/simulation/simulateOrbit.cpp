@@ -12,16 +12,16 @@
 // Latex documentation
 #define DOCSTRING docstring
 static const char *docstring = R"(
-This program integrates an \file{orbit}{instrument} from a given force function (dynamic orbit).
+This program integrates an \file{orbit}{instrument} from a given set of force functions (dynamic orbit).
 The force functions are given by \configClass{forces}{forcesType}.
-For computation of non-conservative forces a \file{satelliteModel}{satelliteModel} is needed.
+For computation of non-conservative forces, a \file{satelliteModel}{satelliteModel} is needed.
 The integration method must be selected with \configClass{propagator}{orbitPropagatorType}.
-Because the orbit data are calculated in the celestial reference frame (CRF) you need
-\configClass{earthRotation}{earthRotationType} to transform the force function
-from the terrestrial reference frame (TRF).
+Because the orbit data are calculated in the celestial reference frame (CRF), you need
+\configClass{earthRotation}{earthRotationType} to transform the force functions
+from the terrestrial reference frame (TRF) to the CRF.
 The integration start and end time, as well as the sampling, are derived from
-the \config{timeSeries} option. It is possible to integrate the arc in \config{reverse},
-where the initial conditions are assumed to be met at the end time of the \config{timeSeries}.
+the \config{timeSeries} option. It is possible to integrate the orbit arc in \config{reverse},
+in which the initial conditions are assumed to be met at the end time of the \config{timeSeries}.
 )";
 
 /***********************************************/
