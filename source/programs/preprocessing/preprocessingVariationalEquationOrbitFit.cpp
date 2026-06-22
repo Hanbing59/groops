@@ -90,7 +90,7 @@ public:
       ia >> nameValue("outlierIndexesArc", outlierIndexesArc);
     }
   };
-  
+
   // normal equations
   // ----------------
   /// \f$ A^TPA \f$, Normal matrix
@@ -200,12 +200,14 @@ void PreprocessingVariationalEquationOrbitFit::run(Config &config, Parallel::Com
 
       if(Parallel::isMaster(comm))
       {
-        /// gather the indexes of detected outliers from each arc
         for(UInt arcNo=0; arcNo<podFile.arcCount(); arcNo++)
+        {
+          /// gather the indexes of detected outliers from each arc
           outlierIndexes.at(arcNo) = arcResults[arcNo].outlierIndexesArc;
+          /// \todo {Add statistics, like residuals RMS for each arc}
+        }
       }
       Parallel::broadCast(outlierIndexes, 0, comm);
-      
 
       // Estimate parameters
       // -------------------
@@ -354,7 +356,7 @@ PreprocessingVariationalEquationOrbitFit::ArcResult PreprocessingVariationalEqua
         }
       }
     }
-    
+
     lPl += quadsum(l);
     obsCount += l.rows();
     rankKUpdate(1., A, N);

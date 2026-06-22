@@ -117,6 +117,7 @@ void GnssSinexBias2SignalBias::run(Config &config, Parallel::CommunicatorPtr /*c
       else
         throw(Exception("unknown unit: "+unit));
 
+      // remove phase attribute for PHASE signals, but why?
       if(gnssType == GnssType::PHASE)
         gnssType = gnssType & ~GnssType::ATTRIBUTE;
 

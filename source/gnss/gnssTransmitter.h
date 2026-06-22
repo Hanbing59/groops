@@ -28,20 +28,30 @@ typedef std::shared_ptr<GnssTransmitter> GnssTransmitterPtr;
 
 /***** CLASS ***********************************/
 
-/** @brief Abstract class for GNSS transmitter.
-* eg. GPS satellites. */
+/** @brief Abstract class for GNSS transmitters. */
 class GnssTransmitter : public GnssTransceiver
 {
-  GnssType                 type; // system + PRN
+  /// PRN
+  GnssType                 type;
+  /// The interpolation polynomial for positions and velocities
   Polynomial               polynomial;
-  std::vector<Double>      clk, scale;
-  std::vector<Vector3d>    offset;   // between CoM and ARF in SRF
-  std::vector<Transform3d> crf2srf, srf2arf;
+  /// Clock errors
+  std::vector<Double>      clk;
+  std::vector<Double>      scale;
+  /// Offsets between CoM and Antenna Reference Point (ARP) in SRF
+  std::vector<Vector3d>    offset;
+  /// Rotation from the Celestial Reference Frame (CRF) to the Satellite Reference Frame (SRF)
+  std::vector<Transform3d> crf2srf;
+  /// Rotation from the Satellite Reference Frame (SRF) to the left-handed Antenna Reference Frame (ARF)
+  std::vector<Transform3d> srf2arf;
 
 public:
   std::vector<Time> timesPosVel;
-  Matrix            pos, vel; // CoM in CRF (epoch times (x,y,z))
+  /// CoM in CRF (epoch times (x,y,z))
+  Matrix            pos;
+  Matrix            vel;
 
+  /** @brief Constructor. */
   GnssTransmitter(GnssType prn, const Platform &platform,
                   GnssAntennaDefinition::NoPatternFoundAction noPatternFoundAction,
                   const Vector &useableEpochs, const std::vector<Double> &clock, const std::vector<Double> &scale, const std::vector<Vector3d> &offset,
@@ -51,38 +61,37 @@ public:
     type(prn), polynomial(timesPosVel, interpolationDegree, TRUE/*throwException*/, FALSE/*leastSquares*/, -(interpolationDegree+1.1), -1.1, 1e-7),
     clk(clock), scale(scale), offset(offset), crf2srf(crf2srf), srf2arf(srf2arf), timesPosVel(timesPosVel), pos(position), vel(velocity) {}
 
-  /// Destructor.
+  /** @brief Destructor. */
   virtual ~GnssTransmitter() {}
 
-  /** @brief Identify number in the GNSS system. */
+  /** @brief Gets ID of the transmitter. */
   UInt idTrans() const {return id_;}
 
-  /** @brief PRN number of satellite.
-  *  = prn + GnssType::SYSTEM. */
+  /** @brief Gets PRN of the transmitter. */
   GnssType PRN() const {return type;}
 
-  /** @brief Clock error.
+  /** @brief Gets the clock error at a given epoch.
   * error = clock time - system time [s] */
   Double clockError(UInt idEpoch) const {return clk.at(idEpoch);}
 
-  /** @brief scale due to frequency offset/clock drift.
+  /** @brief Gets the scale due to frequency offset/clock drift at a given epoch.
   * observed = scaleFactor * true_range */
   Double scaleFactor(UInt idEpoch) const {return scale.at(idEpoch);}
 
-  /** @brief set clock error.
+  /** @brief Accumulates the clock error by a given amount.
   * error = observed clock time - system time [s] */
   void updateClockError(UInt idEpoch, Double deltaClock) {clk.at(idEpoch) += deltaClock;}
 
-  /** @brief center of mass in celestial reference frame (CRF). */
+  /** @brief Returns the CoM positions in CRF at a given epoch. */
   Vector3d positionCoM(const Time &time) const;
 
-  /** @brief antenna reference point in celestial reference frame (CRF). */
+  /** @brief Returns the ARP positions in CRF at a given epoch. */
   Vector3d position(UInt idEpoch, const Time &time) const {return positionCoM(time) + crf2srf.at(idEpoch).inverseTransform(offset.at(idEpoch));}
 
-  /** @brief velocity in CRF [m/s]. */
+  /** @brief Returns the velocities in CRF [m/s]. */
   Vector3d velocity(const Time &time) const;
 
-  /** @brief Rotation from celestial reference frame (CRF) to left-handed antenna system. */
+  /** @brief Gets the rotation from CRF to the left-handed ARF. */
   Transform3d celestial2antennaFrame(UInt idEpoch, const Time &/*time*/) const {return srf2arf.at(idEpoch) * crf2srf.at(idEpoch);}
 };
 

@@ -20,12 +20,10 @@
 
 /***********************************************/
 
-/// Contructor from Rotary3d.
 Transform3d::Transform3d(const Rotary3d &rot) : field(rot.field) {}
 
 /***********************************************/
 
-// rotary from 3x3 matrix
 Transform3d::Transform3d(const_MatrixSliceRef A)
 {
   try

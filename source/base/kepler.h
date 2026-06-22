@@ -31,34 +31,34 @@ public:
   Double i;     //!< inclination
   Double omega; //!< argument of perigee
   Double a;     //!< major semi axis
-  Double e;     //!< excentricity
+  Double e;     //!< eccentricity
   Time   tau;   //!< time of perigee
 
   /// Default constructor.
   Kepler();
 
-  /** @brief Constructor with keplerian elements.
+  /** @brief Constructor with keplerian elements using time of perigee as the time element.
   * @param Omega ascending node
   * @param i     inclination
   * @param omega argument of perigee
   * @param a     major semi axis
-  * @param e     excentricity
+  * @param e     eccentricity
   * @param tau   time of perigee
   * @param GM    specific gravitational constant */
   Kepler(Double Omega, Double i, Double omega, Double a, Double e, const Time &tau, Double GM=DEFAULT_GM);
 
-  /** @brief Constructor with keplerian elements.
+  /** @brief Constructor with keplerian elements using mean anomaly and its time as the time element.
   * @param time  time of mean anomaly
   * @param Omega ascending node
   * @param i     inclination
   * @param omega argument of perigee
   * @param a     major semi axis
-  * @param e     excentricity
+  * @param e     eccentricity
   * @param M     mean anomaly
   * @param GM    specific gravitational constant */
   Kepler(const Time &time, Double Omega, Double i, Double omega, Double a, Double e, Double M, Double GM=DEFAULT_GM);
 
-  /** @brief Constructor with initial state vector.
+  /** @brief Constructor with initial position and velocity state vectors.
   * @param time Start time
   * @param position Start position
   * @param velocity Start velocity

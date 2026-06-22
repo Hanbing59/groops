@@ -37,7 +37,7 @@ void Gnss::init(std::vector<GnssType> simulationTypes, const std::vector<Time> &
 
     // init earth rotation
     // -------------------
-    eop = Matrix(times.size(), 8); // Matrix eop columns: xp, yp, sp, deltaUT, LOD, X, Y, S
+    eop = Matrix(times.size(), 8);
     for(UInt i=0; i<times.size(); i++)
       earthRotation->earthOrientationParameter(times.at(i), eop(i,0), eop(i,1), eop(i,2), eop(i,3), eop(i,4), eop(i,5), eop(i,6), eop(i,7));
     // UT1-UTC => UT1-GPS (avoid leap seconds jumps for interpolation)

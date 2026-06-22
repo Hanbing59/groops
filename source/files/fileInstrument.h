@@ -734,8 +734,11 @@ typedef ArcTemplate<GradiometerEpoch> GradiometerArc;
 class GnssReceiverEpoch : public Epoch
 {
 public:
+  /// List of GNSS observations types
   std::vector<GnssType> obsType;
+  /// List of GNSS satellites
   std::vector<GnssType> satellite;
+  /// List of GNSS observations
   std::vector<Double>   observation;
   Double                clockError;
 

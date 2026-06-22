@@ -27,47 +27,72 @@ typedef std::shared_ptr<GnssTransceiver> GnssTransceiverPtr;
 
 /***** CLASS ***********************************/
 
-/** @brief Abstract class for GNSS receiver or transmitter.
-* eg. GPS satellites. */
+/** @brief Abstract class for GNSS receiver or transmitter. */
 class GnssTransceiver
 {
-   Vector      useableEpochs;
-   UInt        countUseableEpochs;
-   GnssAntennaDefinition::NoPatternFoundAction noPatternFoundAction;
+  /// List of usable epochs of the platform
+  Vector      useableEpochs;
+  /// Number of usable epochs of the platform
+  UInt        countUseableEpochs;
+  /// Action to be taken if no antenna pattern is found for a given frequency
+  GnssAntennaDefinition::NoPatternFoundAction noPatternFoundAction;
 
 public:
-   UInt           id_; // set by Gnss::init()
-   Platform       platform;
-   GnssSignalBias signalBias;
+  /// ID of the GNSS transceiver, set by Gnss::init()
+  UInt           id_;
+  /// Platform for the GNSS transceiver
+  Platform       platform;
+  GnssSignalBias signalBias;
 
 public:
-  /// Constructor.
+  /** @brief Constructor. */
   GnssTransceiver(const Platform &platform, GnssAntennaDefinition::NoPatternFoundAction noPatternFoundAction, const Vector &useableEpochs);
 
-  /// Destructor.
+  /** @brief Destructor. */
   virtual ~GnssTransceiver() {}
 
-  /** @brief name. */
+  /** @brief Returns the name of the transceiver (name of the platform). */
   std::string name() const {return platform.name;}
 
-  /** @brief Is the platform usable at given epoch (or all epochs). */
+  /**
+   * @brief Checks if the platform is usable at one given epoch or any epoch.
+   * @param idEpoch Index of the epoch to check. If NULLINDEX, checks if there are any usable epochs.
+   * @return True if the platform is usable at the specified epoch or any epoch if idEpoch is NULLINDEX.
+   */
   Bool useable(UInt idEpoch=NULLINDEX) const {return countUseableEpochs && ((idEpoch == NULLINDEX) || useableEpochs(idEpoch));}
 
-  /** @brief Disable given epoch. */
+  /** @brief Disables a given epoch of the transceiver for a specific reason.
+   * If no useable epochs remain after this disabling, the transceiver will be disabled.
+  */
   virtual void disable(UInt idEpoch, const std::string &reason);
 
-  /** @brief Disable transceiver. */
+  /** @brief Disables the transceiver for a specific reason. */
   virtual void disable(const std::string &reason);
 
-  /** @brief Allowed signal types. Empty if no  definition was provided. */
+  /** @brief Returns the allowed signal types at a given time,
+   * which will be empty if no GNSS receiver was found or
+   * no signal / receiver definition was provided for this platform. */
   std::vector<GnssType> definedTypes(const Time &time) const;
 
-  /** @brief Direction dependent corrections.
-  * observed range = range (ARPs of transmitter and receiver) + antennaVariations. */
+  /**
+   * @brief Returns the signal direction-dependent corrections for GNSS range measurements at a given time.
+   * Signal biases are included in the correction.
+   * @param time Time at which to calculate the correction.
+   * @param azimut Azimuth angle in the antenna frame.
+   * @param elevation Elevation angle in the antenna frame.
+   * @param type Vector of GNSS signal types.
+   * @return Vector of correction values.
+   */
   Vector antennaVariations(const Time &time, Angle azimut, Angle elevation, const std::vector<GnssType> &type) const;
 
-  /** @brief Direction (and other parameters) dependent standard deviation.
-  * @a azmiut and @a elevation must be given in the antenna frame (left-handed). */
+  /**
+   * @brief Returns the signal direction- (and other parameters) dependent standard deviation for GNSS range measurements at a given time.
+   * @param time Time at which to calculate the accuracy.
+   * @param azimut Azimuth angle in the (left-handed) antenna frame.
+   * @param elevation Elevation angle in the (left-handed) antenna frame.
+   * @param type Vector of GNSS signal types.
+   * @return Vector of standard deviation values.
+   */
   Vector accuracy(const Time &time, Angle azimut, Angle elevation, const std::vector<GnssType> &type) const;
 
   void save(OutArchive &oa) const;

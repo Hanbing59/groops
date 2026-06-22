@@ -102,7 +102,7 @@ Kepler::Kepler(const Time &time, const Vector3d &position, const Vector3d &veloc
   // true anomaly
   const Double v = atan2(p*inner(position,velocity)/C.r(), p-r);
 
-  // oribt system
+  // orbit system
   const Vector3d P = (e+cos(v))/p * position - r*sin(v)/C.r() * velocity;
   const Vector3d Q = sin(v)/p     * position + r*cos(v)/C.r() * velocity;
   const Vector3d K = Vector3d(cos(Omega), sin(Omega), 0);

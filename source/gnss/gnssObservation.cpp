@@ -18,6 +18,28 @@
 
 /***********************************************/
 
+/**
+ * @brief Computes the position and velocity of the receiver and transmitter at the signal reception
+ * and transmission time, respectively, at one epoch, the line-of-sight vectors and other related parameters.
+ *
+ * @param receiver The GNSS receiver.
+ * @param transmitter The GNSS transmitter.
+ * @param rotCrf2Trf The rotation from the celestial reference frame to the terrestrial reference frame.
+ * @param idEpoch The epoch index for which to compute the position, velocity and time.
+ * @param timeRecv The signal reception time at the receiver with receiver clock correction applied.
+ * @param posRecv The receiver position at the signal reception time in CRF.
+ * @param velRecv The receiver velocity at the signal reception time in CRF.
+ * @param azimutRecv Azimuth angle of the transmitter in the receiver antenna frame.
+ * @param elevationRecv Elevation angle of the transmitter in the receiver antenna frame.
+ * @param timeTrans The signal transmission time at the transmitter with receiver clock correction applied.
+ * @param posTrans The transmitter position at the signal transmission time in CRF.
+ * @param velTrans The transmitter velocity at the signal transmission time in CRF.
+ * @param azimutTrans Azimuth angle of the receiver in the transmitter antenna frame.
+ * @param elevationTrans Elevation angle of the receiver in the transmitter antenna frame.
+ * @param k The line-of-sight vector from transmitter to receiver in CRF.
+ * @param kRecv The line-of-sight vector from receiver to transmitter in the receiver antenna frame.
+ * @param kTrans The line-of-sight vector from transmitter to receiver in the transmitter antenna frame.
+ */
 static void positionVelocityTime(const GnssReceiver &receiver, const GnssTransmitter &transmitter, const Rotary3d &rotCrf2Trf, UInt idEpoch,
                                  Time &timeRecv,  Vector3d &posRecv,  Vector3d &velRecv,  Angle &azimutRecv,  Angle &elevationRecv,
                                  Time &timeTrans, Vector3d &posTrans, Vector3d &velTrans, Angle &azimutTrans, Angle &elevationTrans,
@@ -25,14 +47,14 @@ static void positionVelocityTime(const GnssReceiver &receiver, const GnssTransmi
 {
   try
   {
-    // receiver in celestial reference frame
     timeRecv = receiver.timeCorrected(idEpoch);
+    // receiver pos and vel at the signal reception time in the celestial reference frame
     posRecv  = rotCrf2Trf.inverseRotate(receiver.position(idEpoch));
     velRecv  = rotCrf2Trf.inverseRotate(receiver.velocity(idEpoch));
     if(receiver.isEarthFixed())
       velRecv += crossProduct(Vector3d(0., 0., 7.29211585531e-5), posRecv);
 
-    // transmitter position and time
+    // transmitter pos and vel at the signal transmission time in the celestial reference frame
     posTrans = transmitter.position(idEpoch, timeRecv-seconds2time(20200e3/LIGHT_VELOCITY));
     Vector3d posOld;
     for(UInt i=0; (i<10) && ((posTrans-posOld).r() > 0.0001); i++) // iteration
@@ -45,7 +67,8 @@ static void positionVelocityTime(const GnssReceiver &receiver, const GnssTransmi
 
     // line of sight from transmitter to receiver
     k              = normalize(posRecv - posTrans);
-    kRecv          = receiver.global2antennaFrame(idEpoch).transform(rotCrf2Trf.rotate(-k)); // line of sight in receiver antenna system (north, east, up)
+    // line of sight from receiver to transmitter in receiver antenna system (north, east, up)
+    kRecv          = receiver.global2antennaFrame(idEpoch).transform(rotCrf2Trf.rotate(-k));
     azimutRecv     = kRecv.lambda();
     elevationRecv  = kRecv.phi();
     kTrans         = transmitter.celestial2antennaFrame(idEpoch, timeTrans).transform(k);
@@ -104,15 +127,18 @@ Bool GnssObservation::init(const GnssReceiver &receiver, const GnssTransmitter &
     for(UInt i=0; i<size(); i++)
     {
       at(i).sigma0 = sigma0(i);
-      at(i).sigma  = acvRecv(i); // temporarily misuse sigma for ACV pattern nan check
+      // temporarily, use `sigma` for ACV pattern NAN check
+      at(i).sigma  = acvRecv(i);
       for(UInt k=0; k<T.columns(); k++)
         if(T(i,k))
           at(i).sigma  += T(i,k) * acvTrans(k);
     }
     obs.erase(std::remove_if(obs.begin(), obs.end(), [](const auto &x)
     {
-      if(((x.type == GnssType::PHASE) || (x.type == GnssType::RANGE)) && (x.sigma0 <= 0)) return TRUE; // remove Phase/Range for sigma <= 0
-      return std::isnan(x.sigma0) || std::isnan(x.sigma);                                              // remove all NAN values
+      // remove Phase/Range for a-priori accuracy <= 0
+      if(((x.type == GnssType::PHASE) || (x.type == GnssType::RANGE)) && (x.sigma0 <= 0)) return TRUE;
+      // remove observations with NAN values in sigma0 or sigma (ACV pattern)
+      return std::isnan(x.sigma0) || std::isnan(x.sigma);
     }), obs.end());
     obs.shrink_to_fit();
     if(size()==0)
@@ -172,7 +198,7 @@ Bool GnssObservation::observationList(GnssObservation::Group group, std::vector<
     // code observations
     if(group & RANGE)
     {
-      // need obs at two frequencies
+      // needs range obs at least from two frequencies
       std::set<GnssType> typeFrequencies;
       for(UInt i=0; i<size(); i++)
         if((at(i).type == GnssType::RANGE) && (at(i).sigma > 0))
@@ -189,7 +215,7 @@ Bool GnssObservation::observationList(GnssObservation::Group group, std::vector<
     // phase observations
     if(group & PHASE)
     {
-      // need obs at two frequencies
+      // needs phase obs at least from two frequencies
       std::set<GnssType> typeFrequencies;
       for(UInt i=0; i<size(); i++)
         if((at(i).type == GnssType::PHASE) && (at(i).sigma > 0))

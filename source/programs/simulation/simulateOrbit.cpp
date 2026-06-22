@@ -122,11 +122,12 @@ void SimulateOrbit::run(Config &config, Parallel::CommunicatorPtr /*comm*/)
 
     std::vector<Time> times = timeSeries->times();
     Time timeStart = times.front();
+    // Use average time step as the sampling interval
     Time sampling  = 1./(times.size()-1) * (times.back()-times.front());
     if(!isRegular(times))
       throw(Exception("Time intervals must be regularly spaced."));
 
-    // Need to flip?
+    // Need to flip the integration direction?
     if(reverse)
     {
       timeStart = times.back();

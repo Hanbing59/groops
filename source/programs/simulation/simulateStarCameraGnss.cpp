@@ -152,9 +152,14 @@ class SimulateStarCameraGnss
   std::vector<Epoch>        epochs;
   std::vector<AttitudeInfo> attitudeInfos;
 
-  // helper methods
-  Double       wrapAngle(Double angle) const;  ///< Returns angle wrapped to [-PI, PI).
+  /** @brief Returns angle wrapped to [-PI, PI).
+   * @param angle Angle in [rad] */
+  Double       wrapAngle(Double angle) const;
+
+  /** @brief Returns the rotational matrix from orbit normal to the CRF.*/
   Rotary3d     orbitNormal2crf(const Vector3d &posSat, const Vector3d &velSat) const;
+
+  /** @brief Retrieves the attitude info for the given time. */
   AttitudeInfo getAttitudeInfo(const Time &time) const;
   Epoch        createDefaultEpoch(const Time &time, const Vector3d &posSat, const Vector3d &velSat) const;
   Bool         findShadowBoundaries(UInt idMidnightEpoch, Epoch &shadowStart, Epoch &shadowEnd) const;
@@ -298,6 +303,7 @@ void SimulateStarCameraGnss::run(Config &config, Parallel::CommunicatorPtr /*com
       if(idEpoch>0 && inner(quaternions.row(idEpoch), quaternions.row(idEpoch-1))<0.)
         quaternions.row(idEpoch) *= -1; // ensure same sign for correct interpolation
     }
+    // Interpolate quaternions to orbit epochs
     polynomial.init(times, interpolationDegree);
     quaternions = polynomial.interpolate(timesOrbit, quaternions, 1);
     StarCameraArc starCameraArc;

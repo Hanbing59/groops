@@ -28,21 +28,25 @@ class GriddedDataRectangular;
 class GriddedData
 {
 public:
-  Ellipsoid                        ellipsoid; //!< Ellipsoid for conversion to ellipsoidal coordinates
-  std::vector<Vector3d>            points;    //!< List of points
-  std::vector<Double>              areas;     //!< Area element (projected to unit sphere).
-  std::vector<std::vector<Double>> values;    //!< data.at(dataIdx).at(pointIdx)
+  /// The reference ellipsoid for conversion of geodetic/ellipsoidal coordinates
+  Ellipsoid                        ellipsoid;
+  /// Cartesian coordinates of grid points.
+  std::vector<Vector3d>            points;
+  /// Area elements (projected to unit sphere) at each point.
+  std::vector<Double>              areas;
+  /// Data values at each point.
+  std::vector<std::vector<Double>> values;
 
-  /// Default constructor.
+  /** @brief Default constructor. */
   GriddedData() = default;
 
-  /// Constructor with points, area elements, and multiple values for each point.
+  /** @brief Constructor with points, area elements, and multiple values for each point. */
   GriddedData(const Ellipsoid &ellip, const std::vector<Vector3d> &_points, const std::vector<Double> &_areas, const std::vector<std::vector<Double>> &_values) : ellipsoid(ellip), points(_points), areas(_areas), values(_values) {}
 
-  /// Constructor from GriddedDataRectangular.
+  /** @brief Constructor with a @a GriddedDataRectangular object. */
   GriddedData(const GriddedDataRectangular &grid) {init(grid);}
 
-  /// Create from GriddedDataRectangular.
+  /** @brief Initialization from a @a GriddedDataRectangular object. */
   void init(const GriddedDataRectangular &grid);
 
   /** @brief Sort points geographically (North/West->South/East). */
@@ -62,8 +66,7 @@ public:
   /** @brief Automatically area computation of rectangular grids (overwrite areas). */
   Bool computeArea();
 
-  /** @brief Is GriddedData valid?
-  * Test dimensions of vectors. */
+  /** @brief Checks if the number of points, areas, and values of this grid data are consistent.*/
   Bool isValid() const;
 };
 
@@ -73,16 +76,21 @@ public:
 class GriddedDataRectangular
 {
 public:
-  Ellipsoid           ellipsoid;  //!< Ellipsoid for conversion to ellipsoidal coordinates
-  std::vector<Angle>  longitudes; //!< Longitude (columns)
-  std::vector<Angle>  latitudes;  //!< Latitude (rows)
-  std::vector<Double> heights;    //!< Elliposoidal height (rows)
-  std::vector<Matrix> values;     //!< Multiple values at each point.
+  /// The reference ellipsoid for conversion of geodetic/ellipsoidal coordinates
+  Ellipsoid           ellipsoid;
+  /// Longitudes (columns) of the grid points.
+  std::vector<Angle>  longitudes;
+  /// Latitudes (rows) of the grid points.
+  std::vector<Angle>  latitudes;
+  /// Elliposoidal heights (rows) of the grid points.
+  std::vector<Double> heights;
+  /// Data values at each point.
+  std::vector<Matrix> values;
 
-  /// Create from GriddedData.
+  /** @brief Initialization from GriddedData. */
   Bool init(const GriddedData &grid);
 
-  /** @brief Conversion from ellipsoidal to geocentric spherical polar coordinates. */
+  /** @brief Gets the geocentric polar coordinates of the grid points. */
   void geocentric(std::vector<Angle> &lambda, std::vector<Angle> &phi, std::vector<Double> &radius) const;
 
   /** @brief borders of grid cell (i,k): (lat(i) - lat(i+1)) x (lon(k) - lon(k+1)). */
@@ -93,8 +101,7 @@ public:
   * @return total area (4pi for global grids). */
   Double areaElements(std::vector<Double> &dLambda, std::vector<Double> &dPhi) const;
 
-  /** @brief Is GriddedDataRectangular valid?
-  * Test dimensions of vectors. */
+  /** @brief Checks if the number of latitudes, heights, and values of this grid data are consistent. */
   Bool isValid() const;
 };
 

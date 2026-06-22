@@ -73,9 +73,13 @@ typedef std::shared_ptr<GnssReceiverDefinition> GnssReceiverDefinitionPtr;
 
 /***** CLASS ***********************************/
 
+/** @brief Class for a platform. */
 class Platform
 {
 public:
+  /** @brief Class for a reference point of a platform, e.g.
+   * Center of mass (CoM) for satellites
+  */
   class ReferencePoint
   {
   public:
@@ -88,25 +92,34 @@ public:
   std::string                       markerName, markerNumber;
   std::string                       comment;
   Vector3d                          approxPosition;
-  std::vector<ReferencePoint>       referencePoints; ///< time sorted list of referencePoint
+  /// time sorted list of reference points
+  std::vector<ReferencePoint>       referencePoints;
+  /// list of equipments on this platform
   std::vector<PlatformEquipmentPtr> equipments;
 
-  /** @brief reference point in local frame.
-  * Center of mass (CoM) for satellites. */
+  /** @brief Gets the reference point positions at a given epoch. */
   Vector3d referencePoint(const Time &time) const;
 
+  /** @brief Gets a specified type of equipment at a given epoch. */
   template<typename T> std::shared_ptr<T> findEquipment(const Time &time) const;
 
+  /** @brief Sets the antenna definition for the GNSS antenna of the platform. */
   void fillGnssAntennaDefinition (const std::vector<GnssAntennaDefinitionPtr> &antennaList);
+
+  /** @brief Sets the antenna accuracy for the GNSS antenna of the platform. */
   void fillGnssAccuracyDefinition(const std::vector<GnssAntennaDefinitionPtr> &antennaList);
+
+  /** @brief Sets the receiver definition for the GNSS receiver of the platform. */
   void fillGnssReceiverDefinition(const std::vector<GnssReceiverDefinitionPtr> &receiverList);
 };
 
 /***** CLASS ***********************************/
 
+/** @brief Base class for an equipment on a platform. */
 class PlatformEquipment
 {
 public:
+  /// List of all equipment types
   enum Type : Int {UNDEFINED           = 0,
                    OTHER               = 1,
                    GNSSANTENNA         = 2,
@@ -115,20 +128,23 @@ public:
                    LASERRETROREFLECTOR = 5,
                    SATELLITEIDENTIFIER = 6};
 
+  /// Type of this equipment
   static constexpr Type TYPE = OTHER;
   std::string comment;
   std::string name, serial;
   Time        timeStart, timeEnd;
-  Vector3d    position;   // position of instrument in north, east, up or vehicle system
+  /// positions of this instrument in north, east, up or vehicle system
+  Vector3d    position;
 
   virtual ~PlatformEquipment() {}
 
-  /** @brief Create Equipment of given type (as shared_ptr). */
+  /** @brief Creates an equipment instance of a given type (as shared_ptr). */
   static PlatformEquipmentPtr create(Type type);
 
-  /** @brief Data type (e.g. GNSSANTENNA, SLRREFLECTOR). */
+  /** @brief Gets the type of this equipment, e.g. GNSSANTENNA, SLRREFLECTOR. */
   virtual Type getType() const {return TYPE;}
 
+  /** @brief Returns the string ID of the equipment consisting of its name and serial number. */
   virtual std::string str() const {return name+"|"+serial;};
 
   virtual void save(OutArchive &oa) const;
@@ -137,12 +153,14 @@ public:
 
 /***** CLASS ***********************************/
 
+/** @brief Class for a GNSS antenna equipment. */
 class PlatformGnssAntenna : public PlatformEquipment
 {
 public:
   static constexpr Type TYPE = GNSSANTENNA;
   std::string              radome;
-  Transform3d              local2antennaFrame;  // north, east, up or vehicle system -> antenna system
+  /// rotation from the north, east, up or vehicle system to the antenna system
+  Transform3d              local2antennaFrame;
   GnssAntennaDefinitionPtr antennaDef;
   GnssAntennaDefinitionPtr accuracyDef;
 
@@ -154,11 +172,13 @@ public:
 
 /***** CLASS ***********************************/
 
+/** @brief Class for a GNSS receiver equipment. */
 class PlatformGnssReceiver : public PlatformEquipment
 {
 public:
   static constexpr Type TYPE = GNSSRECEIVER;
-  std::string               version; // software version
+  // software version
+  std::string               version;
   GnssReceiverDefinitionPtr receiverDef;
 
   Type getType() const override {return TYPE;}
@@ -169,6 +189,7 @@ public:
 
 /***** CLASS ***********************************/
 
+/** @brief Class for a SLR station equipment. */
 class PlatformSlrStation : public PlatformEquipment
 {
 public:
@@ -181,13 +202,16 @@ public:
 
 /***** CLASS ***********************************/
 
+/** @brief Class for a SLR LRR equipment. */
 class PlatformLaserRetroReflector : public PlatformEquipment
 {
 public:
   static constexpr Type TYPE = LASERRETROREFLECTOR;
-  Transform3d platform2reflectorFrame; // satellite system -> reflector system
+  /// rotation from the satellite system to the reflector system
+  Transform3d platform2reflectorFrame;
   Angle       dZenit;
-  Matrix      range;                   // range variations (azimut(0..360) x zenit(0..dZenit*rows))
+  /// range variations (azimut(0..360) x zenit(0..dZenit*rows))
+  Matrix      range;
 
   Type getType() const override {return TYPE;}
   std::string str() const override {return name;}
@@ -197,6 +221,7 @@ public:
 
 /***** CLASS ***********************************/
 
+/** @brief Class for a satellite ID equipment. */
 class PlatformSatelliteIdentifier : public PlatformEquipment
 {
 public:
@@ -214,10 +239,10 @@ public:
 template<> void save(OutArchive &ar, const Platform &x);
 template<> void load(InArchive  &ar, Platform &x);
 
-/** @brief Write into a Platform file. */
+/** @brief Write a platform into a Platform file. */
 void writeFilePlatform(const FileName &fileName, const Platform &x);
 
-/** @brief Read from a Platform file. */
+/** @brief Read a platform from a Platform file. */
 void readFilePlatform(const FileName &fileName, Platform &x);
 
 /***********************************************/

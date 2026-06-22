@@ -2,7 +2,7 @@
 /**
 * @file ellipsoid.cpp
 *
-* @brief Transformation of ellipsoidial coordinates.
+* @brief Transformation between ellipsoidal coordinates and Cartesian coordinates.
 *
 * @author Torsten Mayer-Guerr
 * @date 2004-10-25
@@ -20,6 +20,7 @@ void Ellipsoid::operator()(const Vector3d &point, Angle &L, Angle &B, Double &h)
   if(point.quadsum() == 0.)
     throw(Exception("In Ellipsoid:\n0 Vector"));
 
+  // the first numerical excentricity
   const Double e2  = sqrt((_a/_b-1)*(_a/_b+1));
   const Double z   = point.z();
   const Double rho = std::sqrt(point.x()*point.x()+point.y()*point.y());
@@ -47,7 +48,9 @@ void Ellipsoid::operator()(const Vector3d &point, Angle &L, Angle &B, Double &h)
 
 const Vector3d Ellipsoid::operator()(Angle L, Angle B, Double h) const
 {
+  // the first numerical excentricity
   Double e2 = std::sqrt((_a/_b-1)*(_a/_b+1));
+  // the prime vertical radius of curvature
   Double N  = _a*(_a/(_b*std::sqrt(1+std::pow(e2*std::cos(B), 2))));
 
   return Vector3d((N+h) * std::cos(B) * std::cos(L),

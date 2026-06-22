@@ -20,7 +20,6 @@
 
 /***********************************************/
 
-// rotary from 3x3 matrix or quaterions
 Rotary3d::Rotary3d(const_MatrixSliceRef q)
 {
   try
@@ -347,4 +346,3 @@ Rotary3d localNorthEastDown(const Vector3d &point, const Ellipsoid &ellipsoid)
 }
 
 /***********************************************/
-

@@ -51,7 +51,7 @@ public:
   * @f[ \lambda = \arctan2(y,x) @f] */
   Angle lambda()  const;
 
-  /** @brief Polar coordinates: latitude [-PI,PI].
+  /** @brief Gets the polar coordinates, elevation [-PI,PI].
   * @f[ \varphi = \arctan2(z,\sqrt{x^2+y^2}) @f] */
   Angle phi() const;
 
@@ -60,7 +60,7 @@ public:
   * @see Vector3d::phi */
   Angle theta() const;
 
-  /** @brief Polar coordinates: radius.
+  /** @brief Get the polar coordinates, polar radius.
   * @f[ r = \sqrt{x^2+y^2+z^2} @f] */
   Double r() const;
 
@@ -98,7 +98,7 @@ public:
 * @f[ c = x^Ty @f] */
 inline Double inner(const Vector3d &x, const Vector3d &y);
 
-/** @brief Vector3d from polar coordinates. */
+/** @brief Returns the Cartesian coordinates from polar coordinates. */
 inline Vector3d polar(Angle lambda, Angle phi, Double r);
 
 /** @brief Cross product.

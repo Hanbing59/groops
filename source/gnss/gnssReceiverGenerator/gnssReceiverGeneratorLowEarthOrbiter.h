@@ -2,7 +2,7 @@
 /**
 * @file gnssReceiverGeneratorLowEarthOrbiter.h
 *
-* @brief GNSS for Low Earth Orbiter (LEO).
+* @brief GNSS receiver generator for Low Earth Orbiter (LEO).
 *
 * @author Torsten Mayer-Guerr
 * @author Sebastian Strasser
@@ -34,20 +34,25 @@ the star camera data can be simulated by using \program{SimulateStarCamera}.
 
 /***** CLASS ***********************************/
 
-/** @brief GNSS for Low Earth Orbiter (LEO).
+/** @brief GNSS receiver generator for Low Earth Orbiter (LEO).
 * @ingroup gnssReceiverGeneratorGroup
 * @see GnssReceiverGenerator */
 class GnssReceiverGeneratorLowEarthOrbiter : public GnssReceiverGeneratorBase
 {
   FileName              fileNameStationInfo;
-  FileName              fileNameAntennaDef, fileNameReceiverDef, fileNameAccuracyDef;
-  FileName              fileNameObs, fileNameOrbit, fileNameStarCamera;
+  FileName              fileNameAntennaDef;
+  FileName              fileNameReceiverDef;
+  FileName              fileNameAccuracyDef;
+  FileName              fileNameObs;
+  FileName              fileNameOrbit;
+  FileName              fileNameStarCamera;
   ExpressionVariablePtr exprSigmaPhase, exprSigmaCode;
   Bool                  integerAmbiguities;
   Double                wavelengthFactor;
   Angle                 elevationCutOff;
   std::vector<GnssType> useType, ignoreType;
   GnssAntennaDefinition::NoPatternFoundAction noPatternFoundAction;
+  /// Whether to print preprocessing statistics
   Bool                  printInfo;
   Double                huber, huberPower;
   Double                codeMaxPosDiff;
@@ -59,8 +64,10 @@ class GnssReceiverGeneratorLowEarthOrbiter : public GnssReceiverGeneratorBase
   GnssReceiverPtr       recv;
 
 public:
+  /** @brief Constructor. */
   GnssReceiverGeneratorLowEarthOrbiter(Config &config);
 
+  /** @brief Initializes the GNSS receiver generator for Low Earth Orbiter (LEO). */
   void init(std::vector<GnssType> simulationTypes, const std::vector<Time> &times, const Time &timeMargin,
             const std::vector<GnssTransmitterPtr> &transmitters, EarthRotationPtr earthRotation,
             Parallel::CommunicatorPtr comm, std::vector<GnssReceiverPtr> &receivers) override;

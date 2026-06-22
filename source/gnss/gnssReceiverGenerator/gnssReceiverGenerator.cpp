@@ -2,7 +2,7 @@
 /**
 * @file gnssReceiverGenerator.cpp
 *
-* @brief Provides a list of receivers.
+* @brief Provides a list of GNSS receivers.
 *
 * @author Torsten Mayer-Guerr
 * @author Sebastian Strasser
@@ -132,8 +132,6 @@ void GnssReceiverGeneratorBase::printPreprocessingInfos(const std::string &heade
     Parallel::reduceSum(recvProcess, 0, comm);
     Parallel::broadCast(recvProcess, 0, comm);
 
-    // preprocessing infos
-    // -------------------
     for(UInt idRecv=0; idRecv<receivers.size(); idRecv++)
       if(recvProcess(idRecv))
       {

@@ -2,7 +2,7 @@
 /**
 * @file ellipsoid.h
 *
-* @brief Transformation of ellipsoidial coordinates.
+* @brief An ellipsoidal model.
 *
 * @author Torsten Mayer-Guerr
 * @date 2004-10-25
@@ -19,42 +19,47 @@
 
 /***** CLASS ***********************************/
 
-/** @brief Transformation of ellipsoidial coordinates.
+/** @brief An ellipsoidal model.
 * @ingroup vector3dGroup */
 class Ellipsoid
 {
   Double _a,_b;
 
 public:
-  /** @brief Ellipsoid from semi major axis and inverse flatenning.
-  * if f=0, a sphere is assumed. */
+  /**
+   * @brief Initializes an ellipsoid with given semi-major axis and inverse flattening.
+   * @param a Semi-major axis [m]
+   * @param f Inverse flattening. If f=0, a sphere is assumed.
+   */
   Ellipsoid(Double a=DEFAULT_GRS80_a, Double f=DEFAULT_GRS80_f) : _a(a), _b((f != 0.) ? (a*(1-1/f)) : a) {}
 
-  /** @brief Computes ellipsoidal coordinates from @a point.
-  * @param point point
-  * @param[out] L longitude (-PI,PI]
-  * @param[out] B latitude [-PI,PI]
-  * @param[out] h height [m]
-  */
+  /**
+   * @brief Computes geodetic/ellipsoidal coordinates from Cartesian coordinates.
+   * @param[in] point Cartesian coordinates
+   * @param[out] L longitude (-PI,PI]
+   * @param[out] B latitude [-PI,PI]
+   * @param[out] h height [m]
+   */
   void operator()(const Vector3d &point, Angle &L, Angle &B, Double &h) const;
 
-  /** @brief Transformation ellipsoidal coordinates in @a Vector3d.
-  * @param L longitude (-PI,PI]
-  * @param B latitude [-PI/2,PI/2]
-  * @param h height [m]
-  */
+  /**
+   * @brief Computes Cartesian coordinates from geodetic/ellipsoidal coordinates.
+   * @param L longitude (-PI,PI]
+   * @param B latitude [-PI/2,PI/2]
+   * @param h height [m]
+   */
   const Vector3d operator()(Angle L, Angle B, Double h) const;
 
-  /// Semi major axis.
+  /** @brief Returns the semi-major axis. */
   Double a() const {return _a;}
 
-  /// Semi minor axis.
+  /** @brief Returns the semi-minor axis. */
   Double b() const {return _b;}
 
-  /// Numerical  excentricity.
+  /** @brief Returns the first numerical excentricity. */
   Double e() const {return sqrt(_a*_a-_b*_b)/_a;}
 
-  /// Flattening.
+  /** @brief Returns the flattening. */
   Double f() const {return (_a-_b)/_a;}
 };
 

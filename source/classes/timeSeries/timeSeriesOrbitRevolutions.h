@@ -77,6 +77,7 @@ inline std::vector<Time> TimeSeriesOrbitRevolutions::times() const
       if((orbit.at(i).position.phi() < 0) && (orbit.at(i+1).position.phi() > 0))
       {
         const Double deltaPhi = Double(orbit.at(i+1).position.phi())-Double(orbit.at(i).position.phi());
+        // as the latitude before the crossing is negative, should we use the absolute value of it?
         const Time   time     = orbit.at(i).time + (Double(orbit.at(i).position.phi())/deltaPhi) * (orbit.at(i+1).time-orbit.at(i).time);
         if(time.isInInterval(timeStart, timeEnd))
           times.push_back(time);

@@ -309,9 +309,12 @@ public:
   /** @brief Returns the index of types vector. If not found NULLINDEX is returned. */
   static UInt index(const std::vector<GnssType> &types, GnssType type);
 
-  /** @brief Returns true if both vectors are of the same size and contain only the same types, independent of sorting. 
-   * @param mask If given, only the parts of the types defined by the mask are compared, 
-   * for example, to check if two lists contain the same observation types independent 
+  /**
+   * @brief Returns true if both vectors are of the same size and contain only the same types, independent of sorting.
+   * @param types1
+   * @param types2
+   * @param mask If given, only the parts of the types defined by the mask are compared,
+   * for example, to check if two lists contain the same observation types independent
    * of frequency and satellite system, use mask=GnssType::TYPE.
   */
   static Bool allEqual(const std::vector<GnssType> &types1, const std::vector<GnssType> &types2, GnssType mask=GnssType::ALL);
@@ -321,15 +324,15 @@ public:
   * Phase types are returned with tracking attributes removed. All other types are removed. */
   static std::vector<GnssType> replaceCompositeSignals(const std::vector<GnssType> &types);
 
-  /** @brief Returns true if a wildcard (*) is used in parts specified by @a mask. 
+  /** @brief Returns true if a wildcard (*) is used in parts specified by @a mask.
    * A wildcard used in a part means that this part is not set and has all zeros in the bit representation.
-   * @param mask If given, only the parts defined by the mask are checked for wildcards, for example, 
-   * to check for wildcards in the frequency part, use mask=GnssType::FREQUENCY. 
+   * @param mask If given, only the parts defined by the mask are checked for wildcards, for example,
+   * to check for wildcards in the frequency part, use mask=GnssType::FREQUENCY.
   */
   Bool hasWildcard(GnssType mask=GnssType::ALL) const;
 
-  /** @brief Combines two GnssType instances if they are compatible. 
-   * Two GnssType instances are compatible if they are equal or 
+  /** @brief Combines two GnssType instances if they are compatible.
+   * Two GnssType instances are compatible if they are equal or
    * if one of them has a wildcard in all parts where they differ.
   */
   GnssType &operator+=(const GnssType &t);
@@ -341,8 +344,8 @@ public:
   /** @brief Returns true if all parts are either the same or match a wildcard. */
   Bool operator==(const GnssType &t) const;
 
-  /** @brief Returns true if both @a this and @a t have the field set and @a this is smaller than @a t or 
-   * only @a t has a wildcard in the field being compared. 
+  /** @brief Returns true if both @a this and @a t have the field set and @a this is smaller than @a t or
+   * only @a t has a wildcard in the field being compared.
    * When used for sorting, wildcards are at the end. */
   Bool operator< (const GnssType &t) const;
 

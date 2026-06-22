@@ -2,7 +2,7 @@
 /**
 * @file gnssReceiverGenerator.h
 *
-* @brief Provides a list of receivers.
+* @brief Provides a list of GNSS receivers.
 *
 * @author Torsten Mayer-Guerr
 * @author Sebastian Strasser
@@ -68,7 +68,7 @@ See also \program{GnssProcessing} and \program{GnssSimulateReceiver}.
 
 /**
 * @defgroup gnssReceiverGeneratorGroup GnssReceiverGenerator
-* @brief Provides a list of receivers.
+* @brief Provides a list of GNSS receivers.
 * @ingroup classesGroup
 * The interface is given by @ref GnssReceiverGenerator. */
 /// @{
@@ -82,7 +82,7 @@ typedef std::shared_ptr<GnssReceiverGenerator> GnssReceiverGeneratorPtr;
 
 /***** CLASS ***********************************/
 
-/** @brief Provides a list of receivers.
+/** @brief Provides a list of GNSS receivers.
 * An Instance of this class can be created by @ref readConfig. */
 class GnssReceiverGenerator
 {
@@ -92,22 +92,22 @@ public:
   /** @brief Constructor from config. */
   GnssReceiverGenerator(Config &config, const std::string &name);
 
-  /// Destructor.
+  /** @brief Destructor. */
  ~GnssReceiverGenerator();
 
-  /** @brief Iniatialize and returns a vector of receivers. */
+  /** @brief Initializes and returns a vector of receivers. */
   std::vector<GnssReceiverPtr> receivers(std::vector<GnssType> simulationTypes, const std::vector<Time> &times, const Time &timeMargin,
                                          const std::vector<GnssTransmitterPtr> &transmitters, EarthRotationPtr earthRotation,
                                          Parallel::CommunicatorPtr comm);
 
-  /** @brief preprocess the observations of receivers. */
+  /** @brief Preprocesses the observations of GNSS receivers. */
   void preprocessing(Gnss *gnss, Parallel::CommunicatorPtr comm);
 
-  /** @brief simulate the observations of receivers. */
+  /** @brief Simulates the observations of GNSS receivers. */
   void simulation(NoiseGeneratorPtr noiseClock, NoiseGeneratorPtr noiseObs,
                   Gnss *gnss, Parallel::CommunicatorPtr comm);
 
-  /** @brief creates an derived instance of this class. */
+  /** @brief Creates an derived instance of this class. */
   static GnssReceiverGeneratorPtr create(Config &config, const std::string &name) {return GnssReceiverGeneratorPtr(new GnssReceiverGenerator(config, name));}
 };
 
@@ -115,7 +115,7 @@ public:
 
 /** @brief Creates an instance of the class GnssReceiverGenerator.
 * Search for a node with @a name in the Config node.
-* if @a name is not found the function returns FALSE and @a var is untouched.
+* If @a name is not found, the function returns FALSE and @a var is untouched.
 * @param config The config node which includes the node with the options for this class
 * @param name Tag name in the config.
 * @param[out] var Created class.
@@ -129,21 +129,30 @@ template<> Bool readConfig(Config &config, const std::string &name, GnssReceiver
 
 /***** CLASS ***********************************/
 
-// Internal class
+/** @brief Internal class */
 class GnssReceiverGeneratorBase
 {
 public:
   virtual ~GnssReceiverGeneratorBase() {}
 
+  /** @brief Initializes the GNSS receiver generator. */
   virtual void init(std::vector<GnssType> simulationTypes, const std::vector<Time> &times, const Time &timeMargin,
                     const std::vector<GnssTransmitterPtr> &transmitters, EarthRotationPtr earthRotation,
                     Parallel::CommunicatorPtr comm, std::vector<GnssReceiverPtr> &receivers) = 0;
 
+  /** @brief Preprocesses the observations of GNSS receivers. */
   virtual void preprocessing(Gnss *gnss, Parallel::CommunicatorPtr comm) = 0;
 
+  /** @brief Simulates the observations of GNSS receivers. */
   virtual void simulation(NoiseGeneratorPtr noiseClock, NoiseGeneratorPtr noiseObs,
                           Gnss *gnss, Parallel::CommunicatorPtr comm) = 0;
 
+  /** @brief Prints preprocessing statistics of GNSS observations from the GNSS receivers.
+   * @param header Header of the output.
+   * @param receivers List of GNSS receivers.
+   * @param disabledOnly If TRUE, only disabled receivers are printed.
+   * @param comm Parallel communicator.
+  */
   static void printPreprocessingInfos(const std::string &header, const std::vector<GnssReceiverPtr> &receivers,
                                       Bool disabledOnly, Parallel::CommunicatorPtr comm);
 };

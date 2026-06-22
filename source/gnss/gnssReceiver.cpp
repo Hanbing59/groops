@@ -37,7 +37,6 @@ GnssReceiver::GnssReceiver(Bool isMyRank, Bool isEarthFixed, const Platform &pla
 
 /***********************************************/
 
-// this seems to improve the performance
 void GnssReceiver::copyObservations2ContinuousMemoryBlock()
 {
   try
@@ -316,36 +315,48 @@ void GnssReceiver::readObservations(const FileName &fileName, const std::vector<
                       std::accumulate(arc.begin(), arc.end(), UInt(0), [](UInt count, const auto &e){return count+e.satellite.size();}), 0);
 
     std::vector<Time> observationTimes;
+    // Phase windup correction for each transmitter
     Vector phaseWindup(transmitters.size());
     std::map<GnssType, UInt> removedTypes;
 
     UInt idEpoch = 0;
+    // loop over observation epochs
     for(UInt arcEpoch=0; arcEpoch<arc.size(); arcEpoch++)
     {
-      // search time slot
+      // Search for the observation epoch corresponding to the idEpoch-th processing epoch:
+      // 1) if the processing epoch falls behind the observation epoch,
+      //    then this processing epoch is disabled and proceed to the next processing epoch.
       while((idEpoch < times.size()) && (times.at(idEpoch)+timeMargin < arc.at(arcEpoch).time))
         disable(idEpoch++, "missing epochs in file");
       if(idEpoch >= times.size())
         break;
+
+      // 2) if the processing epoch surpasses the observation epoch or
+      //    the receiver is not usable at this epoch,
+      //    then skip this observation epoch and proceed to the next observation epoch.
       if((arc.at(arcEpoch).time+timeMargin < times.at(idEpoch)) || !useable(idEpoch))
         continue;
+
+      // 3) if the processing epoch and the observation epoch match,
+      //    update the processing epoch as the observation epoch.
       times.at(idEpoch) = arc.at(arcEpoch).time;
 //    clk.at(idEpoch)   = arc.at(arcEpoch).clockError;
       observationTimes.push_back(arc.at(arcEpoch).time);
 
       const std::vector<GnssType> receiverTypes = definedTypes(times.at(idEpoch));
 
-      // create observation class for each satellite
+      // Counter for number of valid observations at this epoch
       UInt idObs  = 0;
+      // loop over each satellite
       for(UInt k=0; k<arc.at(arcEpoch).satellite.size(); k++)
       {
-        // find list of observation types for this satellite
         GnssType satType = arc.at(arcEpoch).satellite.at(k);
+        // Index of the first obs type for this satellite
         UInt idType = 0;
         while(arc.at(arcEpoch).obsType.at(idType) != satType)
           idType++;
 
-        // search transmitter index for satellite number (PRN)
+        // Index of this satellite in the transmitters list
         const UInt idTrans = std::distance(transmitters.begin(), std::find_if(transmitters.begin(), transmitters.end(),
                                                                               [&](auto t) {return t->PRN() == satType;}));
         std::vector<GnssType> transmitterTypes;
@@ -356,16 +367,17 @@ void GnssReceiver::readObservations(const FileName &fileName, const std::vector<
         if((satType == GnssType::GLONASS) && transmitterTypes.size() && (transmitterTypes.front().frequencyNumber() != 9999))
           satType.setFrequencyNumber(transmitterTypes.front().frequencyNumber());
 
+        // Valid observations from this satellite at this epoch
         GnssObservation *obs = new GnssObservation();
         for(; (idType<arc.at(arcEpoch).obsType.size()) && (arc.at(arcEpoch).obsType.at(idType)==satType); idType++, idObs++)
           if((idTrans < transmitters.size()) && arc.at(arcEpoch).observation.at(idObs)  && !std::isnan(arc.at(arcEpoch).observation.at(idObs)))
           {
             GnssType type = arc.at(arcEpoch).obsType.at(idType) + satType;
-            // remove GLONASS frequency number
+            // Remove frequency number for GLONASS non-G1 and non-G2 observations
             if((type == GnssType::GLONASS) && !((type == GnssType::G1) || (type == GnssType::G2)))
               type.setFrequencyNumber(9999);
 
-            // check completeness
+            // Check the completeness of the GNSS observation type
             if(type.hasWildcard(GnssType::TYPE + GnssType::FREQUENCY + GnssType::SYSTEM + GnssType::PRN))
             {
               logWarning<<name()<<" -> "<<transmitters.at(idTrans)->name()<<" at "<<times.at(idEpoch).dateTimeStr()<<": "<<type.str()<<" is not complete"<<Log::endl;
@@ -382,19 +394,20 @@ void GnssReceiver::readObservations(const FileName &fileName, const std::vector<
               continue;
             }
 
-            // check useType and ignoreType
+            // Check against useType and ignoreType
             Bool use = (useType.size()==0) ? TRUE : FALSE;
             if(type.isInList(useType))
               use = TRUE;
             if(type.isInList(ignoreType))
               use = FALSE;
 
-            // check against receiver and transmitter types
+            // Check against receiver signal types
             if(use && receiverTypes.size() && !type.isInList(receiverTypes))
             {
               use = FALSE;
               removedTypes[type]++;
             }
+            // Check against transmitter signal types
             if(use && transmitterTypes.size())
               for(const GnssType &typeTrans : GnssType::replaceCompositeSignals({type}))
                 if(!typeTrans.isInList(transmitterTypes))
@@ -416,6 +429,7 @@ void GnssReceiver::readObservations(const FileName &fileName, const std::vector<
           continue;
         }
 
+        // store the observation in the receiver's observation list
         if(observations_.size() <= idEpoch)
           observations_.resize(idEpoch+1);
         if(observations_.at(idEpoch).size() <= idTrans)
@@ -955,7 +969,7 @@ void GnssReceiver::deleteTrack(UInt idTrack)
   {
     for(UInt idEpoch=tracks.at(idTrack)->idEpochStart; idEpoch<=tracks.at(idTrack)->idEpochEnd; idEpoch++)
     {
-      deleteObservation(tracks.at(idTrack)->transmitter->idTrans(), idEpoch); // possibly disables receiver and clears all tracks
+      deleteObservation(tracks.at(idTrack)->transmitter->idTrans(), idEpoch);
       if(!useable())
         return;
     }
@@ -1052,7 +1066,6 @@ GnssTrackPtr GnssReceiver::splitTrack(ObservationEquationList &eqnList, GnssTrac
 
 /***********************************************/
 
-// determine Melbourne-Wuebbena-like linear combinations
 void GnssReceiver::linearCombinations(ObservationEquationList &eqnList, GnssTrackPtr track, const std::vector<GnssType> &extraTypes,
                                       std::vector<GnssType> &typesPhase, std::vector<UInt> &idEpochs, Matrix &combinations, Double &cycles2tecu) const
 {
@@ -1109,7 +1122,6 @@ void GnssReceiver::linearCombinations(ObservationEquationList &eqnList, GnssTrac
 
 /***********************************************/
 
-// determine range & TEC based on phase observations only
 void GnssReceiver::rangeAndTec(ObservationEquationList &eqnList, UInt idTrans, const std::vector<UInt> &idEpochs,
                                const std::vector<GnssType> &typesPhase, Vector &range, Vector &tec) const
 {
@@ -1645,9 +1657,6 @@ void GnssReceiver::trackOutlierDetection(const ObservationEquationList &eqnList,
 /***********************************************/
 /***********************************************/
 
-// Total variation denoising algorithm source:
-// Laurent Condat. A Direct Algorithm for 1D Total Variation Denoising. IEEE Signal Processing Letters,
-// Institute of Electrical and Electronics Engineers, 2013, 20 (11), pp.1054-1057. DOI: 10.1109/LSP.2013.2278339.
 Matrix GnssReceiver::totalVariationDenoising(const_MatrixSliceRef y, Double lambda)
 {
   try
