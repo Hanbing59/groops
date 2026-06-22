@@ -196,8 +196,8 @@ void SimulateStarCameraGnss::run(Config &config, Parallel::CommunicatorPtr /*com
     readConfig(config, "outputfileStarCamera",  fileNameStarCamera,   Config::MUSTSET,  "",  "rotation from body frame to CRF");
     readConfig(config, "inputfileOrbit",        fileNameOrbit,        Config::MUSTSET,  "",  "attitude is modeled based on this orbit");
     readConfig(config, "inputfileAttitudeInfo", fileNameAttitudeInfo, Config::OPTIONAL, "{groopsDataDir}/gnss/transmitter/attitudeInfo/attitudeInfo.{svn}.txt", "attitude modes used by the satellite and respective parameters");
-    readConfig(config, "interpolationDegree",   interpolationDegree,  Config::DEFAULT,  "7", "polynomial degree for orbit interpolation");
-    readConfig(config, "modelingResolution",    modelingResolution,   Config::DEFAULT,  "1", "[s] resolution for attitude model evaluation");
+    readConfig(config, "interpolationDegree",   interpolationDegree,  Config::DEFAULT,  "7", "polynomial degree for orbit && attitude interpolation");
+    readConfig(config, "modelingResolution",    modelingResolution,   Config::DEFAULT,  "1", "[s] resolution for attitude model evaluation, not the sampling of the output star camera data");
     readConfig(config, "ephemerides",           ephemerides,          Config::MUSTSET,  "",  "");
     readConfig(config, "eclipse",               eclipse,              Config::MUSTSET,  "",  "model to determine if satellite is in Earth's shadow");
     if(isCreateSchema(config)) return;

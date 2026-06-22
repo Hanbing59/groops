@@ -123,7 +123,7 @@ void GnssReceiver::deleteObservation(UInt idTrans, UInt idEpoch)
       return;
     observations_[idEpoch][idTrans] = nullptr;
     if(std::all_of(observations_[idEpoch].begin(), observations_[idEpoch].end(), [](auto obs) {return obs == nullptr;}))
-      disable(idEpoch, "no valid epochs left");
+      disable(idEpoch, "no valid transmitters left");
   }
   catch(std::exception &e)
   {
@@ -327,7 +327,7 @@ void GnssReceiver::readObservations(const FileName &fileName, const std::vector<
       // 1) if the processing epoch falls behind the observation epoch,
       //    then this processing epoch is disabled and proceed to the next processing epoch.
       while((idEpoch < times.size()) && (times.at(idEpoch)+timeMargin < arc.at(arcEpoch).time))
-        disable(idEpoch++, "missing epochs in file");
+        disable(idEpoch++, "missing epoch in the observation file");
       if(idEpoch >= times.size())
         break;
 
