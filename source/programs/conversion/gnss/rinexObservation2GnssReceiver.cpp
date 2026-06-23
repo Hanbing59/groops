@@ -564,7 +564,7 @@ void RinexObservation2GnssReceiver::readObservationData(InFile &file)
             getLine(file, line, label);
           obs.at(idSat)(idType) = String::toDouble(line.substr((rinexVersion >= 3 ? 3 : 0)+16*(idType%maxObsCountPerLine), 14));
 
-          // TODO: LLI and signal strength
+          /// @todo LLI and signal strength
         }
       }
 
@@ -701,7 +701,7 @@ void RinexObservation2GnssReceiver::readCompactObservationData(InFile &file)
           obs.at(idSat).at(idType) = obsSeries->at(1)/1000;
         }
 
-        // TODO: LLI and signal strength
+        /// @todo LLI and signal strength
       }
 
       if(epochFlag==6)

@@ -57,7 +57,7 @@ UInt GnssAntennaDefinition::findAntennaPattern(const GnssType &type, NoPatternFo
         return NULLINDEX;
       if(noPatternFoundAction == USE_NEAREST_FREQUENCY)
       {
-        // TODO: there should be the following priorities: phase? nearest phase; code? nearest code or if no code then nearest phase
+        /// @todo there should be the following priorities: phase? nearest phase; code? nearest code or if no code then nearest phase
         iter = std::min_element(patterns.begin(), patterns.end(), [&](const GnssAntennaPattern &p1, const GnssAntennaPattern &p2)
         {
           GnssType t1 = p1.type; if(t1 == GnssType::GLONASS) t1.setFrequencyNumber(0);

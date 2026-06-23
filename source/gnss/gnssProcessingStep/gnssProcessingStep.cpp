@@ -166,7 +166,7 @@ void GnssProcessingStep::State::decorrelatedDesignMatrix(GnssObservationEquation
       return;
     }
 
-    // TODO: consider stations with lower sampling!
+    /// @todo consider stations with lower sampling!
     // find future epochs of same track
     std::vector<UInt> idEpochs(1, eqn.idEpoch);
     auto iterIdEpoch = std::upper_bound(normalEquationInfo.idEpochs.begin(), normalEquationInfo.idEpochs.end(), idEpochs.back());

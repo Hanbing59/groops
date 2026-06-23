@@ -77,7 +77,7 @@ void GriddedData::sort()
                              (points.at(i).lambda() < points.at(k).lambda()) :                // sort longitudes
                              (points.at(i).theta()  < points.at(k).theta());});               // sort latitudes
 
-    // TODO: check regional over date boundary
+    /// @todo check regional over date boundary
 
     auto tmpPoints = points;
     for(UInt i=0; i<tmpPoints.size(); i++)
@@ -161,7 +161,7 @@ Bool GriddedData::computeArea()
       dx.back() = std::fabs(std::remainder(lambda.at(lambda.size()-1)-lambda.at(lambda.size()-2), 2*PI));
     }
 
-    // TODO: boundaries should be between ellipsoidal latitudes and not between geocentric phis
+    /// @todo boundaries should be between ellipsoidal latitudes and not between geocentric phis
     // integral cos(phi) dPhi
     std::vector<Double> dy(phi.size(), 2.);
     if(phi.size() > 1)

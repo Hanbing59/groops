@@ -4,7 +4,7 @@
 *
 * @brief Create satellite model from IGS SINEX metadata file.
 *
-* TODO: Consider time-variability in transmit power.
+* @todo Consider time-variability in transmit power.
 *
 * @author Sebastian Strasser
 * @date 2018-09-17

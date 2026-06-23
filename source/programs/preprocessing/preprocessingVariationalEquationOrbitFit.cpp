@@ -204,7 +204,7 @@ void PreprocessingVariationalEquationOrbitFit::run(Config &config, Parallel::Com
         {
           /// gather the indexes of detected outliers from each arc
           outlierIndexes.at(arcNo) = arcResults[arcNo].outlierIndexesArc;
-          /// \todo {Add statistics, like residuals RMS for each arc}
+          /// @todo Add statistics, like residuals RMS for each arc
         }
       }
       Parallel::broadCast(outlierIndexes, 0, comm);
