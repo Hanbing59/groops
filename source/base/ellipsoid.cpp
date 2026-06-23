@@ -59,3 +59,13 @@ const Vector3d Ellipsoid::operator()(Angle L, Angle B, Double h) const
 }
 
 /***********************************************/
+
+const Vector3d Ellipsoid::ellipsoidalVelocity(Angle B, Double h, const Vector3d &vneu) const
+{
+  // the prime vertical radius of curvature
+  Double N = _a/sqrt(1 - std::pow(e()*std::sin(B), 2));
+  // the meridian radius of curvature
+  Double M = _a*(1 - e()*e())/(std::pow(1 - e()*e()*std::sin(B)*std::sin(B), 1.5));
+
+  return Vector3d(vneu.x()/(M+h), vneu.y()/((N+h)*std::cos(B)), vneu.z());
+};

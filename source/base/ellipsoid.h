@@ -61,6 +61,15 @@ public:
 
   /** @brief Returns the flattening. */
   Double f() const {return (_a-_b)/_a;}
+
+  /**
+   * @brief Calculates the ellipsoidal velocity from the local NEU velocity.
+   * @param B Latitude [-PI/2,PI/2]
+   * @param h Height [m]
+   * @param vneu Velocity in local NEU system [m/s]
+   * @return Latitude rate, longitude rate, and height rate [rad/s, rad/s, m/s]
+   */
+  const Vector3d ellipsoidalVelocity(Angle B, Double h, const Vector3d &vneu) const;
 };
 
 /*************************************************/
