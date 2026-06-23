@@ -114,6 +114,7 @@ int main(int argc, char *argv[])
   // init parallel logging
   Log::init(Parallel::myRank(comm), Parallel::size(comm), Parallel::addChannel(Log::getReceive(), comm));
   Log::GroupPtr groupPtr;
+  Time startTime = System::now();
 
   try
   {
@@ -185,9 +186,9 @@ int main(int argc, char *argv[])
       if(!System::isDirectory(logFileName))
         Log::setLogFile(logFileName);
       if(Parallel::size(comm) > 1)
-        logStatus<<"=== Starting GROOPS with "<<Parallel::size(comm)<<" processes ==="<<Log::endl;
+        logStatus<<"=== Starting GROOPS with "<<Parallel::size(comm)<<" processes at "<<startTime%"%y-%m-%d %H:%M:%S"s<<" ==="<<Log::endl;
       else
-        logStatus<<"=== Starting GROOPS ==="<<Log::endl;
+        logStatus<<"=== Starting GROOPS at "<<startTime%"%y-%m-%d %H:%M:%S"s<<" ==="<<Log::endl;
 
       // read default settings and constants
       // -----------------------------------
@@ -266,7 +267,7 @@ int main(int argc, char *argv[])
         groopsHelp(argv[0], comm);
 
       Parallel::barrier(comm);
-      logStatus<<"=== Finished GROOPS ==="<<Log::endl;
+      logStatus<<"=== Finished GROOPS at "<<System::now()%"%y-%m-%d %H:%M:%S"s<<" (elapsed: "<<(System::now()-startTime)%"%H:%M:%S"s<<") ==="<<Log::endl;
       Parallel::barrier(comm);
     }); // Parallel::broadCastExceptions()
   }
@@ -276,7 +277,7 @@ int main(int argc, char *argv[])
     {
       logError<<"****** Error ******"<<Log::endl;
       logError<<e.what()<<Log::endl;
-      logStatus<<"=== Finished GROOPS with error ==="<<Log::endl;
+      logStatus<<"=== Finished GROOPS with error at "<<System::now()%"%y-%m-%d %H:%M:%S"s<<" (elapsed: "<<(System::now()-startTime)%"%H:%M:%S"s<<") ==="<<Log::endl;
     }
     return EXIT_FAILURE;
   }
