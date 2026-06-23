@@ -65,12 +65,43 @@ void Orbit2Groundtracks::run(Config &config, Parallel::CommunicatorPtr /*comm*/)
     logStatus<<"read orbit file <"<<fileNameOrbit<<">"<<Log::endl;
     OrbitArc orbit = InstrumentFile::read(fileNameOrbit);
     std::vector<Vector3d> points;
+    // ellipsoidal velocity: latitude rate, longitude rate, height rate
+    Vector BRate(orbit.size());
+    Vector LRate(orbit.size());
+    Vector HRate(orbit.size());
+    // orbit epochs
+    Vector Epoch(orbit.size());
+    Ellipsoid ellipsoid(a,f);
     for(UInt i=0; i<orbit.size(); i++)
-      points.push_back(earthRotation->rotaryMatrix(orbit.at(i).time).rotate(orbit.at(i).position));
+    {
+      const Rotary3d crf2trf = earthRotation->rotaryMatrix(orbit.at(i).time);
+      const Vector3d postrf = crf2trf.rotate(orbit.at(i).position);
+      points.push_back(postrf);
+
+      Angle L, B;
+      Double H;
+      ellipsoid(postrf, L, B, H);
+
+      const Vector3d omega = crf2trf.rotate(earthRotation->rotaryAxis(orbit.at(i).time));
+      const Vector3d veltrf = crf2trf.rotate(orbit.at(i).velocity) - crossProduct(omega, postrf);
+
+      const Transform3d neu2trf = localNorthEastUp(postrf, ellipsoid);
+      const Vector3d velneu = neu2trf.inverseTransform(veltrf);
+      const Vector3d velblh = ellipsoid.ellipsoidalVelocity(B, H, velneu);
+      BRate(i) = velblh.x();
+      LRate(i) = velblh.y();
+      HRate(i) = velblh.z();
+      Epoch(i) = orbit.at(i).time.mjd();
+    }
 
     // values
     // ------
     std::vector<std::vector<Double>> values;
+    values.push_back(Epoch);
+    values.push_back(LRate);
+    values.push_back(BRate);
+    values.push_back(HRate);
+
     for(auto &fileName : fileNamesInstrument)
     {
       logStatus<<"read instrument file <"<<fileName<<">"<<Log::endl;
@@ -85,7 +116,7 @@ void Orbit2Groundtracks::run(Config &config, Parallel::CommunicatorPtr /*comm*/)
     // write gridded data
     // ------------------
     logStatus<<"write gridded data <"<<fileNameOut<<">"<<Log::endl;
-    writeFileGriddedData(fileNameOut, GriddedData(Ellipsoid(a,f), points, {}, values));
+    writeFileGriddedData(fileNameOut, GriddedData(ellipsoid, points, {}, values));
   }
   catch(std::exception &e)
   {
