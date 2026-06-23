@@ -26,63 +26,79 @@
 /***** CLASS ***********************************/
 
 /** @brief Vector in 3d space.
-* For the representation of e.g. positions, velocities, gravity.
-* Can be rotated with @a Rotary3d.
-* Can added, subtracted and multiplied with a Double.
-* (Internally represented by cartesian coordinates). */
+* For the representation of e.g. positions, velocities, gravity,
+* a @ Vector3d object can be rotated with @a Rotary3d, added, subtracted and multiplied with a @a Double.
+* A @ Vector3d is internally represented by cartesian coordinates. */
 class Vector3d
 {
+  /// Cartesian coordinates: x, y, z.
   std::array<Double,3> field;
 
 public:
-  Vector3d() : field{0.,0.,0.} {} //!< Default constructor (Zero vector).
+  /** @brief Constructor (with a zero vector). */
+  Vector3d() : field{0.,0.,0.} {}
 
-  Vector3d(Double x, Double y, Double z) : field{x,y,z} {} //!< Constructor from cartesian coordinates.
-  explicit Vector3d(const_MatrixSliceRef x);               //!< Constructor from 3x1 or 1x3 matrix slice
+  /** @brief Constructor with specified cartesian coordinates. */
+  Vector3d(Double x, Double y, Double z) : field{x,y,z} {}
 
-  Double  x() const {return field[0];} //!< Cartesian coordinates: x component.
-  Double  y() const {return field[1];} //!< Cartesian coordinates: y component.
-  Double  z() const {return field[2];} //!< Cartesian coordinates: z component.
-  Double &x()       {return field[0];} //!< Cartesian coordinates: x component.
-  Double &y()       {return field[1];} //!< Cartesian coordinates: y component.
-  Double &z()       {return field[2];} //!< Cartesian coordinates: z component.
+  /** @brief Constructor from a 3x1 or 1x3 matrix slice. */
+  explicit Vector3d(const_MatrixSliceRef x);
 
-  /** @brief Polar coordinates: longitude (-PI,PI].
+  /** @brief Returns the x component of the Cartesian coordinates. */
+  Double  x() const {return field[0];}
+  /** @brief Returns the y component of the Cartesian coordinates. */
+  Double  y() const {return field[1];}
+  /** @brief Returns the z component of the Cartesian coordinates. */
+  Double  z() const {return field[2];}
+  /** @brief Returns a reference to the x component of the Cartesian coordinates. */
+  Double &x()       {return field[0];}
+  /** @brief Returns a reference to the y component of the Cartesian coordinates. */
+  Double &y()       {return field[1];}
+  /** @brief Returns a reference to the z component of the Cartesian coordinates. */
+  Double &z()       {return field[2];}
+
+  /** @brief Returns the azimuth angle in polar coordinates, (-PI,PI].
   * @f[ \lambda = \arctan2(y,x) @f] */
   Angle lambda()  const;
 
-  /** @brief Gets the polar coordinates, elevation [-PI,PI].
+  /** @brief Returns the elevation angle in polar coordinates, [-PI,PI].
   * @f[ \varphi = \arctan2(z,\sqrt{x^2+y^2}) @f] */
   Angle phi() const;
 
-  /** @brief Polar coordinates: zenit angle [-PI,PI].
+  /** @brief Returns the zenith angle in polar coordinates, [-PI,PI].
   * @f[ \vartheta = \pi/2 - \varphi @f]
   * @see Vector3d::phi */
   Angle theta() const;
 
-  /** @brief Get the polar coordinates, polar radius.
+  /** @brief Returns the polar radius in polar coordinates.
   * @f[ r = \sqrt{x^2+y^2+z^2} @f] */
   Double r() const;
 
-  /** @brief Quadratic sum.
+  /** @brief Returns the quadratic sum of the Cartesian coordinates.
   * @f[ x^2+y^2+z^2 @f] */
   Double quadsum() const;
 
-  /** @brief L2-Norm.
+  /** @brief Returns the L2-Norm, i.e., the Euclidean length of the vector.
   * @f[ \sqrt{x^2+y^2+z^2} @f]*/
   Double norm() const;
 
-  /** @brief Normalize the vector.
-  * @f[ \frac{1}{\sqrt{x^2+y^2+z^2}} \cdot (x,y,z)^T @f]
-  * @return old length */
+  /**
+   * @brief Normalizes the vector and returns the length before normalization.
+   * @f[ \frac{1}{\sqrt{x^2+y^2+z^2}} \cdot (x,y,z)^T @f]
+   * @return vector length before normalization
+   */
   Double normalize();
 
-  /// Cast to Vector.
+  /** @brief Casts to a 3-element @a Vector object. */
   Vector vector() const;
 
+  /** @brief Adds a @a Vector3d to this @a Vector3d. */
   Vector3d &operator+= (Vector3d const &b);
+  /** @brief Subtracts a @a Vector3d from this @a Vector3d. */
   Vector3d &operator-= (Vector3d const &b);
+  /** @brief Multiplies this @a Vector3d by a scalar. */
   Vector3d &operator*= (Double  c);
+  /** @brief Divides this @a Vector3d by a scalar. */
   Vector3d &operator/= (Double  c);
 
   friend class Rotary3d;
@@ -94,18 +110,22 @@ public:
 
 /***** FUNCTIONS *******************************/
 
-/** @brief Inner Product.
-* @f[ c = x^Ty @f] */
+/**
+ * @brief Returns the inner product of two @a Vector3d objects.
+ * @f[ c = x^Ty @f]
+ */
 inline Double inner(const Vector3d &x, const Vector3d &y);
 
-/** @brief Returns the Cartesian coordinates from polar coordinates. */
+/** @brief Returns the Cartesian coordinates from a given polar coordinates. */
 inline Vector3d polar(Angle lambda, Angle phi, Double r);
 
-/** @brief Cross product.
-* @f[ z = x \times y @f] */
+/**
+ * @brief Returns the cross product of two @a Vector3d objects.
+ * @f[ z = x \times y @f]
+ */
 inline Vector3d crossProduct(const Vector3d &x, const Vector3d &y);
 
-/** @brief Scale vector to unit length. */
+/** @brief Returns the normalized vector of a given Vector3d. */
 inline Vector3d normalize(const Vector3d &x);
 
 inline const Vector3d operator- (const Vector3d &t)                      {return Vector3d(t)  *= -1;}
