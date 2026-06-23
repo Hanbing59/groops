@@ -2,7 +2,7 @@
 /**
 * @file groops.cpp
 *
-* @brief main.
+* @brief The main function and entry point of the GROOPS program.
 *
 * @author Torsten Mayer-Guerr
 * @date 2007
@@ -196,8 +196,9 @@ int main(int argc, char *argv[])
         logInfo<<"settings: <"<<settingsFileName<<">"<<Log::endl;
         readFileSettings(settingsFileName);
       }
-      else // exists groopsDefaults.xml?
+      else
       {
+        // read from file groopsDefaults.xml if it exists in the current working directory
         settingsFileName = "groopsDefaults.xml";
         if(System::exists(settingsFileName))
         {
@@ -236,7 +237,7 @@ int main(int argc, char *argv[])
           writeFileSettings(writeSettingsFileName);
       }
 
-      // Starting Programs
+      // Runs over each configuration file
       // -----------------
       for(auto &configFileName : configFileNames)
       {
