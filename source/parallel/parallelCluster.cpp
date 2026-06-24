@@ -2,7 +2,7 @@
 /**
 * @file parallelCluster.cpp
 *
-* @brief Wrapper for Message Passing Interface (MPI).
+* @brief Multi-processor version of the wrapper for Message Passing Interface (MPI).
 *
 * @author Torsten Mayer-Guerr
 * @date 2004-11-13
@@ -27,6 +27,7 @@ namespace Parallel
 
 /***********************************************/
 
+/** @brief Checks the MPI error code and throws an exception if an error occurred. */
 inline void check(int errorcode)
 {
   if(errorcode != MPI_SUCCESS)
@@ -41,13 +42,14 @@ inline void check(int errorcode)
 /***********************************************/
 /***********************************************/
 
-// Extra channels to communicate log messages and exceptions
+/** @brief Extra channels to communicate log messages and exceptions */
 class HiddenChannel
 {
 public:
   MPI_Comm    comm;
   MPI_Request request;
 
+  /** @brief Constructor that duplicates the given MPI communicator */
   HiddenChannel(MPI_Comm communicator)
   {
     try
@@ -61,6 +63,7 @@ public:
     }
   }
 
+  /** @brief Destructor */
   virtual ~HiddenChannel()
   {
     int completed;
@@ -73,12 +76,14 @@ public:
     check(MPI_Comm_free(&comm));
   }
 
+  /** @brief Called when a signal is received */
   virtual void receivedSignal() = 0;
 };
 
 /***********************************************/
 /***********************************************/
 
+/** @brief MPI wrapper class */
 class Mpi
 {
 public:
@@ -101,18 +106,29 @@ public:
 /***********************************************/
 /***********************************************/
 
+/**
+ * @brief Communicator class for MPI communication.
+ *
+ * The Communicator class encapsulates the MPI communicator and provides methods for
+ * communication and synchronization between processes. It manages the MPI
+ * communicator and handles communication requests, including sending and
+ * receiving messages, broadcasting data, and synchronizing processes.
+ * It also provides methods for peeking at incoming messages and waiting for
+ * communication requests to complete. */
 class Communicator
 {
 public:
   std::shared_ptr<Mpi> mpi;
   MPI_Comm             comm;
 
+  /** @brief Constructor with a parent Communicator and MPI communicator */
   Communicator(CommunicatorPtr commParent, MPI_Comm comm_) : comm(comm_)
   {
     if(commParent)
       mpi = commParent->mpi;
   }
 
+  /** @brief Destructor that frees the MPI communicator if it is not a predefined communicator */
  ~Communicator()
   {
     if((comm != MPI_COMM_WORLD) && (comm != MPI_COMM_SELF) && (comm != MPI_COMM_NULL))
@@ -341,6 +357,7 @@ void peek(CommunicatorPtr comm)
 /***********************************************/
 /***********************************************/
 
+/** @brief Channel for logging messages */
 class LogChannel : public HiddenChannel
 {
   int                      rank, sendRank;
@@ -350,9 +367,13 @@ class LogChannel : public HiddenChannel
   std::function<void(UInt rank, UInt type, const std::string &str)> receive;
 
 public:
+  /** @brief Constructor */
   LogChannel(MPI_Comm communicator, std::function<void(UInt rank, UInt type, const std::string &str)> recv);
+  /** @brief Destructor */
  ~LogChannel();
+  /** @brief Called when a signal is received */
   void receivedSignal() override;
+  /** @brief Sends a signal */
   void sendSignal(UInt type, const std::string &str);
 };
 
@@ -466,6 +487,7 @@ std::function<void(UInt type, const std::string &str)> addChannel(const std::fun
 /***********************************************/
 /***********************************************/
 
+/** @brief Channel for broadcasting exceptions */
 class ErrorChannel : public HiddenChannel
 {
   std::shared_ptr<Mpi> mpi;
@@ -473,18 +495,24 @@ class ErrorChannel : public HiddenChannel
   unsigned int         isExternalSignal;
 
 public:
+  /** @brief Constructor */
   ErrorChannel(CommunicatorPtr comm);
+  /** @brief Called when a signal is received */
   void receivedSignal() override;
+  /** @brief Broadcasts an exception message to all processes */
   void broadCastException(const std::string &msg);
+  /** @brief Synchronizes and throws an exception */
   void synchronizeAndThrowException(const std::string &msg);
 };
 
 /***********************************************/
 
+/** @brief Class for broadcasting exceptions */
 class BroadCastedException
 {
 public:
   std::string message;
+  /** @brief Constructor that initializes the exception message */
   BroadCastedException(const std::string &msg)  : message(msg) {}
 };
 

@@ -34,71 +34,76 @@ namespace Parallel
   class Communicator;
   typedef std::shared_ptr<Communicator> CommunicatorPtr;
 
-  /** @brief Must be called firstly in main.
-  * @return global communicator. */
+  /**
+   * @brief Initializes the Communicator.
+   * Must be called firstly in main.
+   * @return global communicator. */
   CommunicatorPtr init(int argc, char *argv[]);
 
-  /** @brief Add an extra communcation channel to @p comm.
-  * @p receive is called on main process, if the returned send function is called by an arbitrary process.
-  * This function is used for the log.
-  * Must be called by every process in @a comm. */
+  /**
+   * @brief Adds an extra communcation channel to @p comm.
+   * @p receive is called on main process, if the returned send function is called by an arbitrary process.
+   * This function is used for the log and must be called by every process in @a comm. */
   std::function<void(UInt type, const std::string &str)> addChannel(const std::function<void(UInt rank, UInt type, const std::string &str)> &receive, CommunicatorPtr comm);
 
   // =========================================================
 
-  /** @brief Creates new communicators.
-  * a new group is created for each different @a color.
-  * the ranks in the groups are sorted by the @a key. */
+  /**
+   * @brief Splits the communicator.
+   * A new group is created for each different @a color.
+   * The ranks in the groups are sorted by the @a key. */
   CommunicatorPtr splitCommunicator(UInt color, UInt key, CommunicatorPtr comm);
 
-  /** @brief Creates new communicators.
-  * Must be called by every process in @a comm. */
+  /**
+   * @brief Creates new communicators.
+   * Must be called by every process in @a comm. */
   CommunicatorPtr createCommunicator(std::vector<UInt> ranks, CommunicatorPtr comm);
 
-  /** @brief The communicator that refers to the own process only. */
+  /** @brief Returns the communicator that refers to the own process only. */
   CommunicatorPtr selfCommunicator();
 
   // =========================================================
 
-  /** @brief Number of processes. */
+  /** @brief Gets the size of the communicator. */
   UInt size(CommunicatorPtr comm);
 
-  /** @brief Process index. */
+  /** @brief Gets the rank of the communicator. */
   UInt myRank(CommunicatorPtr comm);
 
-  /** @brief Is ths the master process (rank==0)? */
+  /** @brief Checks if the communicator is the master process (rank==0). */
   inline Bool isMaster(CommunicatorPtr comm) {return (myRank(comm) == 0);}
 
-  /** @brief Blocks until all process have reached this routine. */
+  /** @brief Blocks the communicator until all process have reached this routine. */
   void barrier(CommunicatorPtr comm);
 
-  /** @brief Non blocking check of extra channels. */
+  /** @brief Peeks the communicator. */
   void peek(CommunicatorPtr comm);
 
-  /** @brief Distribute exceptions thrown in @p func by a single node to all nodes.
-  * Must be called by every process in @a comm.
-  * Exceptions causes memory leaks due to unfinished communications.
-  * Based on the idea: https://arxiv.org/abs/1804.04481 */
+  /**
+   * @brief Distributes exceptions thrown in @p func by a single node to all nodes.
+   * Must be called by every process in @a comm.
+   * Exceptions causes memory leaks due to unfinished communications.
+   * Based on the idea: https://arxiv.org/abs/1804.04481 */
   void broadCastExceptions(CommunicatorPtr comm, std::function<void(CommunicatorPtr)> func);
 
-  /** @brief Is @a broadCastExceptions interrupted by an external process? */
+  /** @brief Checks if the exception is caused by exceptions from other processes. */
   Bool isExternal(std::exception &e);
 
   // =========================================================
 
-  /** @brief Send raw data @a x to process with rank @a process. */
+  /** @brief Sends raw data @a x to process with rank @a process. */
   void send(const Byte *x, UInt size, UInt process, CommunicatorPtr comm);
 
-  /** @brief receive raw data @a x from prozess with rank @a process.
+  /** @brief Receives raw data @a x from process with rank @a process.
   * If @a process = NULLINDEX then receive from an arbitrary process. */
   void receive(Byte *x, UInt size, UInt process, CommunicatorPtr comm);
 
-  /** @brief Distribute raw data @a x at @a process to all other processes. */
+  /** @brief Distributes raw data @a x at @a process to all other processes. */
   void broadCast(Byte *x, UInt size, UInt process, CommunicatorPtr comm);
 
   // =========================================================
 
-  /** @brief Send @a x to process with rank @a process. */
+  /** @brief Sends @a x to process with rank @a process. */
   ///@{
   template<typename T> void send(const T &x, UInt process, CommunicatorPtr comm);
   template<> void send(const UInt     &x, UInt process, CommunicatorPtr comm);
@@ -112,7 +117,7 @@ namespace Parallel
   template<> void send(const Matrix   &x, UInt process, CommunicatorPtr comm);
   ///@}
 
-  /** @brief receive @a x from prozess with rank @a process.
+  /** @brief Receives @a x from process with rank @a process.
   * If @a process = NULLINDEX then receive from an arbitrary process. */
   ///@{
   template<typename T> void receive(T &x, UInt process, CommunicatorPtr comm);
@@ -127,7 +132,7 @@ namespace Parallel
   template<> void receive(Matrix   &x, UInt process, CommunicatorPtr comm);
   ///@}
 
-  /** @brief Distribute @a x at @a process to all other processes. */
+  /** @brief Distributes @a x at @a process to all other processes. */
   ///@{
   template<typename T> void broadCast(T &x, UInt process, CommunicatorPtr comm);
   template<> void broadCast(UInt     &x, UInt process, CommunicatorPtr comm);
@@ -141,7 +146,7 @@ namespace Parallel
   template<> void broadCast(Matrix   &x, UInt process, CommunicatorPtr comm);
   ///@}
 
-  /** @brief Sum up @a x at all processes (also rank 0) and send the result to @a process. */
+  /** @brief Sums up @a x at all processes (also rank 0) and sends the result to @a process. */
   ///@{
   void reduceSum(UInt                &x, UInt process, CommunicatorPtr comm);
   void reduceSum(Double              &x, UInt process, CommunicatorPtr comm);
@@ -150,7 +155,7 @@ namespace Parallel
   void reduceSum(std::vector<Double> &x, UInt process, CommunicatorPtr comm);
   ///@}
 
-  /** @brief Find min/max of @a x at all processes (also rank 0) and send the result to @a process. */
+  /** @brief Finds min/max of @a x at all processes (also rank 0) and sends the result to @a process. */
   ///@{
   void reduceMin(UInt   &x, UInt process, CommunicatorPtr comm);
   void reduceMin(Double &x, UInt process, CommunicatorPtr comm);
@@ -160,42 +165,48 @@ namespace Parallel
 
   // =========================================================
 
-  /** @brief Parallelized loop.
-  * Calls @a func(i) for every @a i in [0,count).
-  * The different calls are distributed other the processes (without master).
+  /**
+   * @brief Parallelizes a loop.
+   * Calls the function @a func for every index in [0, @a count ).
+   * The different calls are distributed among all processes except the master.
   * @return The process number for @a i is returned (valid at master). */
   template<typename T> std::vector<UInt> forEach(UInt count, T func, CommunicatorPtr comm, Bool timing=TRUE);
 
-  /** @brief Parallelized loop.
-  * Calls @a vec[i]=func(i) for every @a i in [0,vec.size()).
-  * The different calls are distributed other the processes (without master).
-  * The result in @a vec is only valid at master.
-  * @return The process number for @a i is returned (valid at master). */
+  /**
+   * @brief Parallelizes a loop.
+   * Calls @a vec[i]=func(i) for every @a i in [0,vec.size()).
+   * The different calls are distributed among all processes except the master.
+   * The result in @a vec is only valid at master.
+   * @return The process number for @a i is returned (valid at master). */
   template<typename A, typename T> std::vector<UInt> forEach(std::vector<A> &vec, T func, CommunicatorPtr comm, Bool timing=TRUE);
 
-  /** @brief Parallelized loop.
-  * Calls @a func(i) for every @a i in [0,count).
-  * The different calls are distributed other the processes (without master).
-  * @return The process number for @a i is returned (valid at master). */
+  /**
+   * @brief Parallelizes a loop.
+   * Calls @a func(i) for every @a i in [0,count).
+   * The different calls are distributed among all processes except the master.
+   * @return The process number for @a i is returned (valid at master). */
   template<typename T> std::vector<UInt> forEachInterval(UInt count, const std::vector<UInt> &interval, T func, CommunicatorPtr comm, Bool timing=TRUE);
 
-  /** @brief Parallelized loop.
-  * Calls @a vec[i]=func(i) for every @a i in [0,vec.size()).
-  * The different calls are distributed other the processes (without master).
-  * The result in @a vec is only valid at master.
-  * @return The process number for @a i is returned (valid at master). */
+  /**
+   * @brief Parallelizes a loop.
+   * Calls @a vec[i]=func(i) for every @a i in [0,vec.size()).
+   * The different calls are distributed among all processes except the master.
+   * The result in @a vec is only valid at master.
+   * @return The process number for @a i is returned (valid at master). */
   template<typename A, typename T> std::vector<UInt> forEachInterval(std::vector<A> &vec, const std::vector<UInt> &interval, T func, CommunicatorPtr comm, Bool timing=TRUE);
 
-  /** @brief Parallelized loop.
-  * Calls @a func(i) for every @a i in [0,count).
-  * The different calls are distributed using @a processNo (without master).
-  * The result in @a vec is only valid at master. */
+  /**
+   * @brief Parallelizes a loop.
+   * Calls @a func(i) for every @a i in [0,count).
+   * The different calls are distributed using @a processNo (without master).
+   * The result in @a vec is only valid at master. */
   template<typename T> void forEachProcess(UInt count, T func, const std::vector<UInt> &processNo, CommunicatorPtr comm, Bool timing=TRUE);
 
-  /** @brief Parallelized loop.
-  * Calls @a vec[i]=func(i) for every @a i in [0,vec.size()).
-  * The different calls are distributed using @a processNo (without master).
-  * The result in @a vec is only valid at master. */
+  /**
+   * @brief Parallelizes a loop.
+   * Calls @a vec[i]=func(i) for every @a i in [0,vec.size()).
+   * The different calls are distributed using @a processNo (without master).
+   * The result in @a vec is only valid at master. */
   template<typename A, typename T> void forEachProcess(std::vector<A> &vec, T func, const std::vector<UInt> &processNo, CommunicatorPtr comm, Bool timing=TRUE);
 } // end namespace Parallel
 
@@ -205,8 +216,9 @@ namespace Parallel
 * @ingroup parallelGroup */
 namespace Single
 {
-  /** @brief loop with timing.
-  * Calls @a func(i) for every @a i in [0,count). */
+  /**
+   * @brief loop with timing.
+   * Calls @a func(i) for every @a i in [0,count). */
   template<typename T> void forEach(UInt count, T func, Bool timing=TRUE);
 } // end namespace Single
 

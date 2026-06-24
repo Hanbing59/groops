@@ -2,8 +2,7 @@
 /**
 * @file parallelSingle.cpp
 *
-* @brief Wrapper for Message Passing Interface (MPI).
-* All functions are empty statements for single processor version.
+* @brief Single-processor version of the wrapper for Message Passing Interface (MPI).
 *
 * @author Torsten Mayer-Guerr
 * @date 2004-11-13
