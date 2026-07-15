@@ -26,9 +26,9 @@ GnssParametrizationIonosphereVTEC::GnssParametrizationIonosphereVTEC(Config &con
     readConfig(config, "name",            name,                    Config::OPTIONAL, "parameter.VTEC", "");
     readConfig(config, "selectReceivers", selectReceivers,         Config::MUSTSET,   R"(["all"])", "");
     readConfig(config, "outputfileVTEC",  fileNameVTEC,            Config::OPTIONAL, "output/vtec_{loopTime:%D}.{station}.dat", "variable {station} available, columns: MJD, VTEC, north gradient, east gradient");
-    readConfig(config, "mapR",            mapR,                    Config::DEFAULT,  "6371e3",     "constant of MSLM mapping function");
-    readConfig(config, "mapH",            mapH,                    Config::DEFAULT,  "506.7e3",    "constant of MSLM mapping function");
-    readConfig(config, "mapAlpha",        mapAlpha,                Config::DEFAULT,  "0.9782",     "constant of MSLM mapping function");
+    readConfig(config, "mapR",            mapR,                    Config::DEFAULT,  "6371e3",     "radius of Earth in MSLM mapping function");
+    readConfig(config, "mapH",            mapH,                    Config::DEFAULT,  "506.7e3",    "altitude of the single ionosphere layer in MSLM mapping function");
+    readConfig(config, "mapAlpha",        mapAlpha,                Config::DEFAULT,  "0.9782",     "correction factor in MSLM mapping function");
     readConfig(config, "gradient",        parametrizationGradient, Config::DEFAULT,  "",           "parametrization of north and east gradients");
     if(isCreateSchema(config)) return;
   }
