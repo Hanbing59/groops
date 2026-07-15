@@ -126,7 +126,7 @@ void GnssParametrizationIonosphereSTEC::initParameter(GnssNormalEquationInfo &no
             if(recv->observation(idTrans, idEpoch))
               count++;
     Parallel::reduceSum(count, 0, normalEquationInfo.comm);
-    logInfo<<count%"%9i "s<<(applyConstraint ? "constrained " : "")<<"STEC parameters (preeliminated)"s<<Log::endl;
+    logInfo<<count%"%9i "s<<(applyConstraint ? "constrained " : "")<<"STEC parameters (will be pre-eliminated)"s<<Log::endl;
   }
   catch(std::exception &e)
   {
