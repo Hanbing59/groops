@@ -2,7 +2,7 @@
 /**
 * @file miscGriddedData.h
 *
-* @brief Misc functions for values on grid.
+* @brief Miscellaneous functions for values on grid.
 *
 * @author Torsten Mayer-Guerr
 * @date 2008-08-06
@@ -21,7 +21,7 @@
 
 /***********************************************/
 
-/** @brief Functions for values on grid.
+/** @brief Miscellaneous functions for values on grid.
 * @ingroup miscGroup */
 namespace MiscGriddedData
 {

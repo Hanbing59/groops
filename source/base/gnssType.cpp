@@ -382,7 +382,7 @@ std::string GnssType::str() const
     else if((type & ATTRIBUTE.type) == M.type) ss<<'M';
     else if((type & ATTRIBUTE.type) == E.type) ss<<'E';
     else if((type & ATTRIBUTE.type) == N.type) ss<<'N';
-    else if((type & ATTRIBUTE.type) == R.type) ss<<'R'; 
+    else if((type & ATTRIBUTE.type) == R.type) ss<<'R';
     else if((type & ATTRIBUTE.type) == UNKNOWN_ATTRIBUTE.type) ss<<'?';
     else if((type & ATTRIBUTE.type) == 0)      ss<<'*';
     else ss<<'?';
@@ -555,6 +555,7 @@ std::vector<GnssType> GnssType::replaceCompositeSignals(const std::vector<GnssTy
       if((t == GnssType::PHASE) || (t == GnssType::RANGE)) // only phase and code signals are transmitted (what about doppler?)
       {
         GnssType prn = t & GnssType::PRN;
+        // the attribute of phase signals are omitted because the phase biases are assumed to be the same for all attributes of a given frequency
         if(t == GnssType::PHASE)
           types.push_back( t & ~GnssType::ATTRIBUTE );
         else if(t == GnssType::C2DG) {types.push_back(GnssType::C1CG + prn); types.push_back(GnssType::C1WG + prn); types.push_back(GnssType::C2WG + prn);}

@@ -25,9 +25,13 @@
 
 class GnssParameterIndex
 {
+  /// Index of the parameter in the normal equation info
   UInt index;
 public:
+  /** @brief Constructor */
   GnssParameterIndex(UInt idx=NULLINDEX) : index(idx) {}
+
+  /** @brief Checks if the index is valid */
   explicit operator bool() const {return index != NULLINDEX;}
 
   friend class GnssNormalEquationInfo;

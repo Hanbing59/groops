@@ -108,6 +108,7 @@ void GnssParametrizationTecBiases::initParameter(GnssNormalEquationInfo &normalE
           Matrix N(para->trans->signalBias.types.size(), Matrix::SYMMETRIC);
           for(UInt idRecv=0; idRecv<gnss->receivers.size(); idRecv++)
           {
+            // available phase/code types for this receiver-transmitter pair
             std::vector<GnssType> types;
             for(GnssType type : gnss->typesRecvTrans.at(idRecv).at(para->trans->idTrans()))
               if(((type == GnssType::PHASE) || (type == GnssType::RANGE)) && !type.isInList(types))
@@ -115,29 +116,35 @@ void GnssParametrizationTecBiases::initParameter(GnssNormalEquationInfo &normalE
             if(!types.size())
               continue;
 
-            // Composed signals (e.g. C2DG)
+            // original signal types composing the observed signal types (e.g. C2DG)
             std::vector<GnssType> typesTrans;
+            // transformation matrix from original transmitted signal types to observed signal types from this receiver-transmitter pair
             Matrix T;
             gnss->receivers.at(idRecv)->signalComposition(NULLINDEX, types, typesTrans, T);
-
+            // transformation matrix from transmiter signal types to observed signal types from this receiver-transmitter pair
             Matrix A(types.size(), para->trans->signalBias.types.size());
             UInt idx;
             for(UInt i=0; i<typesTrans.size(); i++)
               if(typesTrans.at(i).isInList(para->trans->signalBias.types, idx))
                 axpy(1., T.column(i), A.column(idx));
+            // design matrix for TEC bias parameters
             Vector STEC(types.size());
             for(UInt i=0; i<types.size(); i++)
               STEC(i) = types.at(i).ionosphericFactor();
+            // eliminate TEC bias parameters
             eliminationParameter(STEC, {A});
             rankKUpdate(1., A, N);
           }
 
           // determine eigen values
           Vector eigen = eigenValueDecomposition(N, TRUE);
+          // normalize eigen values
           eigen *= (eigen(eigen.rows()-1) > 1e-4) ? 1./eigen(eigen.rows()-1) : 0.;
+          // count number of zero eigen values
           UInt countZeros = 0;
           while((countZeros < eigen.rows()) && (eigen(countZeros) < 1e-8))
             countZeros++;
+          // the null space basis of N, i.e., the linear combinations of signal biases that are not observable
           para->Bias = N.column(0, countZeros);
           Parallel::broadCast(para->Bias, 0, normalEquationInfo.comm); // to ensure that all nodes use the same matrix
           if(!para->Bias.size())

@@ -2,7 +2,7 @@
 /**
 * @file gnssParametrizationSignalBiases.cpp
 *
-* @brief Signal biases.
+* @brief Parameterization for GNSS signal biases.
 * @see GnssParametrization
 *
 * @author Torsten Mayer-Guerr
@@ -113,6 +113,7 @@ void GnssParametrizationSignalBiases::writeResults(const GnssNormalEquationInfo 
           GnssSignalBias signalBias = trans->signalBias;
           for(UInt idType=0; idType<signalBias.types.size(); idType++)
             if(signalBias.types.at(idType) == GnssType::PHASE)
+              // reduce phase biases to [0, wavelength)
               signalBias.biases.at(idType) = std::remainder(signalBias.biases.at(idType), signalBias.types.at(idType).wavelength());
           fileNameVariableList.setVariable("prn", trans->name());
           writeFileGnssSignalBias(fileNameOutTransmitter(fileNameVariableList).appendBaseName(suffix), signalBias);
@@ -131,6 +132,7 @@ void GnssParametrizationSignalBiases::writeResults(const GnssNormalEquationInfo 
           GnssSignalBias signalBias = recv->signalBias;
           for(UInt idType=0; idType<signalBias.types.size(); idType++)
             if(signalBias.types.at(idType) == GnssType::PHASE)
+              // reduce phase biases to [0, wavelength)
               signalBias.biases.at(idType) = std::remainder(signalBias.biases.at(idType), signalBias.types.at(idType).wavelength());
           fileNameVariableList.setVariable("station", recv->name());
           writeFileGnssSignalBias(fileNameOutReceiver(fileNameVariableList).appendBaseName(suffix), signalBias);

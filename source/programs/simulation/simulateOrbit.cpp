@@ -121,8 +121,9 @@ void SimulateOrbit::run(Config &config, Parallel::CommunicatorPtr /*comm*/)
       readFileSatelliteModel(fileNameSatellite, satellite);
 
     std::vector<Time> times = timeSeries->times();
+    // Start time of the integration
     Time timeStart = times.front();
-    // Use average time step as the sampling interval
+    // Use the average time step as the sampling interval
     Time sampling  = 1./(times.size()-1) * (times.back()-times.front());
     if(!isRegular(times))
       throw(Exception("Time intervals must be regularly spaced."));
@@ -134,7 +135,7 @@ void SimulateOrbit::run(Config &config, Parallel::CommunicatorPtr /*comm*/)
       sampling  = -sampling;
     }
 
-    // read startEpoch from file
+    // read initial state vector of the orbit from file
     // -------------------------
     if(!fileNameStart.empty())
     {

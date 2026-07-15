@@ -2,7 +2,7 @@
 /**
 * @file fileGnssSignalBias.h
 *
-* @brief Code/Phase biases.
+* @brief File for GNSS code/phase biases.
 *
 * @author Torsten Mayer-Guerr
 * @date 2013-08-11
@@ -55,13 +55,16 @@ typedef std::shared_ptr<GnssSignalBias> GnssSignalBiasPtr;
 
 /***** CLASS ***********************************/
 
-/** @brief Code/Phase biases. */
+/** @brief GNSS code/phase biases for a transmitter or receiver. */
 class GnssSignalBias
 {
   public:
+  /// GNSS signal types
   std::vector<GnssType> types;
+  /// GNSS signal biases in meters
   std::vector<Double>   biases;
 
+  /** @brief Gets the signal biases for a list of specified GNSS signal types. */
   Vector compute(const std::vector<GnssType> &types) const;
 };
 
@@ -70,10 +73,10 @@ class GnssSignalBias
 template<> void save(OutArchive &ar, const GnssSignalBias &x);
 template<> void load(InArchive  &ar, GnssSignalBias &x);
 
-/** @brief Write into a GnssSignalBias file. */
+/** @brief Writes the GNSS signal biases of a transmitter or receiver into a GnssSignalBias file. */
 void writeFileGnssSignalBias(const FileName &fileName, const GnssSignalBias &x);
 
-/** @brief Read from a GnssSignalBias file. */
+/** @brief Reads the GNSS signal biases of a transmitter or receiver from a GnssSignalBias file. */
 void readFileGnssSignalBias(const FileName &fileName, GnssSignalBias &x);
 
 /// @}

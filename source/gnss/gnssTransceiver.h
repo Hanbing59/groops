@@ -42,6 +42,7 @@ public:
   UInt           id_;
   /// Platform for the GNSS transceiver
   Platform       platform;
+  /// Signal biases for the GNSS transceiver
   GnssSignalBias signalBias;
 
 public:

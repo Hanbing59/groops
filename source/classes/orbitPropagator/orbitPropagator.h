@@ -46,41 +46,58 @@ typedef std::shared_ptr<OrbitPropagator> OrbitPropagatorPtr;
 
 /***** CLASS ***********************************/
 
-/** @brief Propagate a satellite orbit.
-* An Instance of this class can be created by @ref readConfig. */
+/** @brief Base class for satellite orbit propagators.
+ * An instance of this class can be created by @ref readConfig. */
 class OrbitPropagator
 {
 public:
-  /// Destructor.
+  /** @brief Destructor. */
   virtual ~OrbitPropagator() {}
 
-  /** @brief Propagate orbit arc through force field
-  * @param startEpoch Initial epoch of the orbit
-  * @param sampling Time difference between epochs
-  * @param posCount Total number of epochs in arc (including @a startEpoch)
-  * @param forces Force models to consider
-  * @param satellite Satellite macro model to consider
-  * @param earthRotation for rotations in forces evaluation
-  * @param ephemerides Position of Sun and Moon.
-  * @param timing Show a timer.
-  * @returns OrbitArc arc of size @a posCount, with @a startEpoch at index 0  */
+  /**
+   * @brief Propagates an orbit arc through specified force fields.
+   * @param startEpoch Initial epoch and state vector of the integration
+   * @param sampling Time difference between epochs
+   * @param posCount Total number of integration epochs (including @a startEpoch)
+   * @param forces Force models to be considered
+   * @param satellite Satellite macro model to consider
+   * @param earthRotation Rotations between celestial and terrestrial reference frames
+   * @param ephemerides Planetary ephemerides.
+   * @param timing Whether to show a timer.
+   * @returns OrbitArc Integrated orbit arc of size @a posCount, with @a startEpoch at index 0  */
   virtual OrbitArc integrateArc(const OrbitEpoch &startEpoch, const Time &sampling, UInt posCount, ForcesPtr forces, SatelliteModelPtr satellite,
                                 EarthRotationPtr earthRotation, EphemeridesPtr ephemerides, Bool timing=TRUE) const = 0;
 
-  /** @brief Generic orientation definition in orbital system.
-  * @param time of evaluation
-  * @param position of the satellite
-  * @param velocity of the satellite
-  * @param satellite model of the satellite
-  * @returns Rotary3d satellite orientation, with x as along-track, y cross-track and z perpendicular.  */
+  /**
+   * @brief Generates the rotation from the orbit local system to CRF.
+   *
+   * The orbit local system is defined as follows:
+   * - x-axis, along the velocity vector (tangential)
+   * - y-axis, along the orbit normal vector (normal)
+   * - z-axis, orthogonal to x- and y-axis according to the right-hand rule,
+   *           pointing towards the center of the orbit (radial)
+   * @param time Time of evaluation
+   * @param position Position of the satellite
+   * @param velocity Velocity of the satellite
+   * @param satellite Satellite macro model
+   * @returns Rotary3d Rotation from the orbit local system to CRF. */
   virtual Rotary3d orientation(const Time &time, const Vector3d &position, const Vector3d &velocity, SatelliteModelPtr satellite) const;
 
+  /** @brief Flips the arc, i.e. re-arranges the orbit in the order of reversed epochs. */
   static Arc flip(const Arc &arc);
 
-  /** @brief creates a derived instance of this class. */
+  /** @brief Creates a derived instance of this class. */
   static OrbitPropagatorPtr create(Config &config, const std::string &name);
 
 protected:
+  /**
+   * @brief Computes the accelerations of a satellite at a given epoch.
+   * @param epoch Epoch with time, position and velocity
+   * @param forces Force models to be considered
+   * @param satellite Satellite macro model to consider
+   * @param earthRotation Rotations between celestial and terrestrial reference frames
+   * @param ephemerides Planetary ephemerides.
+   * @returns Acceleration of the satellite in CRF [m/s^2] */
   Vector3d acceleration(const OrbitEpoch &epoch, ForcesPtr forces, SatelliteModelPtr satellite, EarthRotationPtr earthRotation, EphemeridesPtr ephemerides) const;
 };
 

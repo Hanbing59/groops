@@ -60,7 +60,7 @@ public:
   std::function<Rotary3d(const Time &time)>         funcRotationCrf2Trf;
   /// Earth Orientation Parameters (EOP): xp, yp, sp, deltaUT, LOD, X, Y, S
   Matrix                          eop;
-  /// GNSS types used for each receiver and transmitter
+  /// List of GNSS types used for each receiver and transmitter
   std::vector<std::vector<std::vector<GnssType>>> typesRecvTrans;
 
   /**

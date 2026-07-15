@@ -110,17 +110,22 @@ typedef std::shared_ptr<SatelliteModelModule> SatelliteModelModulePtr;
 class SatelliteModel
 {
 public:
+  /** @brief Surface of the satellite. */
   class Surface
   {
   public:
     enum Type {PLATE=0, SPHERE=1, CYLINDER=2, GRACESHADOW=3};
+    /// Type of the surface
     Type     type;
+    /// Normal vector of the surface in the satellite reference frame (SRF)
     Vector3d normal;
+    /// Area of the surface in [m^2]
     Double   area;
     Double   absorptionVisible, absorptionInfrared;
     Double   diffusionVisible,  diffusionInfrared;
     Double   reflexionVisible,  reflexionInfrared;
-    Double   specificHeatCapacity;   //!< 0: no thermal radiation, -1: spontaneous reemission of absorbed radiation [Ws/K/m^2]
+    /// Property about thermal reemission: 0, no thermal radiation; -1: spontaneous reemission of absorbed radiation [Ws/K/m^2]
+    Double   specificHeatCapacity;
 
     Surface();
   };
@@ -130,21 +135,28 @@ public:
   SatelliteModel &operator=(const SatelliteModel &x) = delete; //!< Disallow copying.
   SatelliteModel(const SatelliteModel &x) = delete;            //!< Disallow copy constructor.
 
-  std::string                          satelliteName;      //!< Name of satellite.
+  /// Name of satellite.
+  std::string                          satelliteName;
+  /// Mass of satellite [kg].
   Double                               mass;
+  /// Drag coefficient of satellite.
   Double                               coefficientDrag;
-  Vector3d                             thrustPower;        //!< e.g. of GNSS transmitting antenna in SRF [W].
+  /// Thrust power of satellite, e.g. of GNSS transmitting antenna in SRF [W].
+  Vector3d                             thrustPower;
+  /// Surfaces of satellite.
   std::vector<Surface>                 surfaces;
-  std::vector<SatelliteModelModulePtr> modules;            //!< Adjust the state of satellite.
+  /// Adjust the state of satellite.
+  std::vector<SatelliteModelModulePtr> modules;
 
-  /** @brief Compute new state of satellite.
-  * E.g. Move parts of satellite surfaces, update mass.
-  * @param time Time.
-  * @param position in CRF [m].
-  * @param velocity in CRF [m/s].
-  * @param positionSun in CRF [m].
-  * @param rotSat   Sat -> CRF
-  * @param rotEarth CRF -> TRF */
+  /**
+   * @brief Computes the new state of the satellite.
+   * E.g. moves parts of satellite surfaces, updates its mass.
+   * @param time Time.
+   * @param position in CRF [m].
+   * @param velocity in CRF [m/s].
+   * @param positionSun in CRF [m].
+   * @param rotSat   Sat -> CRF
+   * @param rotEarth CRF -> TRF */
   void changeState(const Time &time, const Vector3d &position, const Vector3d &velocity,
                    const Vector3d &positionSun, const Rotary3d &rotSat, const Rotary3d &rotEarth);
 };
@@ -154,41 +166,43 @@ public:
 template<> void save(OutArchive &ar, const SatelliteModelPtr &x);
 template<> void load(InArchive  &ar, SatelliteModelPtr &x);
 
-/** @brief Write into a SatelliteModel file. */
+/** @brief Write one satellite model into a SatelliteModel file. */
 void writeFileSatelliteModel(const FileName &fileName, const SatelliteModelPtr &x);
 
-/** @brief Write into a SatelliteModel file. */
+/** @brief Write multiple satellite models into a SatelliteModel file. */
 void writeFileSatelliteModel(const FileName &fileName, const std::vector<SatelliteModelPtr> &x);
 
-/** @brief Read from a SatelliteModel file. */
+/** @brief Read one satellite model from a SatelliteModel file. */
 void readFileSatelliteModel(const FileName &fileName, SatelliteModelPtr &x);
 
-/** @brief Read from a SatelliteModel file. */
+/** @brief Read multiple satellite models from a SatelliteModel file. */
 void readFileSatelliteModel(const FileName &fileName, std::vector<SatelliteModelPtr> &x);
 
 /// @}
 
 /***** CLASS ***********************************/
 
-// Internal class
+/** @brief Base class for satellite model modules. */
 class SatelliteModelModule
 {
 public:
   enum Type {SOLARPANEL = 1, ANTENNATHRUST = 2, MASSCHANGE = 3, SPECIFICHEATCAPACITY = 4};
 
   virtual ~SatelliteModelModule() {}
+  /// @brief Returns the type of the module. */
   virtual Type type() const = 0;
   virtual void changeState(SatelliteModel &/*satellite*/, const Time &/*time*/, const Vector3d &/*position*/, const Vector3d &/*velocity*/,
                            const Vector3d &/*positionSun*/, const Rotary3d &/*rotSat*/, const Rotary3d &/*rotEarth*/) {}
   virtual void save(OutArchive &ar) const = 0;
   virtual void load(InArchive  &ar) = 0;
 
-  /** @brief Create an epoch of given type (with new). */
+  /** @brief Create a satellite model module of given type (with new). */
   static SatelliteModelModulePtr create(Type type);
 };
 
 /***********************************************/
 
+/** @brief Solar panel module of a satellite model. */
 class SatelliteModelModuleSolarPanel : public SatelliteModelModule
 {
 public:
@@ -205,10 +219,13 @@ public:
 
 /***********************************************/
 
+/** @brief Antenna thrust module of a satellite model. */
 class SatelliteModelModuleAntennaThrust : public SatelliteModelModule
 {
 public:
+  /// Flag if the thrust is applied or not.
   Bool     applied;
+  /// Thrust vector in the satellite reference frame (SRF)
   Vector3d thrust;
 
   Type type() const {return ANTENNATHRUST;}
@@ -220,6 +237,7 @@ public:
 
 /***********************************************/
 
+/** @brief Mass change module of a satellite model. */
 class SatelliteModelModuleMassChange : public SatelliteModelModule
 {
 public:
@@ -235,6 +253,7 @@ public:
 
 /***********************************************/
 
+/** @brief Specific heat capacity module of a satellite model. */
 class SatelliteModelModuleSetSpecificHeatCapacity : public SatelliteModelModule
 {
 public:

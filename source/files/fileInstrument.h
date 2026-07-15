@@ -110,7 +110,8 @@ public:
                     SATELLITELASERRANGING = -23,
                     METEOROLOGICAL        = -24};
 
-  Time time; //!< Time of Epoch.
+   /// Time of this epoch
+  Time time;
 
   Epoch()                         = default; //!< Constructor
   Epoch(const Epoch &)            = default; //!< Copy constructor
@@ -228,14 +229,14 @@ public:
   Arc(Arc &&) = default;    //!< Move constructor
   virtual ~Arc() = default; //!< Destructor
 
-  /** @brief Constructor from matrix @a A, the first column of which is time in MJD. 
-   * @param A data matrix for epochs. The first column of @a A must contain time in MJD. 
-   * @param type data type of epochs. 
+  /** @brief Constructor from matrix @a A, the first column of which is time in MJD.
+   * @param A data matrix for epochs. The first column of @a A must contain time in MJD.
+   * @param type data type of epochs.
   */
   explicit Arc(const_MatrixSliceRef A, Epoch::Type type=Epoch::EMPTY);
 
   /** @brief Constructor from matrix @a A, the first column of which will be ignored and the time is specified by @a times.
-   * @param times time series for epochs. 
+   * @param times time series for epochs.
    * @param A data matrix for epochs. The first column of @a A will be ignored.
    * @param type data type of epochs.
    * */

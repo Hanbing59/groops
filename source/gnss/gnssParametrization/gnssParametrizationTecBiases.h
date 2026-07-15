@@ -58,12 +58,17 @@ The \file{parameter names}{parameterName} are \verb|<station or prn>:tecBias0<in
 * @see GnssParametrization */
 class GnssParametrizationTecBiases : public GnssParametrizationBase
 {
+  /** @brief Class for a TEC bias parameter. */
   class Parameter
   {
   public:
+    /// Transmitter of this bias parameter
     GnssTransmitterPtr trans;
+    /// Receiver of this bias parameter
     GnssReceiverPtr    recv;
+    /// Index of this bias parameter in the normal equation
     GnssParameterIndex index;
+    /// the linear combinations of signal biases that cannot be estimated from the observations
     Matrix             Bias;
   };
 
@@ -71,22 +76,40 @@ class GnssParametrizationTecBiases : public GnssParametrizationBase
   std::string              name, nameConstraint;
   PlatformSelectorPtr      selectTransmitters, selectReceivers;
   FileName                 fileNameTransmitter, fileNameReceiver;
+  /// Whether assumes a linear dependence on the frequency channel for GLONASS
   Bool                     isLinearBias;
+  /// Whether to apply the zero mean constraint on the bias parameters
   Bool                     applyConstraint;
   Double                   sigmaZeroMean;
-  std::vector<Parameter*>  paraTrans, paraRecv;
-  std::vector<UInt>        idxBiasTrans, idxBiasRecv; // indices in zeroMean matrix
-  Matrix                   zeroMeanDesign;            // zero mean observation equations
+  /// List of parameters for transmitter biases
+  std::vector<Parameter*>  paraTrans;
+  /// List of parameters for receiver biases
+  std::vector<Parameter*>  paraRecv;
+  /// indices in zeroMean matrix
+  std::vector<UInt>        idxBiasTrans, idxBiasRecv;
+  /// zero mean observation equations
+  Matrix                   zeroMeanDesign;
 
 public:
   GnssParametrizationTecBiases(Config &config);
  ~GnssParametrizationTecBiases();
 
+  /** @brief Initializes the bias parameters lists. */
   void   init(Gnss *gnss, Parallel::CommunicatorPtr comm) override;
+
+  /** @brief Initializes the TEC bias parameters in the normal equation. */
   void   initParameter(GnssNormalEquationInfo &normalEquationInfo) override;
+
+  /** @brief Gets the a priori values of the TEC bias parameters. */
   void   aprioriParameter(const GnssNormalEquationInfo &normalEquationInfo, MatrixSliceRef x0) const override;
+
+  /** @brief Forms the design matrix for the TEC bias parameters. */
   void   designMatrix(const GnssNormalEquationInfo &normalEquationInfo, const GnssObservationEquation &eqn, GnssDesignMatrix &A) const override;
+
+  /** @brief Applies the constraints on the TEC bias parameters. */
   void   constraints(const GnssNormalEquationInfo &normalEquationInfo, MatrixDistributed &normals, std::vector<Matrix> &n, Double &lPl, UInt &obsCount) const override;
+
+  /** @brief Updates the TEC bias parameters */
   Double updateParameter(const GnssNormalEquationInfo &normalEquationInfo, const_MatrixSliceRef x, const_MatrixSliceRef Wz) override;
 };
 

@@ -153,8 +153,10 @@ public:
   const GnssTransmitter *transmitter;
 
   // weighted observations (with 1/sigma)
-  std::vector<GnssType> types;            ///< observed types (inclusive composed signals)
-  std::vector<GnssType> typesTransmitted; ///< original transmitted signals (C2XG -> C2LG + C2SG), phases without attribute
+  /// observed types (inclusive composed signals)
+  std::vector<GnssType> types;
+  /// original transmitted signals (C2XG -> C2LG + C2SG), phases without attribute
+  std::vector<GnssType> typesTransmitted;
   UInt   rankDeficit;  ///< from eliminated group parameters
   Vector l;            ///< weighted reduced observations
   Vector sigma;

@@ -94,11 +94,11 @@ void GnssParametrizationIonosphereSTEC::init(Gnss *gnss, Parallel::CommunicatorP
                                             nullptr/*reduceModels*/, idEpoch, FALSE/*homogenize*/, {}/*types*/);
                 varList.setVariable("E", eqn.elevationRecvLocal);
                 recv->observation(idTrans, idEpoch)->sigmaSTEC = exprSigmaSTEC->evaluate(varList);
-              } // for(recv, trans)
-      } // for(idEpoch)
+              }
+      }
       Parallel::barrier(comm);
       timer.loopEnd();
-    } // if(isSigmaSTEC)
+    }
   }
   catch(std::exception &e)
   {
@@ -155,8 +155,9 @@ void GnssParametrizationIonosphereSTEC::observationCorrections(GnssObservationEq
     const     Vector3d piercePoint = eqn.posRecv - (std::sqrt(rk*rk+radiusIono*radiusIono-rRecv*rRecv)+rk) * k;
     const     Rotary3d rotEarth    = Planets::celestial2TerrestrialFrame(eqn.timeRecv);
     const     Vector3d b           = rotEarth.inverseRotate(magnetosphere->magenticFieldVector(eqn.timeRecv, rotEarth.rotate(piercePoint))); // magentic field vector in CRF
+    // second order, in TECU
     const     Double   s           = 1e16*7527.*LIGHT_VELOCITY*inner(b, k);
-    // third order
+    // third order, in TECU^2
     constexpr Double r = 1e16*(2437 * 0.66 * (20.-6.)/(4.55-1.38)*1e-6) * 1e16;
     // bending
     constexpr Double HF2     = 70;                                                                           // F2 layer scale height

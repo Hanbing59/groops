@@ -508,9 +508,11 @@ void axpy(Double c, const_MatrixSliceRef A, MatrixSliceRef B);
 * The @a type of matrices are considered. */
 void matMult(Double c, const_MatrixSliceRef A, const_MatrixSliceRef B, MatrixSliceRef C);
 
-/** @brief rank k update (accumulate normal equations).
-* @a N must be SYMMETRIC.
-* @f[ N += c \cdot (A^TA) @f] */
+/**
+ * @brief Accumulates the design matrix @a A into the normal equations @a N via
+ * @f[ N += c \cdot (A^TA) @f]
+ * in which the normal matrix @a N must be SYMMETRIC.
+ */
 void rankKUpdate(Double c, const_MatrixSliceRef A, MatrixSliceRef N);
 
 /** @brief rank 2k update.
@@ -590,9 +592,13 @@ void solveInPlace(MatrixSliceRef N, MatrixSliceRef B);
 * - if @a N is TRIANGULAR content is unchanged. */
 Matrix solve(MatrixSliceRef N, const_MatrixSliceRef B);
 
-/** @brief Least squares adjustment with multiple right hand sides.
-* Using QR decomposition. Content of A will be destroyed. Residuals are returned in l.
-* @f[ x = (A^TA)^{-1}A^T l @f] */
+/**
+ * @brief Solves the least squares adjustment with multiple right-hand sides
+ * using QR decomposition, i.e.
+ * @f[ x = (A^TA)^{-1}A^T l @f]
+ * @note Content of the design matrix @a A will be destroyed. And residuals
+ * are returned in @a l.
+ */
 Matrix leastSquares(MatrixSliceRef A, MatrixSliceRef l);
 
 /** @brief Observations l reduced by least suqares fit.
@@ -600,17 +606,36 @@ Matrix leastSquares(MatrixSliceRef A, MatrixSliceRef l);
 * @f[ l := (I-A*(A^TA)^{-1}A^T) l @f] */
 void reduceLeastSquaresFit(const_MatrixSliceRef A, MatrixSliceRef l);
 
-/** @brief Eliminate additional parameters from observation equations.
-* Additional parameters are defined by the desigmatrix @a B.
-* Using @a B=QR decomposition.
-* \f[ \bar{A}^T \bar{A} = A^T (I - B (B^T B)^{-1} B^T) A \f] */
+/**
+ * @brief Eliminates a set of additional parameters from the observation equations.
+ * The parameters to be eliminated are defined by the design matrix @a B while other
+ * parameters are defined by the design matrix @a A. In other words, the full observation
+ * equations can be described as \f[ l = A x + B y + e \f]
+ * By projecting the observation equations onto a space orthogonal to the column space
+ * of @a B using the orthogonal projector \f[ P = I - B (B^T B)^{-1} B^T \f]
+ * the design matrix after the elimination becomes
+ * \f[ \bar{A} = P A \f]
+ * As the orthogonal projector is symmetric and idempotent, the normal matrix after
+ * the elimination becomes
+ * \f[ \bar{A}^T \bar{A} = A^T (I - B (B^T B)^{-1} B^T) A \f]
+ */
 void eliminationParameter(MatrixSliceRef B, const std::vector<std::reference_wrapper<Matrix>> &listA);
 
-/** @brief Eliminate additional parameters from observation equations.
-* Additional parameters are defined by the desigmatrix @a B.
-* Using QR decomposition.
-* \f[ \bar{A}^T \bar{A} = A^T (I - B (B^T B)^{-1} B^T) A \f]
-* \f[ \bar{A}^T \bar{l} = A^T (I - B (B^T B)^{-1} B^T) l \f] */
+/**
+ * @brief Eliminates a set of additional parameters from the observation equations.
+ * The parameters to be eliminated are defined by the design matrix @a B while other
+ * parameters are defined by the design matrix @a A. In other words, the full observation
+ * equations can be described as \f[ l = A x + B y + e \f]
+ * By projecting the observation equations onto a space orthogonal to the column space
+ * of @a B using the orthogonal projector \f[ P = I - B (B^T B)^{-1} B^T \f]
+ * the design matrix after the elimination becomes
+ * \f[ \bar{A} = P A \f]
+ * As the orthogonal projector is symmetric and idempotent, the normal matrix after
+ * the elimination becomes
+ * \f[ \bar{A}^T \bar{A} = A^T (I - B (B^T B)^{-1} B^T) A \f]
+ * The right hand side of the normal equations becomes
+ * \f[ \bar{A}^T \bar{l} = A^T (I - B (B^T B)^{-1} B^T) l \f]
+ */
 inline void eliminationParameter(MatrixSliceRef B, Matrix &A, Matrix &l) {eliminationParameter(B, {A, l});}
 
 /***********************************************/

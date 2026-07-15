@@ -2,7 +2,7 @@
 /**
 * @file orbitPropagatorAdamsBashforthMoulton.h
 *
-* @brief Propagate a dynamic orbit using Adams/Bashforth/Moulton algorithm.
+* @brief Propagates a dynamic orbit using the Adams-Bashforth-Moulton algorithm.
 * @see orbitPropagator
 *
 * @author Matthias Ellmer
@@ -32,15 +32,21 @@ given in section 4.2.3 of [1]. Satellite is assumed to be oriented along-track.
 
 /***** CLASS ***********************************/
 
-/** @brief Propagate a dynamic orbit using Adams/Bashforth/Moulton algorithm.
+/** @brief Propagates a dynamic orbit using the Adams-Bashforth-Moulton algorithm.
 * @ingroup orbitPropagatorGroup
 * @see orbitPropagator */
 class OrbitPropagatorAdamsBashforthMoulton : public OrbitPropagator
 {
-  OrbitPropagatorPtr warmup; // Used for generation of warmup values.
+  /// Propagator used for generation of warming-up values.
+  OrbitPropagatorPtr warmup;
+  /// Whether to apply the Adams-Moulton corrector after the Adams-Bashforth prediction.
   Bool   applyMoultonCorrector;
+  /// Order of the Adams-Bashforth-Moulton propagator.
   UInt   order;
-  Vector betaAM, betaAB;
+  /// Coefficients of the Adams-Moulton corrector
+  Vector betaAM;
+  /// Coefficients of the Adams-Bashforth predictor
+  Vector betaAB;
 
 public:
   OrbitPropagatorAdamsBashforthMoulton(Config &config);
@@ -64,8 +70,8 @@ inline OrbitPropagatorAdamsBashforthMoulton::OrbitPropagatorAdamsBashforthMoulto
     readConfig(config, "warmup",                 warmup,                 Config::MUSTSET,  "rungeKutta4", "");
     if(isCreateSchema(config)) return;
 
-    betaAB = coefficients(factorsBashforth(order)); // Adams-Bashforth predictor coefficients
-    betaAM = coefficients(factorsMoulton(order));   // Coefficients for Adams-Moulton corrector
+    betaAB = coefficients(factorsBashforth(order));
+    betaAM = coefficients(factorsMoulton(order));
   }
   catch (std::exception &e)
   {

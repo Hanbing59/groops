@@ -296,7 +296,7 @@ public:
   Int         frequencyNumber() const;
   void        setFrequencyNumber(Int number);
 
-  /** @brief First order STEC influence [m/TECU]. */
+  /** @brief Gets the coefficient of the first-order STEC influence [m/TECU]. */
   Double ionosphericFactor() const;
 
   /** @brief Returns TRUE if calling instance is in the given list. */
@@ -320,8 +320,9 @@ public:
   static Bool allEqual(const std::vector<GnssType> &types1, const std::vector<GnssType> &types2, GnssType mask=GnssType::ALL);
 
   /** @brief Replaces observed (composed) types by original transmitted types.
-  * Code types are replaced according to a set of rules, e.g. C2DG = C1CG - C1WG + C2CW.
-  * Phase types are returned with tracking attributes removed. All other types are removed. */
+   * Only code and phase types are replaced while all other types are omitted.
+   * Code types are replaced according to a set of pre-defined rules, e.g. C2DG = C1CG - C1WG + C2CW.
+   * Phase types are returned with tracking attributes removed. */
   static std::vector<GnssType> replaceCompositeSignals(const std::vector<GnssType> &types);
 
   /** @brief Returns true if a wildcard (*) is used in parts specified by @a mask.

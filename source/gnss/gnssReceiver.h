@@ -117,14 +117,20 @@ public:
   /** @brief Rotation from terrestrial reference frame (TRF) or celestial reference frame (CRF) to left-handed antenna system (usually north, east, up). */
   Transform3d global2antennaFrame(UInt idEpoch) const {return global2antenna.at(idEpoch);}
 
-  /** @brief Transformation matrix for observed (composed) signal types from original transmitted signal types.
-   * E.g. C2DG = C1CG - C1WG + C2WG.
-   * Returns the @a typesTrans and the transformation matrix @a A (dimension: types.size() times typesTrans.size()). */
+  /** @brief Transformation matrix from original transmitted signal types to observed (composed) signal types based on default rules.
+   * E.g., C2DG = C1CG - C1WG + C2CW, C2XG = 0.5*C2SG + 0.5*C2LG.
+   * @param[in] types List of observed (composed) signal types
+   * @param[out] typesTrans List of original transmitted signal types composing the observed signal types
+   * @param[out] A The transformation matrix (dimension: types.size() * typesTrans.size())
+   */
   static void signalCompositionDefault(const std::vector<GnssType> &types, std::vector<GnssType> &typesTrans, Matrix &A);
 
-  /** @brief Transformation matrix for observed (composed) signal types from original transmitted signal types.
-  * E.g. C2DG = C1CG - C1WG + C2WG.
-  * Returns the @a typesTrans and the transformation matrix @a A (dimension: types.size() times typesTrans.size()). */
+  /** @brief Transformation matrix from original transmitted signal types to observed (composed) signal types based on default rules.
+   * E.g., C2DG = C1CG - C1WG + C2CW, C2XG = 0.5*C2SG + 0.5*C2LG.
+   * @param[in] types List of observed (composed) signal types
+   * @param[out] typesTrans List of original transmitted signal types composing the observed signal types
+   * @param[out] A The transformation matrix (dimension: types.size() * typesTrans.size())
+   */
   virtual void signalComposition(UInt /*idEpoch*/, const std::vector<GnssType> &types, std::vector<GnssType> &typesTrans, Matrix &A) const;
 
   /** @brief Gets all observations between the receiver and a given transmitter at a given epoch. */

@@ -89,54 +89,62 @@ typedef std::shared_ptr<GnssParametrization> GnssParametrizationPtr;
 * An instance of this class can be created with @ref readConfig. */
 class GnssParametrization
 {
+  /// List of parametrizations (base classes)
   std::vector<GnssParametrizationBase*> base;
 
 public:
-  /// Constructor.
+  /** @brief Constructor. */
   GnssParametrization(Config &config, const std::string &name);
 
+  /** @brief Destructor. */
  ~GnssParametrization();
 
-  /** @brief init base on transmitters and receivers in @p gnss. */
+  /** @brief Initializes each parametrization. */
   void init(Gnss *gnss, Parallel::CommunicatorPtr comm);
 
   /** @brief How many observations are needed to estimate parameters? */
   void requirements(GnssNormalEquationInfo &normalEquationInfo, std::vector<UInt> &transCount, std::vector<UInt> &transCountEpoch,
                     std::vector<UInt> &recvCount, std::vector<UInt> &recvCountEpoch);
 
-  /** @brief Register parameters in @p normalEquationInfo. */
+  /** @brief Registers parameters in the normal equation for each parametrization. */
   void initParameter(GnssNormalEquationInfo &normalEquationInfo);
 
-  /** @brief Correct observation equations/apply models. */
+  /** @brief Applies corrections to observation equations for each parametrization. */
   void observationCorrections(GnssObservationEquation &eqn) const;
 
-  /** @brief Total parameter vector used as priori Taylor point. */
+  /** @brief Gets the a-priori parameters vector of all parametrizations. */
   Vector aprioriParameter(const GnssNormalEquationInfo &normalEquationInfo) const;
 
-  /** @brief Design matrix for the basic observation equations @p eqn. */
+  /** @brief Calculates the design matrix for the basic observation equations @p eqn. */
   void designMatrix(const GnssNormalEquationInfo &normalEquationInfo, const GnssObservationEquation &eqn, GnssDesignMatrix &A) const;
 
-  /** @brief Add additional (pseudo-) observations equations to the normals for @p idEpoch. */
+  /** @brief Adds constraints to the normal equation for @p idEpoch. */
   void constraintsEpoch(const GnssNormalEquationInfo &normalEquationInfo, UInt idEpoch, MatrixDistributed &normals, std::vector<Matrix> &n, Double &lPl, UInt &obsCount) const;
 
-  /** @brief Add additional (pseudo-) observations equations to the normals. */
+  /** @brief Adds constraints to the normal equation. */
   void constraints(const GnssNormalEquationInfo &normalEquationInfo, MatrixDistributed &normals, std::vector<Matrix> &n, Double &lPl, UInt &obsCount) const;
 
-  /** @brief Resolve ambiguities to integer. */
+  /**
+   * @brief Resolves ambiguities to integers.
+   * @return The maximum sigma
+   */
   Double ambiguityResolve(const GnssNormalEquationInfo &normalEquationInfo, MatrixDistributed &normals, std::vector<Matrix> &n, Double &lPl, UInt &obsCount,
                           const std::vector<Byte> &selectedTransmitters, const std::vector<Byte> &selectedReceivers,
                           const std::function<Vector(const_MatrixSliceRef xFloat, MatrixSliceRef W, const_MatrixSliceRef d, Vector &xInt, Double &sigma)> &searchInteger);
 
-  /** @brief Update the values based on the passed estimated dx. */
+  /**
+   * @brief Updates parameters.
+   * @return The maximum change
+   */
   Double updateParameter(const GnssNormalEquationInfo &normalEquationInfo, const_MatrixSliceRef x, const_MatrixSliceRef Wz);
 
-  /** @brief Update the covariance information passed by @p covariance matrix. */
+  /** @brief Updates the covariance. */
   void updateCovariance(const GnssNormalEquationInfo &normalEquationInfo, const MatrixDistributed &covariance);
 
-  /** @brief Write the output files defined in the parametrizations. */
+  /** @brief Writes the output files for each parametrization. */
   void writeResults(const GnssNormalEquationInfo &normalEquationInfo, const std::string &suffix) const;
 
-  /** @brief creates an derived instance of this class. */
+  /** @brief Creates a derived instance of this class. */
   static GnssParametrizationPtr create(Config &config, const std::string &name) {return GnssParametrizationPtr(new GnssParametrization(config, name));}
 };
 
@@ -158,28 +166,42 @@ template<> Bool readConfig(Config &config, const std::string &name, GnssParametr
 
 /***** CLASS ***********************************/
 
-// Internal class
+/** @brief Base class for GNSS parametrizations. */
 class GnssParametrizationBase
 {
 public:
   virtual ~GnssParametrizationBase() {}
 
+  /** @brief Checks if a given parametrization is enabled. */
   static Bool isEnabled(const GnssNormalEquationInfo &normalEquationInfo, const std::string &name);
 
+  /** @brief Initializes this parametrization. */
   virtual void   init(Gnss */*gnss*/, Parallel::CommunicatorPtr /*comm*/) {}
+
+  /** @brief Defines the requirements for this parametrization. */
   virtual void   requirements(GnssNormalEquationInfo &/*normalEquationInfo*/, std::vector<UInt> &/*transCount*/, std::vector<UInt> &/*transCountEpoch*/,
                               std::vector<UInt> &/*recvCount*/, std::vector<UInt> &/*recvCountEpoch*/) {}
+  /** @brief Initializes the parameters for this parametrization. */
   virtual void   initParameter(GnssNormalEquationInfo &/*normalEquationInfo*/) {}
+  /** @brief Applies observation corrections from this parametrization. */
   virtual void   observationCorrections(GnssObservationEquation &/*eqn*/) const {}
+  /** @brief Gets the a-priori parameters vector of this parametrization. */
   virtual void   aprioriParameter(const GnssNormalEquationInfo &/*normalEquationInfo*/, MatrixSliceRef /*x0*/) const {}
+  /** @brief Constructs the design matrix for this parametrization. */
   virtual void   designMatrix(const GnssNormalEquationInfo &/*normalEquationInfo*/, const GnssObservationEquation &/*eqn*/, GnssDesignMatrix &/*A*/) const {}
+  /** @brief Applies constraints for a specific epoch for this parametrization. */
   virtual void   constraintsEpoch(const GnssNormalEquationInfo &/*normalEquationInfo*/, UInt /*idEpoch*/, MatrixDistributed &/*normals*/, std::vector<Matrix> &/*n*/, Double &/*lPl*/, UInt &/*obsCount*/) const {}
+  /** @brief Applies constraints for this parametrization. */
   virtual void   constraints(const GnssNormalEquationInfo &/*normalEquationInfo*/, MatrixDistributed &/*normals*/, std::vector<Matrix> &/*n*/, Double &/*lPl*/, UInt &/*obsCount*/) const {}
+  /** @brief Resolves ambiguities. */
   virtual Double ambiguityResolve(const GnssNormalEquationInfo &/*normalEquationInfo*/, MatrixDistributed &/*normals*/, std::vector<Matrix> &/*n*/, Double &/*lPl*/, UInt &/*obsCount*/,
                                   const std::vector<Byte> &/*selectedTransmitters*/, const std::vector<Byte> &/*selectedReceivers*/,
                                   const std::function<Vector(const_MatrixSliceRef, MatrixSliceRef, const_MatrixSliceRef, Vector &, Double &)> &) {return 0;}
+  /** @brief Updates the parameters of this parametrization. */
   virtual Double updateParameter(const GnssNormalEquationInfo &/*normalEquationInfo*/, const_MatrixSliceRef /*x*/, const_MatrixSliceRef /*Wz*/) {return 0;}
+  /** @brief Updates the covariance of this parametrization. */
   virtual void   updateCovariance(const GnssNormalEquationInfo &/*normalEquationInfo*/, const MatrixDistributed &/*covariance*/) {}
+  /** @brief Writes the results of this parametrization. */
   virtual void   writeResults(const GnssNormalEquationInfo &/*normalEquationInfo*/, const std::string &/*suffix*/) const {}
 };
 

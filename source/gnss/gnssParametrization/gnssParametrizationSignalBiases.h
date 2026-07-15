@@ -2,7 +2,7 @@
 /**
 * @file gnssParametrizationSignalBiases.h
 *
-* @brief Signal biases.
+* @brief Parameterization for GNSS signal biases.
 * @see GnssParametrization
 *
 * @author Torsten Mayer-Guerr
@@ -54,7 +54,7 @@ All biases for a transmitter/receiver are accumulated and written to the respect
 
 /***** CLASS ***********************************/
 
-/** @brief Signal biases.
+/** @brief A-priori correction for GNSS signal biases.
 * @ingroup gnssParametrizationGroup
 * @see GnssParametrization */
 class GnssParametrizationSignalBiases : public GnssParametrizationBase
@@ -68,7 +68,9 @@ class GnssParametrizationSignalBiases : public GnssParametrizationBase
 public:
   GnssParametrizationSignalBiases(Config &config);
 
+  /** @brief Reads in signal biases from files for the selected transmitters and receivers. */
   void init(Gnss *gnss, Parallel::CommunicatorPtr comm) override;
+  /** @brief Writes out signal biases to files for the selected transmitters and receivers. */
   void writeResults(const GnssNormalEquationInfo &normalEquationInfo, const std::string &suffix) const override;
 };
 

@@ -2,7 +2,7 @@
 /**
 * @file fileGnssSignalBias.cpp
 *
-* @brief Code/Phase biases.
+* @brief File for GNSS code/phase biases.
 *
 * @author Torsten Mayer-Guerr
 * @date 2013-08-11
