@@ -18,13 +18,14 @@
 #ifdef DOCSTRING_GnssParametrization
 static const char *docstringGnssParametrizationSignalBiases = R"(
 \subsection{SignalBiases}\label{gnssParametrizationType:signalBiases}
-Each code and phase observation (e.g \verb|C1C| or \verb|L2W|) contains a bias at transmitter/receiver level
+Each code and phase observation (e.g \verb|C1C| or \verb|L2W|) contains a bias at both the transmitter and receiver level
 \begin{equation}
   [\tau\nu a]_r^s(t) = \dots + \text{bias}[\tau\nu a]^s + \text{bias}[\tau\nu a]_r + \dots
 \end{equation}
-This class provides the apriori model $\M f(\M x_0)$ of eq. \eqref{gnssParametrizationType:model} only.
+This class provides the apriori model $\M f(\M x_0)$ for signal biases in eq. \eqref{gnssParametrizationType:model} only.
 
-The \configFile{inputfileSignalBiasTransmitter/Receiver}{gnssSignalBias} are read
+The \configFile{inputfileSignalBiasTransmitter}{gnssSignalBias} and
+\configFile{inputfileSignalBiasReceiver}{gnssSignalBias} are read
 for each transmitter and receiver. Those file names are interpreted as a template with
 the variable \verb|{prn}| or \verb|{station}| being replaced by transmitter PRNs or receiver station names, respectively.
 (Infos regarding the variables \verb|{prn}| and \verb|{station}| can be found in
@@ -34,13 +35,15 @@ be converted with \program{GnssSinexBias2SignalBias}.
 
 The estimation of the biases is complex due to different linear dependencies, which
 result in rank deficiencies in the system of normal equations.
-For simplification the parametrization for $\Delta\M x$ has been split into:
+For simplification, the estimation for signal biases in $\Delta\M x$ has been split into several parts:
 \configClass{parametrization:codeBiases}{gnssParametrizationType:codeBiases},
 \configClass{parametrization:tecBiases}{gnssParametrizationType:tecBiases}, and
 \configClass{parametrization:ambiguities}{gnssParametrizationType:ambiguities} (including phase biases).
-The file handling on the other hand still remains within this class. Any prior
-values for the transmitter/receiver biases are read with the respective \config{inputfileSignalBiasTransmitter/Receiver}.
-All biases for a transmitter/receiver are accumulated and written to the respective \config{outputfileSignalBiasTransmitter/Receiver}.
+The file handling on the other hand still remains within this parametrization. Any a priori
+values for the transmitter or receiver biases are read from the file specified via the configuration
+\config{inputfileSignalBiasTransmitter} or \config{inputfileSignalBiasReceiver}, respectively.
+All biases for a transmitter or receiver will be accumulated and written to the file specified via the configuration
+\config{outputfileSignalBiasTransmitter} or \config{outputfileSignalBiasReceiver}, respectively.
 )";
 #endif
 

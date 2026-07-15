@@ -34,17 +34,17 @@ The vector $\M x_0$ can be written with
 Any \config{outputfiles} defined in the parametrizations are written with
 \configClass{GnssProcessing:processingStep:writeResults}{gnssProcessingStepType:writeResults}.
 
-Each parametrization (and possible constraint equations) has a \config{name} which enables
-activating/deactivating the estimation of subsets of $\Delta\M x$ with
+Each parametrization (and possible constraint equation) has a \config{name} which enables
+activating/deactivating the estimation of a subset of $\Delta\M x$ with
 \configClass{GnssProcessing:processingStep:selectParametrizations}{gnssProcessingStepType:selectParametrizations}.
-The a priori model $\M f(\M x_0)$ is unaffected and is always reduced.
+In any case, the a priori model $\M f(\M x_0)$ will be unaffected and always reduced.
 
-The model for the different observation types can be described as
+The model for all types of phase and code observations can be described as
 \begin{equation}\label{gnssParametrizationType:gnssFullModel}
 \begin{split}
-  f[\tau\nu a]_r^s(\M x) &= \text{geometry}(\M r_r^s) + \text{clock}^s(t) + \text{clock}_r(t) \\
+  f[\tau\nu a]_r^s(t) &= \text{geometry}(\M r_r^s) + \text{clock}^s(t) + \text{clock}_r(t) \\
                &+ \text{ionosphere}([\tau\nu],t,\M r_r^s) + \text{troposphere}(t,\M r_r^s) \\
-               &+ \text{antenna}[\tau\nu a]^s  + \text{antenna}[\tau\nu a]_r \\
+               &+ \text{antenna}[\tau\nu a]^s(\M r_r^s)  + \text{antenna}[\tau\nu a]_r(\M r_r^s) \\
                &+ \text{bias}[\tau\nu a]^s + \text{bias}[\tau\nu a]_r
                + \lambda[L\nu] N[L\nu a]_r^s + \text{other}(\ldots) + \epsilon[\tau\nu a]_r^s
 \end{split}

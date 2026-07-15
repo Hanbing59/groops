@@ -18,14 +18,14 @@
 #ifdef DOCSTRING_GnssParametrization
 static const char *docstringGnssParametrizationTecBiases = R"(
 \subsection{TecBiases}\label{gnssParametrizationType:tecBiases}
-Each code observation (e.g \verb|C1C| or \verb|C2W|) contains a bias at transmitter/receiver level
+Each code observation (e.g \verb|C1C| or \verb|C2W|) contains a bias at both the transmitter and receiver level
 \begin{equation}
   [C\nu a]_r^s(t) = \dots + \text{bias}[C\nu a]^s + \text{bias}[C\nu a]_r + \ldots
 \end{equation}
 This parametrization represents the linear combination of signal biases
 which completely depend on the STEC parameters. Ignoring these bias combinations would result
 in a biased STEC estimation (all other parameters are nearly unaffected).
-To determine this part of the signal biases
+To determine this part of the signal biases,
 the \configClass{parametrization:ionosphereSTEC}{gnssParametrizationType:ionosphereSTEC} should be constrained.
 Furthermore, additional information about the ionosphere is required from
 \configClass{parametrization:ionosphereVTEC}{gnssParametrizationType:ionosphereVTEC} or
@@ -36,7 +36,7 @@ transmitters and receivers are estimated together.
 The minimum norm nullspace is formulated as zero constraint equations and added with
 a standard deviation of \config{sigmaZeroMeanConstraint}.
 
-The accumulated estimated result can be written to files in
+The accumulated estimated biases can be written to files specified in
 \configClass{parametrization:signalBiases}{gnssParametrizationType:signalBiases}.
 
 The \file{parameter names}{parameterName} are \verb|<station or prn>:tecBias0<index><combi of gnssTypes>::|.
