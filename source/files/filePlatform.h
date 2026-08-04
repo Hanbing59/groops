@@ -87,7 +87,7 @@ public:
     Vector3d    pointStart, pointEnd;
     Time        timeStart, timeEnd;
   };
-
+  // Platform name: PRN for transmitters, marker name for stations, satellite name for LEOs
   std::string                       name;
   std::string                       markerName, markerNumber;
   std::string                       comment;
@@ -161,7 +161,9 @@ public:
   std::string              radome;
   /// rotation from the north, east, up or vehicle system to the antenna system
   Transform3d              local2antennaFrame;
+  /// Antenna definition for phase center patterns
   GnssAntennaDefinitionPtr antennaDef;
+  /// Antenna definition for observation accuracy patterns
   GnssAntennaDefinitionPtr accuracyDef;
 
   Type getType() const override {return TYPE;}

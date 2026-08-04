@@ -69,7 +69,7 @@ GnssReceiverGeneratorLowEarthOrbiter::GnssReceiverGeneratorLowEarthOrbiter(Confi
       readConfig(config, "outputfileTrackBefore",        fileNameTrackBefore,     Config::OPTIONAL, "",     "variables {station}, {prn}, {trackTimeStart}, {trackTimeEnd}, {types}, TEC and MW-like combinations in cycles for each track before cycle slip detection");
       readConfig(config, "outputfileTrackAfter",         fileNameTrackAfter,      Config::OPTIONAL, "",     "variables {station}, {prn}, {trackTimeStart}, {trackTimeEnd}, {types}, TEC and MW-like combinations in cycles for each track after cycle slip detection");
       endSequence(config);
-    } // readConfigSequence(preprocessing)
+    }
     if(isCreateSchema(config)) return;
   }
   catch(std::exception &e)
@@ -206,6 +206,7 @@ void GnssReceiverGeneratorLowEarthOrbiter::preprocessing(Gnss *gnss, Parallel::C
       {
         recv->createTracks(gnss->transmitters, minObsCountPerTrack, {GnssType::L5_G});
         std::vector<Vector3d> posApriori = recv->pos;
+        // estimate initial clock errors from code observations
         recv->pos = recv->estimateInitialClockErrorFromCodeObservations(gnss->transmitters, gnss->funcRotationCrf2Trf, gnss->funcReduceModels, huber, huberPower, TRUE/*estimateKinematicPosition*/);
         // observation equations based on positions from code observations
         GnssReceiver::ObservationEquationList eqn(*recv, gnss->transmitters, gnss->funcRotationCrf2Trf, gnss->funcReduceModels, GnssObservation::RANGE | GnssObservation::PHASE);
@@ -255,17 +256,16 @@ void GnssReceiverGeneratorLowEarthOrbiter::preprocessing(Gnss *gnss, Parallel::C
                       obs->at(idType).sigma0 *= factor;
                       obs->at(idType).sigma  *= factor;
                     }
-                  } // for(idType)
-              } // if(obs)
-            } // for(idTrans, idEpoch)
-        } // if(exprSigmaPhase || exprSigmaCode)
+                  }
+              }
+            }
+        }
       }
       catch(std::exception &e)
       {
         recv->disable(e.what());
       }
-    } // if(recv->isMyRank())
-
+    }
     printPreprocessingInfos("preprocessing statistics after each step", {recv}, !printInfo/*disabledOnly*/, comm);
   }
   catch(std::exception &e)
@@ -294,7 +294,7 @@ void GnssReceiverGeneratorLowEarthOrbiter::simulation(NoiseGeneratorPtr noiseClo
       {
         recv->disable(e.what());
       }
-    } // if(isMaster())
+    }
 
     printPreprocessingInfos("simulation statistics after each step", {recv}, !printInfo/*disabledOnly*/, comm);
   }

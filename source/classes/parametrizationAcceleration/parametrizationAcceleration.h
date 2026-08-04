@@ -52,10 +52,18 @@ typedef std::shared_ptr<ParametrizationAcceleration> ParametrizationAcceleration
 * An Instance of this class can be created by @ref readConfig. */
 class ParametrizationAcceleration
 {
-  UInt parameterCountA, parameterCountB;
-  std::vector<UInt> indexA, indexB;
+  /// Number of unknown parameters
+  UInt parameterCountA;
+  /// Number of unknown arc related parameters
+  UInt parameterCountB;
+  /// Start indexes of unknown parameters of each parametrization
+  std::vector<UInt> indexA;
+  /// Start indexes of unknown arc related parameters of each parametrization
+  std::vector<UInt> indexB;
+  /// List of acceleration parametrizations
   std::vector<ParametrizationAccelerationBase*> parameter;
 
+  /** @brief Counts the number and sets the start indexes of unknown parameters of each parametrization. */
   void computeIndicies();
 
 public:
@@ -76,12 +84,10 @@ public:
   * @return TRUE if parameters are changed */
   Bool setIntervalArc(const Time &timeStart, const Time &timeEnd);
 
-  /** @brief Number of unknown parameters.
-  * This is the column count of the design matrix @a A. */
+  /** @brief Returns the number of unknown parameters, i.e. the column count of the design matrix @a A. */
   UInt parameterCount() const {return parameterCountA;}
 
-  /** @brief Number of unknown arc related parameters.
-  * This is the column count of the design matrix @a B. */
+  /** @brief Returns the number of unknown arc related parameters, i.e. the column count of the design matrix @a B. */
   UInt parameterCountArc() const {return parameterCountB;}
 
   /** @brief Name of parameters.
@@ -92,20 +98,22 @@ public:
   * The names are appended to @a name. */
   void parameterNameArc(std::vector<ParameterName> &name) const;
 
-  /** @brief Partial Derivations of force function.
-  * @param satellite Macro model.
-  * @param time GPS time
-  * @param position in CRF [m]
-  * @param velocity in CRF [m/s]
-  * @param rotSat   Sat -> CRF
-  * @param rotEarth CRF -> TRF
-  * @param ephemerides Position of Sun and Moon
-  * @param[out] A (3 x parameterCount) matrix with partial derivatives in TRF(!) [m/s^2]
-  * @param[out] B (3 x parameterCountArc) matrix with partial derivatives in TRF(!) [m/s^2] */
+  /**
+   * @brief Computes partial derivations of force function w.r.t. the unknown parameters.
+   * @param satellite Macro model.
+   * @param time GPS time
+   * @param position in CRF [m]
+   * @param velocity in CRF [m/s]
+   * @param rotSat   Sat -> CRF
+   * @param rotEarth CRF -> TRF
+   * @param ephemerides Position of Sun and Moon
+   * @param[out] A (3 x parameterCount) matrix with partial derivatives in TRF(!) [m/s^2]
+   * @param[out] B (3 x parameterCountArc) matrix with partial derivatives in TRF(!) [m/s^2]
+   */
   void compute(SatelliteModelPtr satellite, const Time &time, const Vector3d &position, const Vector3d &velocity,
                const Rotary3d &rotSat, const Rotary3d &rotEarth, EphemeridesPtr ephemerides, MatrixSliceRef A, MatrixSliceRef B);
 
-  /** @brief creates an derived instance of this class. */
+  /** @brief Creates an derived instance of this class. */
   static ParametrizationAccelerationPtr create(Config &config, const std::string &name) {return ParametrizationAccelerationPtr(new ParametrizationAcceleration(config, name));}
 };
 
@@ -128,7 +136,7 @@ template<> Bool readConfig(Config &config, const std::string &name, Parametrizat
 
 /***** CLASS ***********************************/
 
-// Internal class
+/** @brief Base class for different accelerations parametrizations. */
 class ParametrizationAccelerationBase
 {
 public:
@@ -137,6 +145,18 @@ virtual Bool isPerArc() const = 0;
 virtual Bool setInterval(const Time &timeStart, const Time &timeEnd) = 0;
 virtual UInt parameterCount() const = 0;
 virtual void parameterName(std::vector<ParameterName> &name) const = 0;
+
+/**
+ * @brief Computes partial derivations of force function w.r.t. the unknown parameters.
+ * @param satellite Macro model.
+ * @param time GPS time
+ * @param position in CRF [m]
+ * @param velocity in CRF [m/s]
+ * @param rotSat   Sat -> CRF
+ * @param rotEarth CRF -> TRF
+ * @param ephemerides Position of Sun and Moon
+ * @param[out] A Matrix with partial derivatives in TRF(!) [m/s^2]
+ */
 virtual void compute(SatelliteModelPtr satellite, const Time &time, const Vector3d &position, const Vector3d &velocity,
                      const Rotary3d &rotSat, const Rotary3d &rotEarth, EphemeridesPtr ephemerides, MatrixSliceRef A) = 0;
 };

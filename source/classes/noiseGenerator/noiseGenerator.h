@@ -56,29 +56,37 @@ NoiseGenerator(Config &config, const std::string &name);
 /// Destructor.
 ~NoiseGenerator();
 
-/** @brief Generalized Matrix containing one or more columns of noise.
-* The type of noise, as well as details like correlations etc. are up to
-* the specific implementation.
-* @param samples number of noise samples to be returned (rows).
-* @param series  number of noise series to be returned (columns)*/
+/**
+ * @brief Generalizes a given number of noise series each contains a given number of samples.
+ * The type of noise, as well as details like correlations etc. are up to
+ * the specific implementation.
+ * @param samples number of noise samples to be returned (rows).
+ * @param series  number of noise series to be returned (columns)
+ * @note If several noise generators are defined, the final noise is the sum of all generated noise series.
+ */
 Matrix noise(UInt samples, UInt series) const;
 
-/** @brief Realization of noise vector.
-* The type of noise, as well as details like correlations etc. are up to
-* the specific implementation.
-* @param samples number of noise samples to be returned. */
+/**
+ * @brief Generalizes one noise series of a given number of samples.
+ * The type of noise, as well as details like correlations etc. are up to
+ * the specific implementation.
+ * @param samples number of noise samples to be returned.
+ */
 Vector noise(UInt samples) const {return noise(samples, 1);}
 
-/** @brief Covariance function of generated noise
- * @param length of the covariance function.
- * @param sampling of the time series in seconds.
- * @return @p length x 2 Matrix with time lag in first column and autocovariance in second */
+/**
+ * @brief Gets the covariance function of generated noise
+ * @param length Length of the covariance function.
+ * @param sampling Sampling of the time series in seconds.
+ * @return @p length x 2 Matrix with time lag in first column and autocovariance in second.
+ */
 Matrix covarianceFunction(UInt length, Double sampling = 1) const;
 
-/** @brief creates an derived instance of this class. */
+/** @brief Creates an derived instance of this class. */
 static NoiseGeneratorPtr create(Config &config, const std::string &name) {return NoiseGeneratorPtr(new NoiseGenerator(config, name));}
 
 private:
+  /// List of noise generators
   std::vector<NoiseGeneratorBase*> noiseGenerator;
 };
 
@@ -100,7 +108,7 @@ template<> Bool readConfig(Config &config, const std::string &name, NoiseGenerat
 
 /***** CLASS ***********************************/
 
-// Internal class
+/** @brief Base class for noise generators. */
 class NoiseGeneratorBase
 {
 public:

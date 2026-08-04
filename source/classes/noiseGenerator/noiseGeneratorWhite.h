@@ -41,6 +41,7 @@ If this value is set to zero a real random value is used as starting value.
 class NoiseGeneratorWhite : public NoiseGeneratorBase
 {
   std::mt19937_64 generator;
+  /// standard deviation
   Double          sigma;
 
 public:

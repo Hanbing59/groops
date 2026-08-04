@@ -48,7 +48,7 @@ typedef std::shared_ptr<PlatformSelector>         PlatformSelectorPtr;
 class Gnss
 {
 public:
-  /// Epochs
+  /// Epochs, in GPS time system
   std::vector<Time>               times;
   /// GNSS transmitters (satellites)
   std::vector<GnssTransmitterPtr> transmitters;
@@ -86,7 +86,8 @@ public:
   Rotary3d rotationCrf2Trf(const Time &time) const;
 
   /**
-   * @brief Synchronizes the transceivers.
+   * @brief Synchronizes receivers' process rank IDs, data, and observation types among all processes and
+   * sets the a-priori signal biases for transmitters and receivers.
    * @param comm Parallel communicator.
    */
   void     synchronizeTransceivers(Parallel::CommunicatorPtr comm);

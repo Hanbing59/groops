@@ -64,28 +64,45 @@ as additional forces.
 
 /***** CLASS ***********************************/
 
-/** @brief Integrate Variational Equations.
+/** @brief Integrates orbit variational equations.
 * @ingroup programsGroup */
 class PreprocessingVariationalEquation
 {
+  /// Satellite macro model
   SatelliteModelPtr              satellite;
+  /// Input orbit file
   InstrumentFile                 orbitFile;
+  /// Input attitude file
   InstrumentFile                 starCameraFile;
+  /// Input accelerometer measurement file, in SRF, in [m/s^2]
   InstrumentFile                 accelerometerFile;
   ForcesPtr                      forces;
   EarthRotationPtr               earthRotation;
   EphemeridesPtr                 ephemerides;
   GravityfieldPtr                gradientfield;
+  /// Input known accelerations parameterization
   ParametrizationAccelerationPtr parameterAcceleration;
+  /// Input known parameters of the acceleration parameterization
   Matrix                         parameter;
+  /// Gravitational constant used for elliptical reference orbit
   Double                         GM;
+  /// Maximum absolute difference between the integrated orbit and the approximate orbit of all arcs
   Double                         maxPosDiff;
+  /// Degree of the polynomial used for integration
   UInt                           integrationDegree;
-  std::vector<Vector>            coeff_g, coeff_tg;
+  /// Coefficients of the polynomial used for integration
+  std::vector<Vector>            coeff_g;
+  std::vector<Vector>            coeff_tg;
 
+  /** @brief Integrates an orbit arc. */
   VariationalEquationArc computeArc(UInt arcNo);
+
+  /** @brief Integrates for satellite positions. */
   Matrix integrate2Position(Double deltaT, const_MatrixSliceRef g) const;
+
+  /** @brief Integrates for satellite velocities. */
   Matrix integrate2Velocity(Double deltaT, const_MatrixSliceRef g) const;
+
   Matrix solve(Double deltaT, const std::vector<Tensor3d> &tensor, const_MatrixSliceRef l) const;
   Matrix refine(Double deltaT, const std::vector<Tensor3d> &tensor, const_MatrixSliceRef x) const;
   Matrix approxInverse(Double deltaT, const std::vector<Tensor3d> &tensor, const_MatrixSliceRef x) const;
@@ -226,8 +243,10 @@ VariationalEquationArc PreprocessingVariationalEquation::computeArc(UInt arcNo)
     AccelerometerArc  accelerometer = accelerometerFile.readArc(arcNo);
     Arc::checkSynchronized({orbit, starCamera, accelerometer});
     std::vector<Time> times         = orbit.times();
+    // Number of epochs in the orbit arc
     const UInt        epochCount    = orbit.size();
     const Double      T             = (times.back()-times.at(0)).seconds();
+    // Average time step in seconds of the input orbit arc
     const Double      deltaT        = T/(epochCount-1);
 
     // computeEarthRotation
@@ -255,6 +274,7 @@ VariationalEquationArc PreprocessingVariationalEquation::computeArc(UInt arcNo)
         force.at(k) += starCamera.at(k).rotary.rotate(accelerometer.at(k).acceleration);
     }
 
+    // Consider known accelerations parameterization
     if(parameterAcceleration)
     {
       parameterAcceleration->setIntervalArc(times.at(0), times.back()+seconds2time(deltaT));
@@ -274,7 +294,7 @@ VariationalEquationArc PreprocessingVariationalEquation::computeArc(UInt arcNo)
       }
     }
 
-    // sort into vector
+    // Accelerations at each orbit epoch, in CRF, in [m/s^2]
     Vector g(3*epochCount);
     for(UInt k=0; k<epochCount; k++)
     {
@@ -285,8 +305,7 @@ VariationalEquationArc PreprocessingVariationalEquation::computeArc(UInt arcNo)
 
     // =============================================
 
-    // approx position
-    // ---------------
+    // approximate satellite positions at each epoch, in CRF, in [m]
     Vector posApprox(3*epochCount);
     for(UInt i=0; i<epochCount; i++)
     {
@@ -296,7 +315,6 @@ VariationalEquationArc PreprocessingVariationalEquation::computeArc(UInt arcNo)
     }
 
     // Elliptical reference orbit
-    // --------------------------
     Vector posRef(3*epochCount);
     Vector velRef(3*epochCount);
     if(GM>0) // useEnke
@@ -354,7 +372,7 @@ VariationalEquationArc PreprocessingVariationalEquation::computeArc(UInt arcNo)
         OrbitEpoch epoch;
         referenceOrbit.orbit(times.at(i), epoch.position, epoch.velocity, epoch.acceleration);
 
-        // acceleration reduced by reference acceleration
+        // total acceleration reduced by reference acceleration
         g(3*i+0) -= epoch.acceleration.x();
         g(3*i+1) -= epoch.acceleration.y();
         g(3*i+2) -= epoch.acceleration.z();
@@ -372,17 +390,17 @@ VariationalEquationArc PreprocessingVariationalEquation::computeArc(UInt arcNo)
 
     // =============================================
 
-    // State matrix: position partial derivatives with respect to boundary values
-    // --------------------------------------------------------------------------
+    // State transition matrix: position partial derivatives with respect to boundary values
     Matrix PosState(3*epochCount, 6);
     for(UInt i=0; i<epochCount; i++)
     {
-      PosState(3*i+0, 0) = PosState(3*i+1, 1) = PosState(3*i+2, 2) = 1.; // d(pos)/d(pos0)
-      PosState(3*i+0, 3) = PosState(3*i+1, 4) = PosState(3*i+2, 5) = i*deltaT/T; //(times.at(i)-times.at(0)).seconds()/T;     // d(pos)/d(vel0)
+       // d(pos)/d(pos0)
+      PosState(3*i+0, 0) = PosState(3*i+1, 1) = PosState(3*i+2, 2) = 1.;
+      // d(pos)/d(vel0), (times.at(i)-times.at(0)).seconds()/T
+      PosState(3*i+0, 3) = PosState(3*i+1, 4) = PosState(3*i+2, 5) = i*deltaT/T;
     }
 
     // Position
-    // --------
     Matrix pos0  = integrate2Position(deltaT, g);
     Vector state = leastSquares(Matrix(PosState), posApprox-posRef-pos0);
     matMult(1, PosState, state, pos0);
@@ -391,7 +409,6 @@ VariationalEquationArc PreprocessingVariationalEquation::computeArc(UInt arcNo)
     // =============================================
 
     // State with indirect effect
-    // --------------------------
     PosState = solve(deltaT, tensor, PosState);
 
     Matrix AccState(3*epochCount, 6);
@@ -409,22 +426,19 @@ VariationalEquationArc PreprocessingVariationalEquation::computeArc(UInt arcNo)
     // =============================================
 
     // Acceleration
-    // ------------
     Matrix acc0 = g;
     Matrix posDelta = pos0 - posApprox;
     for(UInt i=0; i<epochCount; i++)
       matMult(1., tensor.at(i).matrix(), posDelta.row(3*i,3), acc0.row(3*i,3));
 
     // Velocity
-    // --------
     Matrix vel0 = integrate2Velocity(deltaT, acc0);
     for(UInt i=0; i<epochCount; i++)
       for(UInt j=0; j<vel0.columns(); j++)
         axpy(1/T, state.row(3,3), vel0.slice(3*i,j,3,1));
-    vel0 += velRef; // velRef is either 0, or when useEnke, the velocity from equinoctial equations.
+    vel0 += velRef;
 
     // fit to reference orbit
-    // ----------------------
     {
       Vector state = leastSquares(Matrix(PosState), posApprox-pos0);
       matMult(1, PosState, state, pos0);
@@ -444,7 +458,7 @@ VariationalEquationArc PreprocessingVariationalEquation::computeArc(UInt arcNo)
     for(UInt k=0; k<orbit.size(); k++)
       arc.rotSat.at(k) = starCamera.at(k).rotary; // Sat -> CRF
 
-    // for statistics
+    // max. absolute difference between the integrated orbit and the approximate orbit
     maxPosDiff = std::max(maxPosDiff, maxabs(arc.pos0-posApprox));
 
     return arc;
@@ -530,10 +544,11 @@ Matrix PreprocessingVariationalEquation::integrate2Velocity(Double deltaT, const
 
 /***********************************************/
 
-/** @brief Indirect effect (dependency of gravity due to position change)
- * \f$ x = (I-integrate(T))^{-1} l \f$ with the iterative solver BiCGSTAB.
- * 
- * BiCGSTAB (http://en.wikipedia.org/wiki/Biconjugate_gradient_stabilized_method) */
+/**
+ * @brief Solves for the indirect effect (dependency of gravity due to position change), i.e.
+ * \f$ x = (I-integrate(T))^{-1} l \f$ with the iterative solver BiCGSTAB
+ * (http://en.wikipedia.org/wiki/Biconjugate_gradient_stabilized_method).
+ */
 Matrix PreprocessingVariationalEquation::solve(Double deltaT, const std::vector<Tensor3d> &tensor, const_MatrixSliceRef l) const
 {
   try

@@ -38,7 +38,7 @@ class GnssTransceiver
   GnssAntennaDefinition::NoPatternFoundAction noPatternFoundAction;
 
 public:
-  /// ID of the GNSS transceiver, set by Gnss::init()
+  /// Index of the GNSS transceiver, set by Gnss::init()
   UInt           id_;
   /// Platform for the GNSS transceiver
   Platform       platform;
@@ -76,10 +76,10 @@ public:
   std::vector<GnssType> definedTypes(const Time &time) const;
 
   /**
-   * @brief Returns the signal direction-dependent corrections for GNSS range measurements at a given time.
+   * @brief Returns the signal direction-dependent phase center corrections for GNSS range measurements at a given time.
    * Signal biases are included in the correction.
    * @param time Time at which to calculate the correction.
-   * @param azimut Azimuth angle in the antenna frame.
+   * @param azimuth Azimuth angle in the antenna frame.
    * @param elevation Elevation angle in the antenna frame.
    * @param type Vector of GNSS signal types.
    * @return Vector of correction values.
@@ -87,7 +87,7 @@ public:
   Vector antennaVariations(const Time &time, Angle azimut, Angle elevation, const std::vector<GnssType> &type) const;
 
   /**
-   * @brief Returns the signal direction- (and other parameters) dependent standard deviation for GNSS range measurements at a given time.
+   * @brief Returns the signal direction-dependent standard deviation for GNSS range measurements at a given time.
    * @param time Time at which to calculate the accuracy.
    * @param azimut Azimuth angle in the (left-handed) antenna frame.
    * @param elevation Elevation angle in the (left-handed) antenna frame.
@@ -162,6 +162,7 @@ inline Vector GnssTransceiver::antennaVariations(const Time &time, Angle azimut,
   try
   {
     Vector corr(types.size());
+    // Have those signal biases been initialized at this moment?
     corr += signalBias.compute(types);
 
     auto antenna = platform.findEquipment<PlatformGnssAntenna>(time);

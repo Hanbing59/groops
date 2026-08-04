@@ -106,11 +106,11 @@ typedef std::shared_ptr<GnssAntennaDefinition> GnssAntennaDefinitionPtr;
 
 /***** CLASS ***********************************/
 
-/** @brief Antenna center variations.
-* with different patterns for different signals. */
+/** @brief GNSS antenna definition with antenna center offsets and variations for different observation types. */
 class GnssAntennaDefinition
 {
   public:
+  /// Action to be taken if no antenna pattern is found for a given observation type
   enum NoPatternFoundAction
   {
     IGNORE_OBSERVATION,
@@ -118,35 +118,69 @@ class GnssAntennaDefinition
     THROW_EXCEPTION
   };
 
-  std::string name, serial;
+  std::string name;
+  std::string serial;
   std::string radome;
   std::string comment;
+  /// List of azimuth- and elevation-dependent antenna patterns for different observation types
   std::vector<GnssAntennaPattern> patterns;
 
-  /** @brief Returns the separator between parts of the full antenna name. */
+  /// the separator between components of the string ID of the antenna
   static constexpr Char sep = '|';
+
+  /** @brief Returns the string ID of the antenna, which is a concatenation of the given name, serial, and radome. */
   static std::string str(const std::string &name, const std::string &serial, const std::string &radome) {return name+sep+serial+sep+radome;}
+
+  /** @brief Returns the string ID of the antenna, which is a concatenation of its specified name, serial, and radome. */
   std::string str() const {return str(name, serial, radome);}
 
+  /**
+   * @brief Returns the azimuth- and elevation-dependent patterns for the given observation types.
+   * @param azimut Azimuth angle of the signal LOS in the antenna frame, [-PI, PI].
+   * @param elevation Elevation angle of the signal LOS in the antenna frame, [-PI/2, PI/2].
+   * @param types List of observation types.
+   * @param noPatternFoundAction Action to be taken if no antenna pattern is found for a given observation type.
+   * @return Vector of antenna patterns for the given observation types.
+   * @note If no pattern is found for a given observation type, the returned vector will contain NaN for that observation type.
+   */
   Vector antennaVariations(Angle azimut, Angle elevation, const std::vector<GnssType> &types, NoPatternFoundAction noPatternFoundAction) const;
 
-  /** @brief Returns id of pattern matching @p type or of nearest frequency pattern depending on @p noPatternFoundAction. Returns NULLINDEX if there are no patterns. */
+  /**
+   * @brief Returns the index of the antenna pattern matching the given observation @p type.
+   * @param type Observation type for which the antenna pattern is searched.
+   * @param noPatternFoundAction Action to be taken if no antenna pattern is found for the given observation type.
+   * @return Index of the antenna pattern matching the given observation @p type,
+   *         or NULLINDEX if there are no patterns.
+   */
   UInt findAntennaPattern(const GnssType &type, NoPatternFoundAction noPatternFoundAction) const;
 
+  /**
+   * @brief Finds an antenna definition in the given list by its name, serial, and radome.
+   * @param antennaList List of antenna definitions to search.
+   * @param name Name of the antenna to find.
+   * @param serial Serial number of the antenna to find.
+   * @param radome Radome of the antenna to find.
+   * @return Shared pointer to the found antenna definition, or nullptr if not found.
+   * @note In the target list, the first antenna definition matching the given name, serial, and radome will be returned.
+   * And an empty field for name, serial, or radome will match any given value for that field.
+   */
   static GnssAntennaDefinitionPtr find(const std::vector<GnssAntennaDefinitionPtr> &antennaList, const std::string &name, const std::string &serial, const std::string radome);
 };
 
 /***** CLASS ***********************************/
 
-/** @brief Antenna center variations.
-* for one specfic observation type. */
+/** @brief GNSS antenna pattern for a specific observation type, including antenna center offset and azimuth- and elevation-dependent variations. */
 class GnssAntennaPattern
 {
   public:
+  /// observation type for which the antenna pattern is defined
   GnssType type;
-  Vector3d offset;   // phase center relative to antenna reference point
+  /// phase center offset relative to the antenna reference point
+  Vector3d offset;
+  /// zenith angle step size for the pattern grid, in radians
   Angle    dZenit;
-  Matrix   pattern;  // phase center variations (azimut(0..360) x zenit(0..dZenit*rows))
+  /// azimuth- and elevation-dependent pattern grid, with rows corresponding to azimuth angles and columns corresponding to zenith angles
+  Matrix   pattern;
 
   // pattern estimation -> not written to file
   std::vector<std::vector<std::vector<Double>>> residuals;

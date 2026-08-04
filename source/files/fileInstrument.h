@@ -739,7 +739,7 @@ public:
   std::vector<GnssType> obsType;
   /// List of GNSS satellites
   std::vector<GnssType> satellite;
-  /// List of GNSS observations
+  /// List of GNSS observations in the same order as @a obsType and @a satellite
   std::vector<Double>   observation;
   Double                clockError;
 

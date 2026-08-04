@@ -111,8 +111,7 @@ void GnssSimulateReceiver::run(Config &config, Parallel::CommunicatorPtr comm)
       return;
     }
 
-    // count observation types
-    // -----------------------
+    // count observation types for each transmitter
     logInfo<<"types and number of observations:"<<Log::endl;
     std::vector<GnssType> types = gnss.types(~(GnssType::PRN + GnssType::FREQ_NO));
     Vector countTypes(types.size());
@@ -164,7 +163,7 @@ void GnssSimulateReceiver::run(Config &config, Parallel::CommunicatorPtr comm)
               epoch.time       = gnss.times.at(idEpoch);
               epoch.clockError = recv->clockError(idEpoch);
 
-              // get types
+              // get observation types of this receiver at this epoch
               for(UInt idTrans=0; idTrans<recv->idTransmitterSize(idEpoch); idTrans++)
                 if(recv->observation(idTrans, idEpoch) && gnss.transmitters.at(idTrans)->useable(idEpoch))
                   for(UInt idType=0; idType<recv->observation(idTrans, idEpoch)->size(); idType++)
@@ -179,6 +178,7 @@ void GnssSimulateReceiver::run(Config &config, Parallel::CommunicatorPtr comm)
                 {
                   const GnssObservation &obs = *recv->observation(idTrans, idEpoch);
                   const GnssType prn = obs.at(0).type & (GnssType::SYSTEM + GnssType::PRN + GnssType::FREQ_NO);
+                  // index of the first observation type of this PRN in the epoch.obsType list
                   UInt idType = std::distance(epoch.obsType.begin(), std::find(epoch.obsType.begin(), epoch.obsType.end(), prn));
 
                   epoch.satellite.push_back(prn);
@@ -200,8 +200,8 @@ void GnssSimulateReceiver::run(Config &config, Parallel::CommunicatorPtr comm)
 
           fileNameVariableList.setVariable("station", recv->name());
           InstrumentFile::write(fileNameReceiver(fileNameVariableList), arc);
-        } // for(recv)
-    } // if(fileNameReceiver)
+        }
+    }
 
     // ============================
 

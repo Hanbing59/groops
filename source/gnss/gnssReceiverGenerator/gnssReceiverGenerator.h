@@ -135,7 +135,7 @@ class GnssReceiverGeneratorBase
 public:
   virtual ~GnssReceiverGeneratorBase() {}
 
-  /** @brief Initializes the GNSS receiver generator. */
+  /** @brief Initializes GNSS receivers according to a GNSS receiver generator. */
   virtual void init(std::vector<GnssType> simulationTypes, const std::vector<Time> &times, const Time &timeMargin,
                     const std::vector<GnssTransmitterPtr> &transmitters, EarthRotationPtr earthRotation,
                     Parallel::CommunicatorPtr comm, std::vector<GnssReceiverPtr> &receivers) = 0;

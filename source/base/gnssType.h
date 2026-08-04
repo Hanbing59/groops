@@ -290,6 +290,7 @@ public:
   Double      wavelength() const;
   /** @brief Returns the string representation of the GnssType. */
   std::string str() const;
+  /** @brief Returns the PRN string of the GnssType. */
   std::string prnStr() const {return str().substr(3,3);}
   UInt        prn() const    {return type & PRN.type;}
   /** @brief Returns the GLONASS frequency number (9999 if not set). */
@@ -316,13 +317,17 @@ public:
    * @param mask If given, only the parts of the types defined by the mask are compared,
    * for example, to check if two lists contain the same observation types independent
    * of frequency and satellite system, use mask=GnssType::TYPE.
-  */
+   */
   static Bool allEqual(const std::vector<GnssType> &types1, const std::vector<GnssType> &types2, GnssType mask=GnssType::ALL);
 
-  /** @brief Replaces observed (composed) types by original transmitted types.
+  /**
+   * @brief Replaces observed (composed) types by original transmitted types.
    * Only code and phase types are replaced while all other types are omitted.
    * Code types are replaced according to a set of pre-defined rules, e.g. C2DG = C1CG - C1WG + C2CW.
-   * Phase types are returned with tracking attributes removed. */
+   * Phase types are returned with tracking attributes removed.
+   * @param[in] types List of observed types.
+   * @return List of original transmitted types.
+   */
   static std::vector<GnssType> replaceCompositeSignals(const std::vector<GnssType> &types);
 
   /** @brief Returns true if a wildcard (*) is used in parts specified by @a mask.

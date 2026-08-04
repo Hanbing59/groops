@@ -111,7 +111,7 @@ void Gnss::synchronizeTransceivers(Parallel::CommunicatorPtr comm)
 {
   try
   {
-    // distribute process id of receivers
+    // distribute and synchronize receivers process IDs
     // ----------------------------------
     Vector recvProcess(receivers.size());
     for(UInt idRecv=0; idRecv<receivers.size(); idRecv++)
@@ -120,7 +120,7 @@ void Gnss::synchronizeTransceivers(Parallel::CommunicatorPtr comm)
     Parallel::reduceSum(recvProcess, 0, comm);
     Parallel::broadCast(recvProcess, 0, comm);
 
-    // synchronize transceivers
+    // synchronize receivers' data
     // ------------------------
     for(UInt idRecv=0; idRecv<receivers.size(); idRecv++)
       if(recvProcess(idRecv))
@@ -128,7 +128,7 @@ void Gnss::synchronizeTransceivers(Parallel::CommunicatorPtr comm)
       else if(receivers.at(idRecv)->useable())
         receivers.at(idRecv)->disable("");
 
-    // collect observation types
+    // collect and sort observation types for each receiver-transmitter pair
     // -------------------------
     typesRecvTrans.clear();
     typesRecvTrans.resize(receivers.size(), std::vector<std::vector<GnssType>>(transmitters.size()));
@@ -147,22 +147,24 @@ void Gnss::synchronizeTransceivers(Parallel::CommunicatorPtr comm)
           }
           std::sort(typesRecvTrans.at(recv->idRecv()).at(idTrans).begin(), typesRecvTrans.at(recv->idRecv()).at(idTrans).end());
         }
+      // synchronize the list of observation types of each receiver
       if(recv->useable())
         Parallel::broadCast(typesRecvTrans.at(recv->idRecv()), static_cast<UInt>(recvProcess(recv->idRecv())-1), comm);
     }
 
-    // adjust signal biases to available observation types
+    // set a-priori values for signal biases for each transmitter
     // ---------------------------------------------------
     for(auto trans : transmitters)
     {
+      // full list of tracked observation types for this transmitter
       std::vector<GnssType> types;
       for(auto &typesTrans : typesRecvTrans)
         for(GnssType type : typesTrans.at(trans->idTrans()))
           if((type == GnssType::PHASE) || (type == GnssType::RANGE))
             if(!type.isInList(types))
               types.push_back(type + trans->PRN());
+      // Converted to original signal types
       types = GnssType::replaceCompositeSignals(types);
-
       if(types.size())
       {
         trans->signalBias.biases = trans->signalBias.compute(types); // apriori signal bias
@@ -172,6 +174,7 @@ void Gnss::synchronizeTransceivers(Parallel::CommunicatorPtr comm)
 
     for(auto recv : receivers)
     {
+      // full list of tracking observation types for this receiver
       std::vector<GnssType> types;
       for(auto &typesTrans : typesRecvTrans.at(recv->idRecv()))
         for(GnssType type : typesTrans)
@@ -179,7 +182,6 @@ void Gnss::synchronizeTransceivers(Parallel::CommunicatorPtr comm)
             if(!type.isInList(types))
               types.push_back(type & ~GnssType::PRN);
       std::sort(types.begin(), types.end());
-
       if(types.size())
       {
         recv->signalBias.biases = recv->signalBias.compute(types); // apriori signal bias

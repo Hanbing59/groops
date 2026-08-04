@@ -43,17 +43,38 @@ The \file{parameter names}{parameterName} are
 class ParametrizationAccelerationAccBias : public ParametrizationAccelerationBase
 {
   ParametrizationTemporalPtr temporal;
+  /// Number of axes to estimate (1, 2 or 3)
   UInt countAxis;
-  Bool estimateX, estimateY, estimateZ;
+  /// Whether to estimate the x-axis or along-track bias
+  Bool estimateX;
+  /// Whether to estimate the y-axis or cross-track bias
+  Bool estimateY;
+  /// Whether to estimate the z-axis or radial bias
+  Bool estimateZ;
+  /// Whether to apply this parametrization per arc or for the whole time span
   Bool perArc;
 
 public:
+  /** @brief Constructor. */
   ParametrizationAccelerationAccBias(Config &config);
 
   Bool isPerArc() const override {return perArc;}
   Bool setInterval(const Time &timeStart, const Time &timeEnd) override {return temporal->setInterval(timeStart, timeEnd, perArc);}
   UInt parameterCount() const override {return countAxis*temporal->parameterCount();}
+  /** @brief Sets the names of parameters. */
   void parameterName(std::vector<ParameterName> &name) const override;
+
+  /**
+ * @brief Computes partial derivations of the force function w.r.t. accelerometer bias parameters.
+ * @param satellite Satellite macro model.
+ * @param time Current epoch in GPS time
+ * @param position in CRF [m]
+ * @param velocity in CRF [m/s]
+ * @param rotSat   Sat -> CRF
+ * @param rotEarth CRF -> TRF
+ * @param ephemerides Position of Sun and Moon
+ * @param[out] A Matrix with partial derivatives in TRF [m/s^2]
+ */
   void compute(SatelliteModelPtr satellite, const Time &time, const Vector3d &position, const Vector3d &velocity,
                const Rotary3d &rotSat, const Rotary3d &rotEarth, EphemeridesPtr ephemerides, MatrixSliceRef A) override;
 };

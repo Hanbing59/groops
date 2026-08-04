@@ -311,11 +311,13 @@ void GnssReceiver::readObservations(const FileName &fileName, const std::vector<
   try
   {
     GnssReceiverArc arc = InstrumentFile::read(fileName);
+    // Counts each tracked transmitter as one observation
     preprocessingInfo("in file <"+fileName.str()+">", arc.size(),
                       std::accumulate(arc.begin(), arc.end(), UInt(0), [](UInt count, const auto &e){return count+e.satellite.size();}), 0);
 
+    // Epochs of matched observations
     std::vector<Time> observationTimes;
-    // Phase windup correction for each transmitter
+    // Phase windup corrections for each transmitter
     Vector phaseWindup(transmitters.size());
     std::map<GnssType, UInt> removedTypes;
 
@@ -338,11 +340,12 @@ void GnssReceiver::readObservations(const FileName &fileName, const std::vector<
         continue;
 
       // 3) if the processing epoch and the observation epoch match,
-      //    update the processing epoch as the observation epoch.
+      //    update the processing epoch with the observation epoch.
       times.at(idEpoch) = arc.at(arcEpoch).time;
 //    clk.at(idEpoch)   = arc.at(arcEpoch).clockError;
       observationTimes.push_back(arc.at(arcEpoch).time);
 
+      // Possibly tracked GNSS types of this receiver at this epoch
       const std::vector<GnssType> receiverTypes = definedTypes(times.at(idEpoch));
 
       // Counter for number of valid observations at this epoch
@@ -359,6 +362,7 @@ void GnssReceiver::readObservations(const FileName &fileName, const std::vector<
         // Index of this satellite in the transmitters list
         const UInt idTrans = std::distance(transmitters.begin(), std::find_if(transmitters.begin(), transmitters.end(),
                                                                               [&](auto t) {return t->PRN() == satType;}));
+        // Possibly emitted GNSS types of this transmitter at this epoch
         std::vector<GnssType> transmitterTypes;
         if(idTrans < transmitters.size())
           transmitterTypes = transmitters.at(idTrans)->definedTypes(times.at(idEpoch));
@@ -369,6 +373,7 @@ void GnssReceiver::readObservations(const FileName &fileName, const std::vector<
 
         // Valid observations from this satellite at this epoch
         GnssObservation *obs = new GnssObservation();
+        // loop over each observation type for this satellite
         for(; (idType<arc.at(arcEpoch).obsType.size()) && (arc.at(arcEpoch).obsType.at(idType)==satType); idType++, idObs++)
           if((idTrans < transmitters.size()) && arc.at(arcEpoch).observation.at(idObs)  && !std::isnan(arc.at(arcEpoch).observation.at(idObs)))
           {
@@ -414,6 +419,7 @@ void GnssReceiver::readObservations(const FileName &fileName, const std::vector<
                 {
                   use = FALSE;
                   removedTypes[type]++;
+                  // Should we break here?
                 }
 
             if(use)
@@ -439,12 +445,12 @@ void GnssReceiver::readObservations(const FileName &fileName, const std::vector<
         obs->sort();
         std::swap(observations_[idEpoch][idTrans], obs);
         delete obs;
-      } // for(satellite)
+      }
 
       if((observations_.size() <= idEpoch) || (observations_[idEpoch].size() == 0))
         disable(idEpoch, "no useable observations found (elevationCutOff, use/ignoreTypes, defined receiver/transmitter types, missing antenna patterns)");
       idEpoch++;
-    } // for(arcEpoch)
+    }
 
     for(UInt idEpoch=observations_.size(); idEpoch<times.size(); idEpoch++)
       disable(idEpoch, "missing epochs in file");
@@ -476,6 +482,7 @@ void GnssReceiver::simulateZeroObservations(const std::vector<GnssType> &types,
 {
   try
   {
+    // Phase windup corrections for each transmitter
     Vector phaseWindup(transmitters.size());
     for(UInt idEpoch=0; idEpoch<times.size(); idEpoch++)
     {
@@ -484,17 +491,18 @@ void GnssReceiver::simulateZeroObservations(const std::vector<GnssType> &types,
       // create observation class for each satellite
       for(UInt idTrans=0; idTrans<transmitters.size(); idTrans++)
       {
-        // find list of observation types for this satellite
+        // PRN of this satellite
         GnssType satType = transmitters.at(idTrans)->PRN();
         std::vector<GnssType> transmitterTypes;
         if(idTrans < transmitters.size())
           transmitterTypes = transmitters.at(idTrans)->definedTypes(times.at(idEpoch));
 
-        // repair GLONASS frequency number
+        // set the frequency number for GLONASS satellites
         if((satType == GnssType::GLONASS) && transmitterTypes.size() && (transmitterTypes.front().frequencyNumber() != 9999))
           satType.setFrequencyNumber(transmitterTypes.front().frequencyNumber());
 
         GnssObservation *obs = new GnssObservation();
+        // loop over each to-be-simulated observation type for this satellite
         for(UInt idType=0; idType<types.size(); idType++)
           if(types.at(idType) == satType)
           {
@@ -527,9 +535,10 @@ void GnssReceiver::simulateZeroObservations(const std::vector<GnssType> &types,
             if(type.isInList(ignoreType))
               use = FALSE;
 
-            // check against receiver and transmitter types
+            // check against receiver signal types
             if(use && receiverTypes.size() && !type.isInList(receiverTypes))
               use = FALSE;
+            // check against basic transmitter signal types
             if(use && transmitterTypes.size())
             {
               GnssType typeComposed = type;
@@ -541,7 +550,7 @@ void GnssReceiver::simulateZeroObservations(const std::vector<GnssType> &types,
             }
             if(!use)
               continue;
-
+            // add the observation with zero value
             obs->push_back(GnssSingleObservation(type, 0.0));
           }
 
@@ -563,11 +572,11 @@ void GnssReceiver::simulateZeroObservations(const std::vector<GnssType> &types,
         obs->sort();
         std::swap(observations_[idEpoch][idTrans], obs);
         delete obs;
-      } // for(satellite)
+      }
 
       if((observations_.size() <= idEpoch) || (observations_[idEpoch].size() == 0))
         disable(idEpoch, "no observations simulated (elevationCutOff, use/ignoreTypes, defined receiver/transmitter types, missing antenna patterns)");
-    } // for(arcEpoch)
+    }
 
     observationSampling = medianSampling(times).seconds();
     copyObservations2ContinuousMemoryBlock();
@@ -596,16 +605,18 @@ void GnssReceiver::simulateObservations(NoiseGeneratorPtr noiseClock, NoiseGener
       if(useable(idEpoch))
         updateClockError(idEpoch, clock(idEpoch)/LIGHT_VELOCITY);
 
-    // ambiguities
-    // -----------
+    /** @brief A local class for a GNSS ambiguity. */
     class Ambiguity : public GnssAmbiguity
     {
     public:
+      /// The GNSS types of the ambiguities
       std::vector<GnssType> types;
-      Vector                value; // ambiguities in meter
+      /// ambiguity values, in meter
+      Vector                value;
 
       explicit Ambiguity(GnssTrack *track, const Vector &value) : GnssAmbiguity(track), types(track->types), value(value) {}
 
+      /** @brief Returns the ambiguity values of the given GNSS types. */
       Vector ambiguities(const std::vector<GnssType> &types) const override
       {
         Vector value(types.size());
@@ -619,18 +630,21 @@ void GnssReceiver::simulateObservations(NoiseGeneratorPtr noiseClock, NoiseGener
 
     // init random phase ambiguities
     std::random_device randomDevice;
-    std::mt19937_64 generator; // for ambiguities
+    // pseudo-random generator for ambiguities
+    std::mt19937_64 generator;
     generator.seed(randomDevice());
+    // uniform distribution for ambiguities between -10000 and 10000 cycles
     auto ambiguityRandom = std::uniform_int_distribution<Int>(-10000, 10000);
 
     createTracks(transmitters, minObsCountPerTrack, {});
+    // simulate ambiguities for each track
     for(auto &track : tracks)
     {
       Vector value(track->types.size());
       for(UInt i=0; i<value.size(); i++)
         if(track->types.at(i) == GnssType::PHASE)
           value(i) = wavelengthFactor*track->types.at(i).wavelength() * ambiguityRandom(generator); // cycles to meter
-      new Ambiguity(track.get(), value); // track is owner of ambiguity
+      new Ambiguity(track.get(), value);
     }
 
     // reduced observations
@@ -652,7 +666,8 @@ void GnssReceiver::simulateObservations(NoiseGeneratorPtr noiseClock, NoiseGener
       if(!typesTrans.size())
         continue;
 
-      const Matrix eps = noiseObs->noise(times.size(), typesTrans.size()); // obs noise
+      // obs noises for each epoch and each observation type of this transmitter
+      const Matrix eps = noiseObs->noise(times.size(), typesTrans.size());
       UInt idx;
       for(UInt idEpoch=0; idEpoch<times.size(); idEpoch++)
         if(observation(idTrans, idEpoch))
@@ -680,7 +695,7 @@ std::vector<Vector3d> GnssReceiver::estimateInitialClockErrorFromCodeObservation
 {
   try
   {
-    // count systems
+    // count available GNSS systems and RANGE observation types
     std::vector<GnssType> systems, types;
     for(UInt idTrans=0; idTrans<transmitters.size(); idTrans++)
       for(UInt idEpoch=0; idEpoch<idEpochSize(); idEpoch++)
@@ -704,13 +719,15 @@ std::vector<Vector3d> GnssReceiver::estimateInitialClockErrorFromCodeObservation
       std::vector<Matrix> listlFull, listAFull, listBFull;
       std::vector<UInt>   listEpoch;
       std::vector<std::vector<UInt>> listIndexFull;
+      // maximum number of satellites tracked at any epoch
       UInt maxSat = 0;
       for(UInt idEpoch=0; idEpoch<idEpochSize(); idEpoch++)
         if(useable(idEpoch))
         {
-          // count observations and setup observation equations for each transmitter
+          // number of observations at this epoch
           UInt                                 obsCount = 0;
           std::vector<GnssObservationEquation> eqnList;
+          // count observations and setup observation equations for each transmitter
           for(UInt idTrans=0; idTrans<idTransmitterSize(idEpoch); idTrans++)
           {
             const GnssObservation *obs = observation(idTrans, idEpoch);
@@ -723,7 +740,7 @@ std::vector<Vector3d> GnssReceiver::estimateInitialClockErrorFromCodeObservation
             }
           }
 
-          if(!obsCount || (eqnList.size() <= countEpochParameters)) // if not enough observations -> delete epoch
+          if(!obsCount || (eqnList.size() <= countEpochParameters))
           {
             disable(idEpoch, "not enough observations to estimate clock errors");
             continue;
@@ -731,8 +748,8 @@ std::vector<Vector3d> GnssReceiver::estimateInitialClockErrorFromCodeObservation
 
           // setup combined observation equations
           Vector l(obsCount);
-          Matrix A(obsCount, countStaticParameters); // pos (if static) + intersystem clock bias (per system)
-          Matrix B(obsCount, countEpochParameters);  // epoch: clock + pos (if kinematic)
+          Matrix A(obsCount, countStaticParameters);
+          Matrix B(obsCount, countEpochParameters);
 
           listIndexFull.push_back({0});
           UInt idx = 0;
@@ -766,7 +783,7 @@ std::vector<Vector3d> GnssReceiver::estimateInitialClockErrorFromCodeObservation
             listl.push_back(l);
             listA.push_back(A);
           }
-        } // for(idEpoch)
+        }
 
       if(!listEpoch.size() || (maxSat < countStaticParameters+countEpochParameters))
       {
@@ -776,6 +793,8 @@ std::vector<Vector3d> GnssReceiver::estimateInitialClockErrorFromCodeObservation
 
       // estimate static parameters
       // --------------------------
+      // Position change if estimated statically or maximum position change of all epochs
+      // if estimated kinematically in distance after each iteration
       Double maxPosDiff = 0;
       if(countStaticParameters)
       {
@@ -821,9 +840,9 @@ std::vector<Vector3d> GnssReceiver::estimateInitialClockErrorFromCodeObservation
 
       // check convergence
       // -----------------
-      if(maxPosDiff < 5.0) // pos change smaller than 5 m
+      if(maxPosDiff < 5.0)
         break;
-    } // for(iter)
+    }
 
     preprocessingInfo("estimateInitialClockErrorFromCodeObservations()");
 
@@ -846,8 +865,9 @@ void GnssReceiver::disableEpochsWithGrossCodeObservationOutliers(ObservationEqua
     for(UInt idEpoch=0; idEpoch<idEpochSize(); idEpoch++)
       if(useable(idEpoch))
       {
-        // delete all observations to a satellite at epoch if they contain a gross code outlier
+        // number of outliers at this epoch
         UInt outlierCount = 0;
+        // number of observed satellites at this epoch
         UInt count   = 0;
         for(UInt idTrans=0; idTrans<idTransmitterSize(idEpoch); idTrans++)
           if(observation(idTrans, idEpoch))
@@ -856,6 +876,7 @@ void GnssReceiver::disableEpochsWithGrossCodeObservationOutliers(ObservationEqua
             for(UInt idType=0; idType<eqn.types.size(); idType++)
               if((eqn.types.at(idType) == GnssType::RANGE) && (std::fabs(eqn.l.at(idType)) >= threshold))
               {
+                // delete all observations to a satellite at an epoch if they contain a gross code outlier
                 deleteObservation(idTrans, idEpoch);
                 outlierCount++;
                 break;
@@ -890,7 +911,7 @@ void GnssReceiver::createTracks(const std::vector<GnssTransmitterPtr> &transmitt
       {
         // find continuous track
         // ---------------------
-        // find first epoch of the track
+        // find the first epoch with observations of this track
         while((idEpochStart < idEpochSize()) && !observation(idTrans, idEpochStart))
           idEpochStart++;
 
@@ -898,44 +919,47 @@ void GnssReceiver::createTracks(const std::vector<GnssTransmitterPtr> &transmitt
         if(!obs) // at end?
           break;
 
-        // phase and range types of start epoch
+        // phase and range types of the start epoch
         std::vector<GnssType> types;
         for(UInt idType= 0; idType <obs->size(); idType++)
           if((obs->at(idType).type == GnssType::PHASE) || (obs->at(idType).type == GnssType::RANGE))
             types.push_back(obs->at(idType).type);
         std::sort(types.begin(), types.end());
 
-        // find last epoch of the track
+        // number of epochs in this track
         UInt countEpoch = 1;
+        // find the last epoch of this track
         UInt idEpochEnd = idEpochStart;
         for(UInt idEpoch=idEpochStart+1; idEpoch<idEpochSize(); idEpoch++)
         {
           GnssObservation *obs = observation(idTrans, idEpoch);
           if(obs)
           {
+            // Gap longer than 1.5 times the observation sampling ends the track
             if((times.at(idEpoch)-times.at(idEpochEnd)).seconds() > 1.5*observationSampling)
               break;
 
-            // test types
+            // phase and range types of this epoch
             std::vector<GnssType> typesNew;
             for(UInt idType=0; idType<obs->size(); idType++)
               if((obs->at(idType).type == GnssType::PHASE) || (obs->at(idType).type == GnssType::RANGE))
                 typesNew.push_back(obs->at(idType).type);
+            // Different set of phase and range types ends the track
             if(!GnssType::allEqual(types, typesNew))
               break;
 
             idEpochEnd = idEpoch;
             countEpoch++;
           }
-        } // for(idEpoch)
+        }
 
-        // need phases at two frequencies (additional to extraTypes)
+        // list of frequencies of phase types in this track (additional to extraTypes)
         std::vector<GnssType> typeFrequencies;
         for(GnssType type : types)
           if((type == GnssType::PHASE) && !type.isInList(extraTypes) && !type.isInList(typeFrequencies))
             typeFrequencies.push_back(type & GnssType::FREQUENCY);
 
-        // define track
+        // a valid track
         if((countEpoch >= minObsCountPerTrack) && (typeFrequencies.size() >= 2))
         {
           tracks.push_back(std::make_shared<GnssTrack>(this, transmitters.at(idTrans).get(), idEpochStart, idEpochEnd, types));
@@ -946,6 +970,7 @@ void GnssReceiver::createTracks(const std::vector<GnssTransmitterPtr> &transmitt
         else
         {
           for(UInt idEpoch=idEpochStart; idEpoch<=idEpochEnd; idEpoch++)
+          {
             deleteObservation(idTrans, idEpoch);
         }
 
@@ -1038,20 +1063,20 @@ GnssTrackPtr GnssReceiver::splitTrack(ObservationEquationList &eqnList, GnssTrac
 {
   try
   {
-    // new track
     const UInt idTrans = track->transmitter->idTrans();
+    // the newly created track by splitting the old track
     GnssTrackPtr trackNew = std::make_shared<GnssTrack>(track->receiver, track->transmitter, idEpochSplit, track->idEpochEnd, track->types);
     tracks.push_back(trackNew);
 
     // shorten old track
     track->idEpochEnd = idEpochSplit-1;
 
-    // connect observations to new track
+    // connect observations to the new track
     for(UInt idEpoch=trackNew->idEpochStart; idEpoch<=trackNew->idEpochEnd; idEpoch++)
       if(observation(idTrans, idEpoch))
         observation(idTrans, idEpoch)->track = trackNew.get();
 
-    // connect observation equations to new track
+    // connect observation equations to the new track
     for(UInt idEpoch=trackNew->idEpochStart; idEpoch<=trackNew->idEpochEnd; idEpoch++)
       if(observation(idTrans, idEpoch))
         eqnList(idTrans, idEpoch)->track = trackNew.get();
@@ -1071,7 +1096,7 @@ void GnssReceiver::linearCombinations(ObservationEquationList &eqnList, GnssTrac
 {
   try
   {
-    // available observations for this track
+    // available phase observation types in this track
     typesPhase.clear();
     idEpochs.clear();
     for(UInt idEpoch=track->idEpochStart; idEpoch<=track->idEpochEnd; idEpoch++)
@@ -1200,12 +1225,15 @@ void GnssReceiver::writeTracks(const FileName &fileName, ObservationEquationList
         rangeAndTec(eqnList, track->transmitter->idTrans(), idEpochs, typesPhase, range, tec);
 
         Matrix A(idEpochs.size(), 2+combinations.columns());
+        // 1st column: TEC in cycles
         axpy(1./cycles2tecu, tec, A.column(1));
+        // 2nd column: linear combinations
         copy(combinations, A.column(2, combinations.columns()));
 
         std::vector<Time> timesTrack;
         for(UInt idEpoch : idEpochs)
           timesTrack.push_back(times.at(idEpoch));
+        // remove the column-wise median for 2nd and subsequent columns (columns 1..n)
         for(UInt i=1; i<A.columns(); i++)
           A.column(i) -= median(A.column(i));
 
@@ -1258,17 +1286,23 @@ void GnssReceiver::cycleSlipsDetection(ObservationEquationList &eqnList, GnssTra
   {
     // determine Melbourne-Wuebbena-like linear combinations
     // -----------------------------------------------------
+    // list of phase types in this track (additional to extraTypes)
     std::vector<GnssType> typesPhase;
+    // epochs of this track with valid observations
     std::vector<UInt>     idEpochs;
+    // the computed linear combinations of the observations in this track
     Matrix                combinations;
+    // conversion factor from cycles to TEC
     Double                cycles2tecu;
     linearCombinations(eqnList, track, extraTypes, typesPhase, idEpochs, combinations, cycles2tecu);
+    // marking cycle slips at epochs
     Vector slips(idEpochs.size());
     for(UInt k=0; k<combinations.columns(); k++)
     {
       const Vector smoothed = totalVariationDenoising(combinations.column(k), lambda);
       const Double bias     = computeBias(smoothed, 0.01);
-      for(UInt i=1; i<idEpochs.size(); i++) // cycle slip if denoised difference exceeds 3/4 cycle
+      // cycle slip if the rounded epoch-to-epoch difference of two consecutive unbiased denoised values exceeds 3/4 cycle
+      for(UInt i=1; i<idEpochs.size(); i++)
         if(std::fabs(std::round(smoothed(i)-bias) - std::round(smoothed(i-1)-bias)) > 0.75)
           slips(i) = TRUE;
     }
@@ -1277,7 +1311,8 @@ void GnssReceiver::cycleSlipsDetection(ObservationEquationList &eqnList, GnssTra
       if(slips(i))
       {
         splitTrack(eqnList, track, idEpochs.at(i));
-        idEpochs.resize(i); // shorten data to new track length
+        // the original track is shortened to the epoch before the splitting epoch
+        idEpochs.resize(i);
       }
 
     // find cycle slips in TEC based on moving window over autoregressive model residuals
@@ -1418,6 +1453,7 @@ void GnssReceiver::cycleSlipsDetection(ObservationEquationList &eqnList, GnssTra
         }
       }
 
+      // list of epochs where a cycle slip is detected
       std::vector<UInt> slips;
       for(UInt i = 0; i < slipsDetect.size(); i++)
         if(slipsDetect.at(i) == 3)
@@ -1426,11 +1462,12 @@ void GnssReceiver::cycleSlipsDetection(ObservationEquationList &eqnList, GnssTra
       for(UInt i=slips.size(); i-->0;)
       {
         splitTrack(eqnList, track, idEpochs.at(slips.at(i)));
-        idEpochs.resize(slips.at(i)); // shorten data to new track length
+        // shorten the original track to the epoch before the splitting epoch
+        idEpochs.resize(slips.at(i));
       }
     }
 
-    // repair GPS L5 cycle slips
+    // repair cycle slips in the extra phase types (e.g. GPS L5)
     // -------------------------
     for(GnssType type : extraTypes)
     {
@@ -1646,7 +1683,7 @@ void GnssReceiver::trackOutlierDetection(const ObservationEquationList &eqnList,
             observation(idTrans, listEpoch.at(i))->at(types.at(idType)).observation -= b(idType);
           }
         }
-    } // for(track)
+    }
   }
   catch(std::exception &e)
   {

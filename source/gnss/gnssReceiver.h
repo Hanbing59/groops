@@ -51,7 +51,7 @@ public:
   Bool                      isEarthFixed_;
   /// Processing epochs
   std::vector<Time>         times;
-  /// Clock errors
+  /// Clock errors for each epoch (i.e., receiver clock time - system time), in seconds
   std::vector<Double>       clk;
   /// Regularized marker position in global system
   std::vector<Vector3d>     pos, vel;
@@ -85,7 +85,7 @@ public:
   /** @brief Disables a given epoch for a given reason. */
   void disable(UInt idEpoch, const std::string &reason) override;
 
-  /** @brief Disable the receiver for a given reason, which will be recorded in the member variable @a disableReason. */
+  /** @brief Disables the receiver for a given reason, which will be recorded in the member variable @a disableReason. */
   void disable(const std::string &reason) override;
 
   Bool isMyRank() const {return isMyRank_;}
@@ -94,7 +94,7 @@ public:
   * error = clock time - system time [s] */
   Double clockError(UInt idEpoch) const {return clk.at(idEpoch);}
 
-  /** @brief Accumulates the clock error by a given amount.
+  /** @brief Adds to the clock error by a given amount.
   * error = clock time - system time [s] */
   void updateClockError(UInt idEpoch, Double deltaClock) {clk.at(idEpoch) += deltaClock;}
 
@@ -152,26 +152,29 @@ public:
 
   // Preprocessing
   // -------------
-  /** @brief Compute observation equations (reduced observations). */
+  /** @brief Observation equations (reduced observations) for a GNSS receiver to a set of GNSS transmitters at all epochs. */
   class ObservationEquationList
   {
+    /// All observation equations of this receiver
     std::vector<std::vector<std::unique_ptr<GnssObservationEquation>>> eqn;
 
   public:
     ObservationEquationList() {}
+    /** @brief Constructor. */
     ObservationEquationList(const GnssReceiver &receiver, const std::vector<GnssTransmitterPtr> &transmitters,
                             const std::function<Rotary3d(const Time &time)> &rotationCrf2Trf,
                             const std::function<void(GnssObservationEquation &eqn)> &reduceModels, GnssObservation::Group group);
 
+    /** @brief Returns the observation equation for a given transmitter and epoch. */
     GnssObservationEquation *operator()(UInt idTrans, UInt idEpoch) const;
   };
 
   /**
    * @brief Adds a preprocessing information message into the preprocessing informations list @a preprocessingInfos.
-   * @param info The information message to add.
-   * @param countEpochs The number of epochs.
-   * @param countObservations The number of observations.
-   * @param countTracks The number of tracks.
+   * @param[in] info The information message to add.
+   * @param[in] countEpochs If not specified, the number of usable epochs.
+   * @param[in] countObservations If not specified, the sum of the number of tracked transmitters with usable observations at each epoch.
+   * @param[in] countTracks If not specified, the number of tracks.
    */
   void preprocessingInfo(const std::string &info, UInt countEpochs=NULLINDEX, UInt countObservations=NULLINDEX, UInt countTracks=NULLINDEX);
 
@@ -193,7 +196,14 @@ public:
                         const Time &timeMargin, Angle elevationCutOff, const std::vector<GnssType> &useType, const std::vector<GnssType> &ignoreType, GnssObservation::Group group);
 
   /**
-   * @brief Simulates observations.
+   * @brief Simulates observations with zero values.
+   * @param types A vector of GNSS signal types to simulate.
+   * @param transmitters A vector of shared pointers to GNSS transmitters.
+   * @param rotationCrf2Trf A function that returns the rotation from celestial reference frame (CRF) to terrestrial reference frame (TRF) at a given time.
+   * @param elevationCutOff The elevation cut-off angle for observations.
+   * @param useType If specified, only those GNSS signal types would be simulated
+   * @param ignoreType A vector of GNSS signal types to ignore.
+   * @param group The group of observations to simulate.
    * @note The member variable @a times must be set.
    * @note Receiver and Transmitter positions, orientations, ... must be initialized beforehand.
    * @note Observations that don't match the types from receiver and transmitter definition will be deleted.
@@ -205,8 +215,16 @@ public:
 
   /**
    * @brief Simulates observations.
+   * @param noiseClock A shared pointer to a noise generator for the receiver clock.
+   * @param noiseObs A shared pointer to a noise generator for the observations.
+   * @param transmitters A vector of shared pointers to GNSS transmitters.
+   * @param rotationCrf2Trf A function that returns the rotation from CRF to TRF at a given time.
+   * @param reduceModels A function that reduces the observation equations.
+   * @param minObsCountPerTrack The minimum number of epochs per track.
+   * @param elevationTrackMinimum The minimum elevation angle for a track to be considered valid.
+   * @param group The group of observations to simulate.
    * @note The member variable @a times must be set.
-   * @note Receiver and Transmitter positions, orientations, ... must be initialized beforehand.
+   * @note Receiver and transmitters' positions, orientations, ... must be initialized beforehand.
    * @note Observations that don't match the types from receiver and transmitter definition will be deleted.
    */
   void simulateObservations(NoiseGeneratorPtr noiseClock, NoiseGeneratorPtr noiseObs,
@@ -216,7 +234,7 @@ public:
                             UInt minObsCountPerTrack, Angle elevationTrackMinimum, GnssObservation::Group group);
 
   /**
-   * @brief Estimates coarse receiver clock errors from a code-based Precise Point Positioning (PPP) solution.
+   * @brief Estimates coarse receiver clock errors based on a code-based Precise Point Positioning (PPP) solution.
    * @param transmitters A vector of shared pointers to GNSS transmitters.
    * @param rotationCrf2Trf A function that returns the rotation from celestial reference frame (CRF) to terrestrial reference frame (TRF) at a given time.
    * @param reduceModels A function that reduces the observation equations.
@@ -231,22 +249,25 @@ public:
                                                                       Double huber, Double huberPower, Bool estimateKinematicPosition);
 
   /**
-   * @brief Disables epochs if reduced code observations @p eqn exceed @p threshold (e.g. 100+ km for code cycle slips).
+   * @brief Disables epochs if their ratios of outliers exceed a given @p outlierRatio.
    * @param eqn The observation equations containing the reduced observations.
-   * @param threshold The threshold for detecting gross code outliers.
-   * @param outlierRatio The ratio of observed satellites that must exceed the threshold to disable the epoch.
-   * @note Epochs for which a ratio of @p outlierRatio or more of the observed satellites have gross code outliers will be disabled.
+   * @param[in] threshold The threshold (e.g. 100+ km for code cycle slips) for detecting gross code observations for each transmitter.
+   * @param[in] outlierRatio The maximum ratio of outlier satellites allowed for an epoch to be considered usable.
+   * @note For a transmitter at a given epoch, if any of its reduced code observations exceeds the threshold,
+   *       all observations of that transmitter at that epoch will be deleted and the transmitter will be considered
+   *       as an outlier for that epoch.
    */
   void disableEpochsWithGrossCodeObservationOutliers(ObservationEquationList &eqn, Double threshold, Double outlierRatio=0.5);
 
   /**
-   * @brief Creates tracks with continuously identical phase observations.
-   * @param transmitters A vector of shared pointers to GNSS transmitters.
-   * @param minObsCountPerTrack The minimum number of observations per track.
-   * @param extraTypes A vector of extra GNSS signal types to include in the tracks.
+   * @brief Creates tracks with continuously identical set of phase and range observations.
+   * @param[in] transmitters A vector of shared pointers to GNSS transmitters.
+   * @param[in] minObsCountPerTrack The minimum number of epochs per track.
+   * @param[in] extraTypes A vector of extra GNSS phase types to include in the tracks.
    *
-   * @note Tracks may contain gaps but must contain observations of at least @p minObsCountPerTrack epochs.
-   * @note Extra types are included (e.g. L5*G), but tracks must have at least two others phases at different frequencies.
+   * @note Tracks may contain short gaps but must contain observations of at least @p minObsCountPerTrack epochs.
+   * @note Extra phase types are included (e.g. L5*G), but tracks must have at
+   *       least two other phases at different frequencies.
    */
   void createTracks(const std::vector<GnssTransmitterPtr> &transmitters, UInt minObsCountPerTrack, const std::vector<GnssType> &extraTypes={});
 
@@ -256,36 +277,45 @@ public:
   /** @brief Removes tracks that never exceed @p minElevation (in radian). */
   void removeLowElevationTracks(ObservationEquationList &eqn, Angle minElevation);
 
-  /** @brief Split a @p track at @p idEpochSplit into two new tracks.
-  * Shortens the old track and returns the new track. Updates observation and observation equation @p eqn track assignments. */
+  /**
+   * @brief Splits a @p track at epoch @p idEpochSplit into two new tracks.
+   * After splitting, the original track would be shortened and the new track would be returned.
+   * Track affiliations in observations and observation equations would be updated accordingly.
+   * @param eqn The observation equations containing the reduced observations.
+   * @param track The track to split.
+   * @param idEpochSplit The epoch at which to split the track.
+   * @return The new track created by splitting the old track, i.e. the one starting at @p idEpochSplit and
+   *         ending at the original track's end epoch.
+   */
   GnssTrackPtr splitTrack(ObservationEquationList &eqn, GnssTrackPtr track, UInt idEpochSplit);
 
   /**
    * @brief Computes Melbourne-Wuebbena-like linear combinations for a given track.
    * @param eqnList The list of observation equations.
    * @param track The track for which to compute combinations.
-   * @param extraTypes The extra GNSS signal types to include.
-   * @param typesPhase The phase types found in the track.
-   * @param idEpochs The epochs in the track.
-   * @param combinations The resulting combinations.
-   * @param cycles2tecu The conversion factor from cycles to TECU.
+   * @param[in] extraTypes The extra GNSS signal types to include.
+   * @param[out] typesPhase Phase types found in this track, not including the extra types.
+   * @param[out] idEpochs Epochs in this track.
+   * @param[out] combinations The resulting combinations.
+   * @param[out] cycles2tecu The conversion factor from cycles to TECU.
    */
   void linearCombinations(ObservationEquationList &eqnList, GnssTrackPtr track, const std::vector<GnssType> &extraTypes,
                           std::vector<GnssType> &typesPhase, std::vector<UInt> &idEpochs, Matrix &combinations, Double &cycles2tecu) const;
 
-  /** @brief Computes range and TEC from phase observations.
-   * @param eqnList The list of observation equations.
-   * @param idTrans The ID of the transmitter.
-   * @param idEpochs The epochs for which to compute range and TEC.
-   * @param typesPhase The phase types found in the track.
-   * @param range The resulting range.
-   * @param tec The resulting TEC.
+  /**
+   * @brief Estimates range and TEC from phase observations.
+   * @param[in] eqnList The list of observation equations.
+   * @param[in] idTrans The ID of the transmitter.
+   * @param[in] idEpochs The epochs for which to compute range and TEC.
+   * @param[in] typesPhase The phase types found in the track.
+   * @param[out] range The resulting range.
+   * @param[out] tec The resulting TEC.
    */
   void rangeAndTec(ObservationEquationList &eqnList, UInt idTrans, const std::vector<UInt> &idEpochs,
                    const std::vector<GnssType> &typesPhase, Vector &range, Vector &tec) const;
 
   /**
-   * @brief Writes tracks to a file.
+   * @brief Writes phase tracks to a file.
    * @param fileName The name of the file to write tracks to.
    * @param eqnList The list of observation equations.
    * @param extraTypes The extra GNSS signal types to include.
@@ -300,34 +330,45 @@ public:
    * In a second step, smoothness of TEC is evaluated using a moving window peak/outlier detection based on AR model residuals.
    *
    * @param eqnList Observation equations (reduced observations).
-   * @param minObsCountPerTrack Removes tracks that don't have enough observations.
+   * @param[in] minObsCountPerTrack Minimum number of usable epochs for a valid track.
    * @param lambda Regularization parameter (@see @a totalVariationDenoising) (e.g. @p lambda = 5 for GPS ground stations).
-   * @param windowSize Size of the moving window used for the TEC smoothness evaluation. If 0, TEC is not analyzed.
+   * @param[in] windowSize Size of the moving window used for the TEC smoothness evaluation. If 0, TEC is not analyzed.
    * @param tecSigmaFactor Factor applied to moving standard deviation of AR model residuals to determine threshold for peak/outlier detection.
    * @param extraTypes GPS L5 observations are handled separately due to temporal changing bias.*/
   void cycleSlipsDetection(ObservationEquationList &eqnList, UInt minObsCountPerTrack, Double lambda, UInt windowSize, Double tecSigmaFactor, const std::vector<GnssType> &extraTypes={});
 
   /**
-   * @brief Splits tracks at detected cycle slips based on all Melbourne-Wuebbena like combinations.
+   * @brief Splits the track at detected cycle slips based on all Melbourne-Wuebbena like combinations.
+   * @param eqnList Observation equations (reduced observations).
+   * @param track The track to analyze.
+   * @param lambda Regularization parameter (@see @a totalVariationDenoising) (e.g. @p lambda = 5 for GPS ground stations).
+   * @param[in] windowSize Size of the moving window used for the TEC smoothness evaluation. If 0, TEC is not analyzed.
+   * @param tecSigmaFactor Factor applied to moving standard deviation of AR model residuals to determine threshold for peak/outlier detection.
+   * @param extraTypes GPS L5 observations are handled separately due to temporal changing bias.
    */
   void cycleSlipsDetection(ObservationEquationList &eqnList, GnssTrackPtr track, Double lambda, UInt windowSize, Double tecSigmaFactor, const std::vector<GnssType> &extraTypes);
 
   /**
-   * @brief Repairs cycle slip differences at same frequencies (e.g. between L1CG and L1WG), which allows to reduce the number of integer ambiguities.
-   * @param eqnList Observation equations (reduced observations). */
+   * @brief Repairs cycle slip differences between different phase types of
+   * the same frequency, like between L1CG and L1WG, which allows to
+   * reduce the number of integer ambiguities.
+   * @param eqnList Observation equations (reduced observations).
+   */
   void cycleSlipsRepairAtSameFrequency(ObservationEquationList &eqnList);
 
   /**
-   * @brief Track outlier detection based on robust least squares estimation.
+   * @brief Detects outliers in tracks based on robust least squares estimation.
    * @param eqn Observation equations (reduced observations).
-   * @param ignoreTypes Types of observations to ignore.
+   * @param ignoreTypes Types of observations to be ignored (downweighted) in the estimation.
    * @param huber Huber loss parameter.
    * @param huberPower Power for the Huber loss function.
+   * @note Outliers are not disabled or deleted but downweighted.
    */
   void trackOutlierDetection(const ObservationEquationList &eqn, const std::vector<GnssType> &ignoreTypes, Double huber, Double huberPower);
 
   /**
    * @brief Total variation denoising, which solves the total variation regularized least-squares problem.
+   *
    * Laurent Condat. A Direct Algorithm for 1D Total Variation Denoising. IEEE Signal Processing Letters,
    * Institute of Electrical and Electronics Engineers, 2013, 20 (11), pp.1054-1057. DOI: 10.1109/LSP.2013.2278339.
    *
@@ -341,14 +382,17 @@ public:
 
 class GnssAmbiguity;
 
-/** @brief Class for GNSS tracking phases and ranges along epochs. */
+/** @brief Class for a GNSS track. */
 class GnssTrack
 {
 public:
   GnssReceiver         *receiver;
   GnssTransmitter      *transmitter;
-  UInt                  idEpochStart, idEpochEnd;
+  UInt                  idEpochStart;
+  UInt                  idEpochEnd;
+  /// GNSS signal types of the observations in the track
   std::vector<GnssType> types;
+  /// Pointer to the ambiguity associated with this track
   GnssAmbiguity        *ambiguity;
 
   /** @brief Constructor. */
@@ -357,7 +401,7 @@ public:
   /** @brief Destructor. */
  ~GnssTrack();
 
-  /** @brief Returns the number of observations in the track. */
+  /** @brief Returns the number of usable epochs in the track. */
   UInt countObservations() const;
 
   /**
@@ -369,7 +413,7 @@ public:
 
 /***** CLASS ***********************************/
 
-/** @brief Abstract class for GNSS ambiguities. */
+/** @brief Abstract class for a GNSS ambiguity. */
 class GnssAmbiguity
 {
 public:

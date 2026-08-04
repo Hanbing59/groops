@@ -23,6 +23,7 @@
 * Angle is converted from/to degrees in input/output. */
 class Angle
 {
+  /// Value of the angle in radians.
   Double value;
 
 public:
@@ -30,7 +31,8 @@ public:
 
   Angle &operator=(Double x) {value=x; return *this;} //!< Assignment.
 
-  operator Double() const {return value;} //!< Cast to Double.
+  /// Returns the value of the angle in radians.
+  operator Double() const {return value;}
 
   Angle &operator*= (Double c)       {value *= c;       return *this;}
   Angle &operator+= (const Angle &x) {value += x.value; return *this;}

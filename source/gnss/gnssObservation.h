@@ -31,12 +31,18 @@ class GnssTransmitter;
 class GnssSingleObservation
 {
 public:
-  GnssType type;        ///< GNSS measurement types (phases, pseudo ranges, ...)
-  Double   observation; ///< original observations
-  Double   residuals;   ///< estimated postfit residuals
-  Double   redundancy;  ///< partial redundancies of the least squares adjustment
-  Double   sigma0;      ///< expected (apriori) accuracies
-  Double   sigma;       ///< modified accuracies, especially for downweighted outliers
+  /// GNSS measurement types (phases, pseudo ranges, ...)
+  GnssType type;
+  /// original observations
+  Double   observation;
+  /// estimated postfit residuals
+  Double   residuals;
+  /// partial redundancies of the least squares adjustment
+  Double   redundancy;
+  /// a priori accuracy, including signal direction-dependent STD
+  Double   sigma0;
+  /// modified accuracy (especially for downweighted observations), initially set to the same value as sigma0
+  Double   sigma;
 
   /** @brief Constructor. */
   GnssSingleObservation() {}
@@ -66,7 +72,7 @@ public:
   /// use all available observations
   constexpr static Group ALL   = ~0;
 
-  /// phase track
+  /// the phase track to which this observation belongs
   GnssTrack *track;
   /// the total STEC
   Double     STEC;
@@ -134,8 +140,7 @@ public:
 
 /***** CLASS ***********************************/
 
-/** @brief Reduced observations (obs - computed) and design matrix.
-* Between one receiver and one transmitter at one epoch. */
+/** @brief Observation equations (reduced observations) for one GNSS receiver to one GNSS transmitter at one epoch. */
 class GnssObservationEquation
 {
 public:
@@ -147,19 +152,24 @@ public:
         idxSTEC       = 9,
         idxUnit       = 10};
 
+  /// index of the epoch
   UInt  idEpoch;
-  const GnssTrack       *track; // phase ambiguities
+  // the associated track
+  const GnssTrack       *track;
   const GnssReceiver    *receiver;
   const GnssTransmitter *transmitter;
 
-  // weighted observations (with 1/sigma)
-  /// observed types (inclusive composed signals)
+  /// observed types, may include composite signal types
   std::vector<GnssType> types;
-  /// original transmitted signals (C2XG -> C2LG + C2SG), phases without attribute
+  /// list of basic transmitted signals constituting the composite signal types in @a types
   std::vector<GnssType> typesTransmitted;
-  UInt   rankDeficit;  ///< from eliminated group parameters
-  Vector l;            ///< weighted reduced observations
+  /// from eliminated group parameters
+  UInt   rankDeficit;
+  /// weighted reduced observations, i.e. scaled by 1/sigma
+  Vector l;
+  /// modified accuracies, initially set to the same value as sigma0
   Vector sigma;
+  /// a priori accuracies
   Vector sigma0;
 
   // design matrix
@@ -183,6 +193,9 @@ public:
                           UInt idEpoch, Bool homogenize, const std::vector<GnssType> &types)
     {compute(observation, receiver, transmitter, rotationCrf2Trf, reduceModels, idEpoch, homogenize, types);}
 
+  /**
+   * @brief Computes the observation equations (reduced observations) for a given receiver and transmitter at one epoch.
+   */
   void compute(const GnssObservation &observation, const GnssReceiver &receiver, const GnssTransmitter &transmitter,
                const std::function<Rotary3d(const Time &time)> &rotationCrf2Trf, const std::function<void(GnssObservationEquation &eqn)> &reduceModels,
                UInt idEpoch, Bool homogenize, const std::vector<GnssType> &types);

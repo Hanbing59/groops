@@ -29,13 +29,13 @@
  * @param timeRecv The signal reception time at the receiver with receiver clock correction applied.
  * @param posRecv The receiver position at the signal reception time in CRF.
  * @param velRecv The receiver velocity at the signal reception time in CRF.
- * @param azimutRecv Azimuth angle of the transmitter in the receiver antenna frame.
- * @param elevationRecv Elevation angle of the transmitter in the receiver antenna frame.
+ * @param azimutRecv Azimuth angle of the transmitter in the receiver antenna frame, [-PI, PI].
+ * @param elevationRecv Elevation angle of the transmitter in the receiver antenna frame, [-PI/2, PI/2].
  * @param timeTrans The signal transmission time at the transmitter with receiver clock correction applied.
  * @param posTrans The transmitter position at the signal transmission time in CRF.
  * @param velTrans The transmitter velocity at the signal transmission time in CRF.
- * @param azimutTrans Azimuth angle of the receiver in the transmitter antenna frame.
- * @param elevationTrans Elevation angle of the receiver in the transmitter antenna frame.
+ * @param azimutTrans Azimuth angle of the receiver in the transmitter antenna frame, [-PI, PI].
+ * @param elevationTrans Elevation angle of the receiver in the transmitter antenna frame, [-PI/2, PI/2].
  * @param k The line-of-sight vector from transmitter to receiver in CRF.
  * @param kRecv The line-of-sight vector from receiver to transmitter in the receiver antenna frame.
  * @param kTrans The line-of-sight vector from transmitter to receiver in the transmitter antenna frame.
@@ -107,12 +107,12 @@ Bool GnssObservation::init(const GnssReceiver &receiver, const GnssTransmitter &
 
     if(elevationRecv < elevationCutOff)
       return FALSE;
-
+    // the list of (composite) obs types at this epoch
     std::vector<GnssType> types(size());
     for(UInt i=0; i<size(); i++)
       types.at(i) = at(i).type;
 
-    // Composed signals (e.g. C2DG)
+    // the list of (basic) obs types at this epoch
     std::vector<GnssType> typesTransmitted;
     Matrix T;
     receiver.signalComposition(idEpoch, types, typesTransmitted, T);
@@ -129,15 +129,16 @@ Bool GnssObservation::init(const GnssReceiver &receiver, const GnssTransmitter &
       at(i).sigma0 = sigma0(i);
       // temporarily, use `sigma` for ACV pattern NAN check
       at(i).sigma  = acvRecv(i);
+      // for transmitter ACV patterns, converting from basic obs types to composite obs types
       for(UInt k=0; k<T.columns(); k++)
         if(T(i,k))
           at(i).sigma  += T(i,k) * acvTrans(k);
     }
     obs.erase(std::remove_if(obs.begin(), obs.end(), [](const auto &x)
     {
-      // remove Phase/Range for a-priori accuracy <= 0
+      // remove phase/range obs with a-priori accuracy <= 0
       if(((x.type == GnssType::PHASE) || (x.type == GnssType::RANGE)) && (x.sigma0 <= 0)) return TRUE;
-      // remove observations with NAN values in sigma0 or sigma (ACV pattern)
+      // remove observations with NAN values for a priori accuracy or phase center pattern correction
       return std::isnan(x.sigma0) || std::isnan(x.sigma);
     }), obs.end());
     obs.shrink_to_fit();
