@@ -58,7 +58,7 @@ void GnssSinexBias2SignalBias::run(Config &config, Parallel::CommunicatorPtr /*c
     readConfig(config, "inputfileSinexBias",           fileNameSinexBias,     Config::MUSTSET,  "", "");
     readConfig(config, "inputfilePrn2FrequencyNumber", fileNamePrnSvn2FreqNo, Config::OPTIONAL, "{groopsDataDir}/gnss/transmitter/glonassPrnSvn2FrequencyNumber.txt", "matrix with columns: GLONASS PRN, SVN, mjdStart, mjdEnd, frequencyNumber");
     readConfig(config, "identifier",                   identifiers,           Config::OPTIONAL, "", "(empty = all) satellite PRN, e.g. G23 or E05");
-    readConfig(config, "time",                         time,                  Config::OPTIONAL, "", "if entries exist for different time periods");
+    readConfig(config, "time",                         time,                  Config::OPTIONAL, "", "If specified, only entries within the given time period are considered");
     if(isCreateSchema(config)) return;
 
     // ==================================================

@@ -49,8 +49,8 @@ GnssReceiverGeneratorLowEarthOrbiter::GnssReceiverGeneratorLowEarthOrbiter(Confi
     readConfig(config, "inputfileObservations",        fileNameObs,             Config::OPTIONAL,  "gnssReceiver_{loopTime:%D}.dat", "");
     readConfig(config, "inputfileOrbit",               fileNameOrbit,           Config::MUSTSET,  "",     "approximate positions");
     readConfig(config, "inputfileStarCamera",          fileNameStarCamera,      Config::MUSTSET,  "",     "satellite attitude");
-    readConfig(config, "sigmaFactorPhase",             exprSigmaPhase,          Config::OPTIONAL, "",     "PHASE: factor = f(FREQ, ELE, SNR, ROTI, dTEc, IONOINDEX)");
-    readConfig(config, "sigmaFactorCode",              exprSigmaCode,           Config::OPTIONAL, "",     "CODE: factor = f(FREQ, ELE, SNR, ROTI, dTEc, IONOINDEX)");
+    readConfig(config, "sigmaFactorPhase",             exprSigmaPhase,          Config::OPTIONAL, "",     "PHASE: factor = f(FREQ, SNR, ROTI)");
+    readConfig(config, "sigmaFactorCode",              exprSigmaCode,           Config::OPTIONAL, "",     "CODE: factor = f(FREQ, SNR, ROTI)");
     readConfig(config, "supportsIntegerAmbiguities",   integerAmbiguities,      Config::DEFAULT,  "1",    "receiver tracks full cycle integer ambiguities");
     readConfig(config, "wavelengthFactor",             wavelengthFactor,        Config::DEFAULT,  "1.",   "factor to account for half-wavelength observations (collected by codeless squaring techniques)");
     readConfig(config, "useType",                      useType,                 Config::OPTIONAL, "",     "only use observations that match any of these patterns");
