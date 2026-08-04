@@ -41,9 +41,9 @@ The integrated orbit should be fitted to orbit/position observations afterwards 
 \program{PreprocessingVariationalEquationOrbitFit} and/or \program{PreprocessingVariationalEquationSstFit}.
 They apply a least squares adjustment by estimating some satellite parameters (e.g. an accelerometer bias).
 If the fitted orbit is too far away from the original \configFile{inputfileOrbit}{instrument}(i.e., the orbit observations), it means the linearization may not be
-accurate enough. In this case, \program{PreprocessingVariationalEquation} should be run again with the fitted orbit 
+accurate enough. In this case, \program{PreprocessingVariationalEquation} should be run again with the fitted orbit
 (e.g., \configFile{outputfileOrbit}{instrument} from \program{PreprocessingVariationalEquationOrbitFit})
-served as \configFile{inputfileOrbit}{instrument} and introducing the \config{estimatedParameters} 
+served as \configFile{inputfileOrbit}{instrument} and introducing the \config{estimatedParameters}
 estimated during the orbit fitting (e.g., \configFile{outputfileSolution}{matrix} from \program{PreprocessingVariationalEquationOrbitFit})
 as additional forces.
 )";
