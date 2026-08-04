@@ -18,6 +18,11 @@
             "miDebuggerPath": "/usr/bin/gdb",
             "setupCommands": [
                 {
+                    "description": "Clear debuginfod URLs",
+                    "text": "set debuginfod urls ",
+                    "ignoreFailures": true
+                },
+                {
                     "description": "Enable pretty-printing for gdb",
                     "text": "-enable-pretty-printing",
                     "ignoreFailures": true
@@ -56,6 +61,11 @@
             "MIMode": "gdb",
             "miDebuggerPath": "/usr/bin/gdb",
             "setupCommands": [
+                {
+                    "description": "Clear debuginfod URLs",
+                    "text": "set debuginfod urls ",
+                    "ignoreFailures": true
+                },
                 {
                     "description": "Enable pretty-printing for gdb",
                     "text": "-enable-pretty-printing",
