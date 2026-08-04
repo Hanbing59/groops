@@ -112,24 +112,49 @@ void GnssProcessing::run(Config &config, Parallel::CommunicatorPtr comm)
     receiverGenerator    = nullptr;
     gnssParametrization  = nullptr;
     earthRotation        = nullptr;
-    logInfo<<"  transmitter: "<<std::count_if(gnss->transmitters.begin(), gnss->transmitters.end(), [](auto t) {return t->useable();})<<Log::endl;
-    logInfo<<"  receiver:    "<<std::count_if(gnss->receivers.begin(),    gnss->receivers.end(),    [](auto r) {return r->useable();})<<Log::endl;
-    if(!std::any_of(gnss->transmitters.begin(), gnss->transmitters.end(), [](auto trans){return trans->useable();}))
+
+    // Get sorted list of useable transmitters
+    std::set<GnssType> transmitterSet;
+    for(auto trans : gnss->transmitters)
+      if(trans->useable())
+        transmitterSet.insert(trans->PRN());
+    if(!transmitterSet.size())
     {
       logWarningOnce<<times.front().dateTimeStr()<<" - "<<times.back().dateTimeStr()<<": no useable transmitters"<<Log::endl;
       return;
     }
-    if(!std::any_of(gnss->receivers.begin(), gnss->receivers.end(), [](auto recv){return recv->useable();}))
+    std::stringstream ss;
+    ss<<"transmitters: "<<transmitterSet.size();
+    for(auto it = transmitterSet.begin(); it != transmitterSet.end(); ++it)
+      ss<<" "<<it->prnStr();
+    logInfo<<ss.str()<<Log::endl;
+
+    // Get sorted list of useable receivers
+    std::set<std::string> receiverSet;
+    for(auto recv : gnss->receivers)
+      if(recv->useable())
+        receiverSet.insert(recv->name());
+    if(!receiverSet.size())
     {
       logWarningOnce<<times.front().dateTimeStr()<<" - "<<times.back().dateTimeStr()<<": no useable receivers"<<Log::endl;
       return;
     }
+    ss.str("");
+    ss<<"receivers   : "<<receiverSet.size();
+    for(auto it = receiverSet.begin(); it != receiverSet.end(); ++it)
+      ss<<" "<<*it;
+    logInfo<<ss.str()<<Log::endl;
 
-    // count observation types
-    // -----------------------
-    logInfo<<"types and number of observations:"<<Log::endl;
-    std::vector<GnssType> types = gnss->types(~(GnssType::PRN + GnssType::FREQ_NO));
-    Vector countTypes(types.size());
+    // count observation types for each transmitter
+    logInfo<<"types and numbers of observations:"<<Log::endl;
+    std::vector<GnssType> allTypes = gnss->types(~(GnssType::PRN + GnssType::FREQ_NO));
+    // Count only RANGE and PHASE observations
+    std::vector<GnssType> types;
+    for(const auto &type : allTypes)
+      if((type & GnssType::TYPE) == GnssType::RANGE || (type & GnssType::TYPE) == GnssType::PHASE)
+        types.push_back(type);
+    std::vector<GnssType> satellites(transmitterSet.begin(), transmitterSet.end());
+    Vector countTypes(satellites.size() * types.size());
     for(auto recv : gnss->receivers)
       if(recv->isMyRank())
         for(UInt idEpoch=0; idEpoch<recv->idEpochSize(); idEpoch++)
@@ -137,19 +162,58 @@ void GnssProcessing::run(Config &config, Parallel::CommunicatorPtr comm)
           {
             auto obs = recv->observation(idTrans, idEpoch);
             if(obs)
+            {
+              // Get satellite PRN of this transmitter. Is the idTrans can be indexed into the satellites vector?
+              GnssType satPrn = gnss->transmitters.at(idTrans)->PRN();
+              UInt idSat = std::distance(satellites.begin(), std::find(satellites.begin(), satellites.end(), satPrn));
+              if(idSat >= satellites.size())
+                continue;
+
               for(UInt idType=0; idType<obs->size(); idType++)
               {
                 const UInt idx = GnssType::index(types, obs->at(idType).type);
-                if(idx != NULLINDEX)
-                  countTypes(idx)++;
+                if(idx == NULLINDEX)
+                  continue;
+                countTypes(idSat * types.size() + idx)++;
               }
+            }
           }
     Parallel::reduceSum(countTypes, 0, comm);
 
+    // Table header
+    ss.str("");
+    ss<<"    ";
+    for(const auto &type : types)
+      ss<<"     "<<type.str().substr(0,4);
+    logInfo<<ss.str()<<Log::endl;
+    // Total number of observations for each satellite
+    std::vector<UInt> colSum(types.size(), 0);
+    // Print each row of the table
+    for(UInt idSat=0; idSat<satellites.size(); idSat++)
+    {
+      ss.str("");
+      ss<<" "<<satellites.at(idSat).prnStr();
+      UInt rowSum = 0;
+      for(UInt idType=0; idType<types.size(); idType++)
+      {
+        UInt count = countTypes(idSat * types.size() + idType);
+        ss<<" "<<count%"%8i"s;
+        rowSum += count;
+        colSum[idType] += count;
+      }
+      ss<<" | "<<rowSum%"%10i"s;
+      logInfo<<ss.str()<<Log::endl;
+    }
+    ss.str("");
+    ss<<" SUM";
+    UInt allSum = 0;
     for(UInt idType=0; idType<types.size(); idType++)
-      logInfo<<"  "<<types.at(idType).str()<<":"<<countTypes(idType)%"%10i"s<<Log::endl;
-    logInfo<<"        + ========="<<Log::endl;
-    logInfo<<"  total:"<<sum(countTypes)%"%11i"s<<Log::endl;
+    {
+      ss<<" "<<colSum[idType]%"%8i"s;
+      allSum += colSum[idType];
+    }
+    ss<<" | "<<allSum%"%10i"s;
+    logInfo<<ss.str()<<Log::endl;
 
     UInt countTracks = 0;
     for(auto recv : gnss->receivers)

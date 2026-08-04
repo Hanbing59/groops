@@ -207,7 +207,7 @@ void PreprocessingVariationalEquation::run(Config &config, Parallel::Communicato
     std::vector<VariationalEquationArc> arcs(orbitFile.arcCount());
     Parallel::forEach(arcs, [this](UInt arcNo) {return computeArc(arcNo);}, comm);
     Parallel::reduceMax(maxPosDiff, 0, comm);
-    logInfo<<"  max diff (orbit-reference orbit) "<<maxPosDiff<<" m"<<Log::endl;
+    logInfo<<"  max abs diff between integrated orbit and approximate orbit "<<maxPosDiff<<" m"<<Log::endl;
 
     // write results
     // -------------
@@ -365,7 +365,7 @@ VariationalEquationArc PreprocessingVariationalEquation::computeArc(UInt arcNo)
       while((++iter < maxIter) && (maxabs(dx) > 1e-9));
 
       if(iter == maxIter)
-        logWarning<<"no convergence in equinoctial fit"<< Log::endl;
+        logWarning<<"no convergence reached in the equinoctial orbit fitting"<< Log::endl;
 
       for(UInt i=0; i<epochCount; i++)
       {

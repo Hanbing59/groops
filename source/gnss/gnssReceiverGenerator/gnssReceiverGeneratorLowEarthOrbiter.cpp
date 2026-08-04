@@ -146,7 +146,7 @@ void GnssReceiverGeneratorLowEarthOrbiter::init(std::vector<GnssType> simulation
             i++;
           if((i >= orbit.size()) || (orbit.at(i).time > times.at(idEpoch)+timeMargin))
           {
-            recv->disable(idEpoch, "due to missing orbit/attitude data");
+            recv->disable(idEpoch, "due to missing orbit data");
             continue;
           }
 
@@ -165,15 +165,16 @@ void GnssReceiverGeneratorLowEarthOrbiter::init(std::vector<GnssType> simulation
         }
         recv->preprocessingInfo("init()");
 
-        logStatus<<"read observations"<<Log::endl;
         auto rotationCrf2Trf = std::bind(&EarthRotation::rotaryMatrix, earthRotation, std::placeholders::_1);
         if(isSimulation)
         {
+          logStatus<<"simulate zero observations"<<Log::endl;
           recv->simulateZeroObservations(simulationTypes, transmitters, rotationCrf2Trf, elevationCutOff,
                                          useType, ignoreType, GnssObservation::RANGE | GnssObservation::PHASE);
         }
         else
         {
+          logStatus<<"read observations"<<Log::endl;
           recv->readObservations(fileNameObs, transmitters,  rotationCrf2Trf, timeMargin, elevationCutOff,
                                  useType, ignoreType, GnssObservation::RANGE | GnssObservation::PHASE);
         }
@@ -199,7 +200,7 @@ void GnssReceiverGeneratorLowEarthOrbiter::preprocessing(Gnss *gnss, Parallel::C
     if(fileNameObs.empty())
       return;
 
-    logStatus<<"init observations"<<Log::endl;
+    logStatus<<"init preprocessing"<<Log::endl;
     if(recv->isMyRank())
     {
       try

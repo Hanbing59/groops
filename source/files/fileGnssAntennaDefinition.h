@@ -187,7 +187,13 @@ class GnssAntennaPattern
   Matrix   ePe, redundancy;
   Matrix   sum, count;
 
-  Double antennaVariations(Angle azimut, Angle elevation, Bool applyOffset=TRUE) const;
+  /**
+   * @brief Returns the antenna variations for a given azimuth and elevation angle.
+   * @param azimuth Azimuth angle of the signal LOS in the antenna frame, [-PI, PI].
+   * @param elevation Elevation angle of the signal LOS in the antenna frame, [-PI/2, PI/2].
+   * @param applyOffset Whether to apply the antenna offset to the returned value.
+   */
+  Double antennaVariations(Angle azimuth, Angle elevation, Bool applyOffset=TRUE) const;
 };
 
 /***** FUNCTIONS *******************************/

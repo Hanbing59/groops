@@ -100,11 +100,11 @@ GnssAntennaDefinitionPtr GnssAntennaDefinition::find(const std::vector<GnssAnten
 /***********************************************/
 /***********************************************/
 
-Double GnssAntennaPattern::antennaVariations(Angle azimut, Angle elevation, Bool applyOffset) const
+Double GnssAntennaPattern::antennaVariations(Angle azimuth, Angle elevation, Bool applyOffset) const
 {
   try
   {
-    Double tauA  = std::fmod(Double(azimut)/(2*PI)+1,1) * pattern.rows();
+    Double tauA  = std::fmod(Double(azimuth)/(2*PI)+1,1) * pattern.rows();
     Double tauZ  = (PI/2-Double(elevation))/Double(dZenit);
     const UInt idxA1 = static_cast<UInt>(std::floor(tauA));
     const UInt idxA2 = (idxA1+1)%pattern.rows();
@@ -120,7 +120,7 @@ Double GnssAntennaPattern::antennaVariations(Angle azimut, Angle elevation, Bool
                +  (tauA)  *  (tauZ)  * pattern(idxA2, idxZ2);
 
     if(applyOffset)
-      acv -= inner(offset, polar(azimut, elevation, 1.));
+      acv -= inner(offset, polar(azimuth, elevation, 1.));
 
     return acv;
   }

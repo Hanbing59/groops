@@ -126,7 +126,7 @@ void Gnss::synchronizeTransceivers(Parallel::CommunicatorPtr comm)
       if(recvProcess(idRecv))
         Parallel::broadCast(static_cast<GnssTransceiver&>(*receivers.at(idRecv)), static_cast<UInt>(recvProcess(idRecv)-1), comm);
       else if(receivers.at(idRecv)->useable())
-        receivers.at(idRecv)->disable("");
+        receivers.at(idRecv)->disable("No process assigned, weird!");
 
     // collect and sort observation types for each receiver-transmitter pair
     // -------------------------
@@ -158,8 +158,8 @@ void Gnss::synchronizeTransceivers(Parallel::CommunicatorPtr comm)
     {
       // full list of tracked observation types for this transmitter
       std::vector<GnssType> types;
-      for(auto &typesTrans : typesRecvTrans)
-        for(GnssType type : typesTrans.at(trans->idTrans()))
+      for(auto &typesRecvs : typesRecvTrans)
+        for(GnssType type : typesRecvs.at(trans->idTrans()))
           if((type == GnssType::PHASE) || (type == GnssType::RANGE))
             if(!type.isInList(types))
               types.push_back(type + trans->PRN());

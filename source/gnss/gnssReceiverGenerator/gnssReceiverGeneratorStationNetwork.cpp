@@ -368,7 +368,7 @@ void GnssReceiverGeneratorStationNetwork::preprocessing(Gnss *gnss, Parallel::Co
 {
   try
   {
-    logStatus<<"init observations"<<Log::endl;
+    logStatus<<"init preprocessing"<<Log::endl;
     VariableList fileNameVariableList;
     Single::forEach(receivers.size(), [&](UInt idRecv)
     {

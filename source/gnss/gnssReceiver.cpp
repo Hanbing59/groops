@@ -322,6 +322,8 @@ void GnssReceiver::readObservations(const FileName &fileName, const std::vector<
     std::map<GnssType, UInt> removedTypes;
 
     UInt idEpoch = 0;
+    // Number of deleted observations due to different reasons
+    std::vector<UInt> countDeleted(4, 0);
     // loop over observation epochs
     for(UInt arcEpoch=0; arcEpoch<arc.size(); arcEpoch++)
     {
@@ -375,7 +377,7 @@ void GnssReceiver::readObservations(const FileName &fileName, const std::vector<
         GnssObservation *obs = new GnssObservation();
         // loop over each observation type for this satellite
         for(; (idType<arc.at(arcEpoch).obsType.size()) && (arc.at(arcEpoch).obsType.at(idType)==satType); idType++, idObs++)
-          if((idTrans < transmitters.size()) && arc.at(arcEpoch).observation.at(idObs)  && !std::isnan(arc.at(arcEpoch).observation.at(idObs)))
+          if((idTrans < transmitters.size()) && arc.at(arcEpoch).observation.at(idObs) && !std::isnan(arc.at(arcEpoch).observation.at(idObs)))
           {
             GnssType type = arc.at(arcEpoch).obsType.at(idType) + satType;
             // Remove frequency number for GLONASS non-G1 and non-G2 observations
@@ -426,11 +428,28 @@ void GnssReceiver::readObservations(const FileName &fileName, const std::vector<
               obs->push_back(GnssSingleObservation(type, arc.at(arcEpoch).observation.at(idObs)));
           }
 
-        std::vector<GnssType> types;
-        if((obs->size() == 0) || (idTrans >= transmitters.size()) ||
-           !obs->init(*this, *transmitters.at(idTrans), rotationCrf2Trf, idEpoch, elevationCutOff, phaseWindup(idTrans)) ||
-           !obs->observationList(group, types))
+        if(obs->size() == 0)
         {
+          countDeleted[0]++;
+          delete obs;
+          continue;
+        }
+        if(idTrans >= transmitters.size())
+        {
+          countDeleted[1]++;
+          delete obs;
+          continue;
+        }
+        if(!obs->init(*this, *transmitters.at(idTrans), rotationCrf2Trf, idEpoch, elevationCutOff, phaseWindup(idTrans)))
+        {
+          countDeleted[2]++;
+          delete obs;
+          continue;
+        }
+        std::vector<GnssType> types;
+        if(!obs->observationList(group, types))
+        {
+          countDeleted[3]++;
           delete obs;
           continue;
         }
@@ -465,7 +484,12 @@ void GnssReceiver::readObservations(const FileName &fileName, const std::vector<
 
     observationSampling = medianSampling(observationTimes).seconds();
     copyObservations2ContinuousMemoryBlock();
-    preprocessingInfo("readObservations()");
+
+    std::stringstream ss;
+    ss << "readObservations(), deleted";
+    for(UInt i=0; i<countDeleted.size(); i++)
+      ss << " " << countDeleted[i];
+    preprocessingInfo(ss.str());
   }
   catch(std::exception &e)
   {
@@ -484,6 +508,8 @@ void GnssReceiver::simulateZeroObservations(const std::vector<GnssType> &types,
   {
     // Phase windup corrections for each transmitter
     Vector phaseWindup(transmitters.size());
+    // Number of deleted observations due to different reasons
+    std::vector<UInt> countDeleted(3, 0);
     for(UInt idEpoch=0; idEpoch<times.size(); idEpoch++)
     {
       const std::vector<GnssType> receiverTypes = definedTypes(times.at(idEpoch));
@@ -493,9 +519,8 @@ void GnssReceiver::simulateZeroObservations(const std::vector<GnssType> &types,
       {
         // PRN of this satellite
         GnssType satType = transmitters.at(idTrans)->PRN();
-        std::vector<GnssType> transmitterTypes;
-        if(idTrans < transmitters.size())
-          transmitterTypes = transmitters.at(idTrans)->definedTypes(times.at(idEpoch));
+        // list of broadcasted observation types of this satellite at this epoch
+        std::vector<GnssType> transmitterTypes = transmitters.at(idTrans)->definedTypes(times.at(idEpoch));
 
         // set the frequency number for GLONASS satellites
         if((satType == GnssType::GLONASS) && transmitterTypes.size() && (transmitterTypes.front().frequencyNumber() != 9999))
@@ -554,11 +579,22 @@ void GnssReceiver::simulateZeroObservations(const std::vector<GnssType> &types,
             obs->push_back(GnssSingleObservation(type, 0.0));
           }
 
-        std::vector<GnssType> types;
-        if((obs->size() == 0) || (idTrans >= transmitters.size()) ||
-           !obs->init(*this, *transmitters.at(idTrans), rotationCrf2Trf, idEpoch, elevationCutOff, phaseWindup(idTrans)) ||
-           !obs->observationList(group, types))
+        if(obs->size() == 0)
         {
+          countDeleted[0]++;
+          delete obs;
+          continue;
+        }
+        if(!obs->init(*this, *transmitters.at(idTrans), rotationCrf2Trf, idEpoch, elevationCutOff, phaseWindup(idTrans)))
+        {
+          countDeleted[1]++;
+          delete obs;
+          continue;
+        }
+        std::vector<GnssType> types;
+        if(!obs->observationList(group, types))
+        {
+          countDeleted[2]++;
           delete obs;
           continue;
         }
@@ -580,7 +616,12 @@ void GnssReceiver::simulateZeroObservations(const std::vector<GnssType> &types,
 
     observationSampling = medianSampling(times).seconds();
     copyObservations2ContinuousMemoryBlock();
-    preprocessingInfo("simulateObservations()");
+
+    std::stringstream ss;
+    ss << "simulateObservations(), deleted";
+    for(UInt i=0; i<countDeleted.size(); i++)
+      ss << " " << countDeleted[i];
+    preprocessingInfo(ss.str());
   }
   catch(std::exception &e)
   {
@@ -708,9 +749,12 @@ std::vector<Vector3d> GnssReceiver::estimateInitialClockErrorFromCodeObservation
 
     std::vector<Vector3d> posOld = pos;
 
-    const UInt countStaticParameters = (estimateKinematicPosition ? 0 : 3) + systems.size()-1; // pos + inter clock biases
-    const UInt countEpochParameters  = (estimateKinematicPosition ? 3 : 0) + 1; // pos + clock error
-
+    // number of static parameters: 3 for position (if static) + inter-system clock biases (per system)
+    const UInt countStaticParameters = (estimateKinematicPosition ? 0 : 3) + systems.size()-1;
+    // number of epoch parameters: 3 for position (if kinematic) + clock error
+    const UInt countEpochParameters  = (estimateKinematicPosition ? 3 : 0) + 1;
+    // Count the number of deleted epochs
+    UInt countDisabled = 0;
     for(UInt iter=0; iter<10; iter++)
     {
       // setup observation equations: position, clock
@@ -742,6 +786,7 @@ std::vector<Vector3d> GnssReceiver::estimateInitialClockErrorFromCodeObservation
 
           if(!obsCount || (eqnList.size() <= countEpochParameters))
           {
+            countDisabled++;
             disable(idEpoch, "not enough observations to estimate clock errors");
             continue;
           }
@@ -787,7 +832,7 @@ std::vector<Vector3d> GnssReceiver::estimateInitialClockErrorFromCodeObservation
 
       if(!listEpoch.size() || (maxSat < countStaticParameters+countEpochParameters))
       {
-       disable("only "+maxSat%"%i satellites tracked"s);
+       disable("only maximum "+maxSat%"%i satellites tracked for any epoch"s);
        return posOld;
       }
 
@@ -844,7 +889,7 @@ std::vector<Vector3d> GnssReceiver::estimateInitialClockErrorFromCodeObservation
         break;
     }
 
-    preprocessingInfo("estimateInitialClockErrorFromCodeObservations()");
+    preprocessingInfo("estimateInitialClockErrorFromCodeObservations(), disabled "+countDisabled%"%i epochs due to insufficient observations"s);
 
     // restore apriori positions and return new positions
     std::swap(pos, posOld);
@@ -862,6 +907,8 @@ void GnssReceiver::disableEpochsWithGrossCodeObservationOutliers(ObservationEqua
 {
   try
   {
+    // Count the number of disabled epochs
+    UInt countDisabled = 0;
     for(UInt idEpoch=0; idEpoch<idEpochSize(); idEpoch++)
       if(useable(idEpoch))
       {
@@ -886,10 +933,13 @@ void GnssReceiver::disableEpochsWithGrossCodeObservationOutliers(ObservationEqua
 
         // disable epoch if outlierRatio or more of the observed satellites have gross code outliers
         if(outlierCount >= outlierRatio * count)
-          disable(idEpoch, "too many gross code outliers");
+        {
+          disable(idEpoch, "too many gross code outliers, "+outlierCount%"%i out of "s+count%"%i transmitters"s);
+          countDisabled++;
+        }
       }
 
-    preprocessingInfo("disableEpochsWithGrossCodeObservationOutliers()");
+    preprocessingInfo("disableEpochsWithGrossCodeObservationOutliers(), disabled "+countDisabled%"%i epochs"s);
   }
   catch(std::exception &e)
   {
@@ -904,6 +954,8 @@ void GnssReceiver::createTracks(const std::vector<GnssTransmitterPtr> &transmitt
   try
   {
     tracks.clear();
+    // Count the number of deleted observations for each transmitter
+    std::vector<UInt> countDeleted(transmitters.size(), 0);
     for(UInt idTrans=0; idTrans<transmitters.size(); idTrans++)
     {
       UInt idEpochStart = 0;
@@ -972,13 +1024,15 @@ void GnssReceiver::createTracks(const std::vector<GnssTransmitterPtr> &transmitt
           for(UInt idEpoch=idEpochStart; idEpoch<=idEpochEnd; idEpoch++)
           {
             deleteObservation(idTrans, idEpoch);
+            countDeleted[idTrans]++;
+          }
         }
-
         idEpochStart = idEpochEnd + 1;
-      } // for(;;)
-    } // for(idTrans)
-
-    preprocessingInfo("createTracks()");
+      }
+    }
+    // total number of deleted observations for all transmitters
+    UInt countDeletedTotal = std::accumulate(countDeleted.begin(), countDeleted.end(), UInt(0));
+    preprocessingInfo("createTracks(), deleted "+countDeletedTotal%"%i observations"s);
   }
   catch(std::exception &e)
   {
@@ -1034,6 +1088,8 @@ void GnssReceiver::removeLowElevationTracks(ObservationEquationList &eqnList, An
 {
   try
   {
+    // count the number of deleted tracks
+    UInt countDeleted = 0;
     for(UInt idTrack=tracks.size(); idTrack-->0;)
     {
       const UInt idTrans = tracks.at(idTrack)->transmitter->idTrans();
@@ -1046,10 +1102,13 @@ void GnssReceiver::removeLowElevationTracks(ObservationEquationList &eqnList, An
         }
 
       if(removeTrack)
+      {
+        countDeleted++;
         deleteTrack(idTrack);
+      }
     }
 
-    preprocessingInfo("removeLowElevationTracks()");
+    preprocessingInfo("removeLowElevationTracks(), deleted "+countDeleted%"%i tracks"s);
   }
   catch(std::exception &e)
   {

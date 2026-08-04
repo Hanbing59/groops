@@ -208,7 +208,7 @@ Bool GnssObservation::observationList(GnssObservation::Group group, std::vector<
         return FALSE;
 
       for(UInt i=0; i<size(); i++)
-        if(at(i).sigma>0)
+        if(at(i).sigma > 0)
           if(at(i).type == GnssType::RANGE)
             types.push_back( at(i).type );
     }
@@ -225,7 +225,7 @@ Bool GnssObservation::observationList(GnssObservation::Group group, std::vector<
         return FALSE;
 
       for(UInt i=0; i<size(); i++)
-        if(at(i).sigma>0)
+        if(at(i).sigma > 0)
           if(at(i).type == GnssType::PHASE)
             types.push_back( at(i).type );
     }

@@ -84,17 +84,17 @@ public:
    * @param type Vector of GNSS signal types.
    * @return Vector of correction values.
    */
-  Vector antennaVariations(const Time &time, Angle azimut, Angle elevation, const std::vector<GnssType> &type) const;
+  Vector antennaVariations(const Time &time, Angle azimuth, Angle elevation, const std::vector<GnssType> &type) const;
 
   /**
    * @brief Returns the signal direction-dependent standard deviation for GNSS range measurements at a given time.
    * @param time Time at which to calculate the accuracy.
-   * @param azimut Azimuth angle in the (left-handed) antenna frame.
-   * @param elevation Elevation angle in the (left-handed) antenna frame.
+   * @param azimuth Azimuth angle in the (left-handed) antenna frame, [-PI, PI].
+   * @param elevation Elevation angle in the (left-handed) antenna frame, [-PI/2, PI/2].
    * @param type Vector of GNSS signal types.
    * @return Vector of standard deviation values.
    */
-  Vector accuracy(const Time &time, Angle azimut, Angle elevation, const std::vector<GnssType> &type) const;
+  Vector accuracy(const Time &time, Angle azimuth, Angle elevation, const std::vector<GnssType> &type) const;
 
   void save(OutArchive &oa) const;
   void load(InArchive  &ia);
@@ -157,7 +157,7 @@ inline std::vector<GnssType> GnssTransceiver::definedTypes(const Time &time) con
 
 /***********************************************/
 
-inline Vector GnssTransceiver::antennaVariations(const Time &time, Angle azimut, Angle elevation, const std::vector<GnssType> &types) const
+inline Vector GnssTransceiver::antennaVariations(const Time &time, Angle azimuth, Angle elevation, const std::vector<GnssType> &types) const
 {
   try
   {
@@ -170,7 +170,7 @@ inline Vector GnssTransceiver::antennaVariations(const Time &time, Angle azimut,
       throw(Exception(platform.markerName+"."+platform.markerNumber+": no antenna definition found at "+time.dateTimeStr()));
     if(!antenna->antennaDef)
       throw(Exception("no antenna definition for "+antenna->str()));
-    corr += antenna->antennaDef->antennaVariations(azimut, elevation, types, noPatternFoundAction);
+    corr += antenna->antennaDef->antennaVariations(azimuth, elevation, types, noPatternFoundAction);
 
     return corr;
   }
@@ -182,7 +182,7 @@ inline Vector GnssTransceiver::antennaVariations(const Time &time, Angle azimut,
 
 /***********************************************/
 
-inline Vector GnssTransceiver::accuracy(const Time &time, Angle azimut, Angle elevation, const std::vector<GnssType> &types) const
+inline Vector GnssTransceiver::accuracy(const Time &time, Angle azimuth, Angle elevation, const std::vector<GnssType> &types) const
 {
   try
   {
@@ -191,7 +191,7 @@ inline Vector GnssTransceiver::accuracy(const Time &time, Angle azimut, Angle el
       throw(Exception(platform.markerName+"."+platform.markerNumber+": no antenna accuracy found at "+time.dateTimeStr()));
     if(!antenna->accuracyDef)
       throw(Exception("no accuracy definition for "+antenna->str()));
-    return antenna->accuracyDef->antennaVariations(azimut, elevation, types, noPatternFoundAction);
+    return antenna->accuracyDef->antennaVariations(azimuth, elevation, types, noPatternFoundAction);
   }
   catch(std::exception &e)
   {
