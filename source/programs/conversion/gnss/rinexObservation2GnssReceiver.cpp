@@ -124,7 +124,7 @@ void RinexObservation2GnssReceiver::run(Config &config, Parallel::CommunicatorPt
     std::vector<FileName> fileNameInObs;
 
     readConfig(config, "outputfileGnssReceiver",             fileNameOut,                       Config::MUSTSET,  "", "");
-    readConfig(config, "inputfileRinexObservation",          fileNameInObs,                     Config::MUSTSET,  "", "RINEX or Compact RINEX observation files");
+    readConfig(config, "inputfileRinexObservation",          fileNameInObs,                     Config::MUSTSET,  "", "RINEX or Compact RINEX observation files with wildcards (* and ?) allowed");
     readConfig(config, "inputfileMatrixPrn2FrequencyNumber", fileNameInPrn2FrequencyNumber,     Config::OPTIONAL, "{groopsDataDir}/gnss/transmitter/glonassPrnSvn2FrequencyNumber.txt", "(required for RINEX v2 files containing GLONASS observations), matrix with columns: GLONASS PRN, SVN, mjdStart, mjdEnd, frequencyNumber");
     readConfig(config, "inputfileStationInfo",               fileNameStationInfo,               Config::OPTIONAL, "", "used to determine semi-codeless receivers and to cross-check antenna and receiver info");
     readConfig(config, "inputfileSemiCodelessReceivers",     fileNameSemiCodelessReceivers,     Config::OPTIONAL, "{groopsDataDir}/gnss/receiverStation/semiCodelessReceivers.txt", "list with one receiver name per line");
