@@ -65,6 +65,7 @@ and the second being the equivalent RINEX v3 type.
 * @ingroup programsConversionGroup */
 class RinexObservation2GnssReceiver
 {
+  /** @brief GLONASS frequency number interval record */
   struct FrequencyNumberInterval
   {
     FrequencyNumberInterval(const Time &timeStart_, const Time &timeEnd_, Int frequencyNumber_) : timeStart(timeStart_), timeEnd(timeEnd_), frequencyNumber(frequencyNumber_) {}
@@ -85,9 +86,12 @@ class RinexObservation2GnssReceiver
   std::vector<std::string> semiCodelessReceivers;
 
   std::vector<GnssType> useType, ignoreType;
+  /// GLONASS frequency number mapping histories
   std::map<std::string, std::vector<FrequencyNumberInterval>> prn2FrequencyNumbers;
+  /// Mapping of special observation types to RINEX 3 types
   std::map<std::string, std::string> specialTypes;
-  std::map<Char, std::vector<GnssType>> system2ObsTypes; // system, obsTypes
+  /// GNSS system to observation types mapping
+  std::map<Char, std::vector<GnssType>> system2ObsTypes;
 
   void readHeader(InFile &file, UInt lineCount=MAX_UINT);
   void readObservationData(InFile &file);
@@ -95,6 +99,8 @@ class RinexObservation2GnssReceiver
   void checkStationInfo();
   void addEpoch(const Time &time, const std::vector<GnssType> &satNumber, const std::vector<Vector> &obs, Double clockError=0.);
   Bool getLine(InFile &file, std::string &line, std::string &label) const;
+
+  /** @brief Tests if @p labelInLine contains @p label. */
   Bool testLabel(const std::string &labelInLine, const std::string &label, Bool optional=TRUE) const;
   Time readEpochTime(const std::string &line) const;
   std::vector<GnssType> getSystemObsTypes(const GnssType &prn, const Time &time) const;

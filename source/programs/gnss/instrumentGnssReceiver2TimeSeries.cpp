@@ -106,12 +106,14 @@ void InstrumentGnssReceiver2TimeSeries::run(Config &config, Parallel::Communicat
             UInt idObs = 0;
             for(GnssType typeSat : epoch.satellite)
             {
-              // find first type for the satellite system
+              // find first type for this satellite
               UInt idType = std::distance(epoch.obsType.begin(), std::find(epoch.obsType.begin(), epoch.obsType.end(), typeSat));
 
               MiscValuesEpoch epochNew(2+types.size()); // prn, system, types
               epochNew.time      = epoch.time;
+              // PRN
               epochNew.values(0) = static_cast<Double>(typeSat.prn());
+              // system ID
                    if(typeSat == GnssType::GPS)     epochNew.values(1) = static_cast<Double>('G');
               else if(typeSat == GnssType::GLONASS) epochNew.values(1) = static_cast<Double>('R');
               else if(typeSat == GnssType::GALILEO) epochNew.values(1) = static_cast<Double>('E');
@@ -132,25 +134,24 @@ void InstrumentGnssReceiver2TimeSeries::run(Config &config, Parallel::Communicat
                 if(idx != NULLINDEX)
                 {
                   epochNew.values(2+idx) = value;
+                  // Mark this type as processed
                   typesTmp.at(idx) = GnssType(static_cast<UInt64>(-1));
                   found = TRUE;
                 }
               }
-
               if(found)
                 arcNew.push_back(epochNew);
-            } // for(idTrans)
-          } // for(idEpoch)
-
+            }
+          }
           if(arcNew.size())
             arcList.push_back(arcNew);
-        } // for(idArc)
+        }
       }
       catch(...)
       {
         logError<<"error by opening file, continue..."<<Log::endl;
       }
-    } // for(fileName)
+    }
 
     // ============================
 

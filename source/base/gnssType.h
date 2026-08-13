@@ -290,8 +290,9 @@ public:
   Double      wavelength() const;
   /** @brief Returns the string representation of the GnssType. */
   std::string str() const;
-  /** @brief Returns the PRN string of the GnssType. */
+  /** @brief Returns the PRN as string (with the system ID) of the GNSS observation type. */
   std::string prnStr() const {return str().substr(3,3);}
+  /** @brief Returns the PRN as integer (without the system ID) of the GNSS observation type. */
   UInt        prn() const    {return type & PRN.type;}
   /** @brief Returns the GLONASS frequency number (9999 if not set). */
   Int         frequencyNumber() const;

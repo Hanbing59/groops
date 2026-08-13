@@ -589,7 +589,7 @@ void Arc::printStatistics(const std::vector<Arc> &arcList)
       return;
     }
     if(duplicateCount)
-      logInfo<<"  duplicates:      "<<duplicateCount<<Log::endl;
+      logInfo<<"  duplicated epochs:      "<<duplicateCount<<Log::endl;
 
     // median sampling
     // ---------------
@@ -602,7 +602,7 @@ void Arc::printStatistics(const std::vector<Arc> &arcList)
     const Double sampling = medianSampling(times).seconds();
     logInfo<<"  median sampling: "<<sampling<<" seconds"<<Log::endl;
 
-    // arc statistics
+    // arc length statistics
     // --------------
     if(arcList.size() == 1)
     {
@@ -614,18 +614,26 @@ void Arc::printStatistics(const std::vector<Arc> &arcList)
     }
     else
     {
+      // mean arc length in epochs
       Double  meanLen  = 0;
+      // max. arc length in epochs
       UInt    maxLen   = 0;
+      // min. arc length in epochs
       UInt    minLen   = MAX_UINT;
+      // max. arc length in time
       Time    maxTime;
+      // min. arc length in time
       Time    minTime = seconds2time(100*365*86400.);
+      // mean arc length in time
       Time    meanTime;
 
       for(UInt arcNo=0; arcNo<arcList.size(); arcNo++)
       {
+        // arc length in epochs
         UInt size = arcList.at(arcNo).size();
         if(size==0)
           continue;
+        // arc length in time
         Time time = arcList.at(arcNo).at(size-1).time - arcList.at(arcNo).at(0).time;
 
         maxLen   = std::max(maxLen, size);
@@ -637,7 +645,9 @@ void Arc::printStatistics(const std::vector<Arc> &arcList)
         meanTime += time;
       }
 
+      // number of arcs with min. length in epochs
       UInt minCount = 0;
+      // number of arcs with max. length in epochs
       UInt maxCount = 0;
       for(UInt arcNo=0; arcNo<arcList.size(); arcNo++)
       {

@@ -90,7 +90,7 @@ inline void GnssProcessingStepPrintResidualStatistics::process(GnssProcessingSte
                     <<", count = "     <<obsCount.at(i)%"%5i"s
                     <<", outliers = "  <<outlierCount.at(i)%"%5i"s<<" ("<<(100.*outlierCount.at(i)/obsCount.at(i))%"%4.2f"s<<" %)"<<Log::endl;
             }
-      } // for(idRecv)
+      }
   }
   catch(std::exception &e)
   {

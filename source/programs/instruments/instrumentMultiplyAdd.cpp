@@ -32,10 +32,13 @@ See also \program{InstrumentArcCalculate}.
 class InstrumentMultiplyAdd
 {
 public:
+  /** @brief Data for each instrument file. */
   class Data
   {
     public:
+    /// File name of the instrument data
     FileName fileName;
+    /// Factor to multiply the instrument data
     Double   factor;
   };
 

@@ -63,6 +63,7 @@ public:
   std::vector<GnssTrackPtr> tracks;
   /// Median of the observation sampling interval in seconds (for all epochs)
   Double                    observationSampling;
+  /// Whether supports full-cycle integer ambiguities fixing
   Bool                      integerAmbiguities;
   /// Factor to account for half-wavelength observations, i.e., collected by codeless squaring techniques.
   Double                    wavelengthFactor;
