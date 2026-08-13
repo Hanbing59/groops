@@ -663,6 +663,45 @@ void Arc::printStatistics(const std::vector<Arc> &arcList)
       logInfo<<"  min. arc length: "<<minTime.str() <<" with "<<minLen <<" epochs\t ("<<minCount<<" arcs)"<<Log::endl;
       logInfo<<"  mean arc length: "<<meanTime.str()<<" with "<<meanLen<<" epochs"<<Log::endl;
     }
+
+    // arc values statistics
+    // ---------------------
+    // number of data columns
+    UInt dataCols = 0;
+    for(const Arc &arc : arcList)
+      if(arc.size())
+      {
+        dataCols = arc.matrix().columns()-1;
+        break;
+      }
+    if(dataCols>0)
+    {
+      std::vector<std::vector<Double>> data(dataCols);
+      for(UInt arcNo=0; arcNo<arcList.size(); arcNo++)
+      {
+        const Matrix A = arcList.at(arcNo).matrix();
+        if((A.columns() == 0) || (A.columns()-1 != dataCols))
+        {
+          logWarning<<"  arc"<<arcNo%"%02i"s<<" has "<<(A.columns() ? A.columns()-1 : 0)%"%02i"s
+                    <<" data columns but the first arc has "<<dataCols%"%02i"s
+                    <<" data columns!"<<Log::endl;
+          continue;
+        }
+        for(UInt i=0; i<A.rows(); i++)
+          for(UInt j=0; j<dataCols; j++)
+            data.at(j).push_back(A(i, j+1));
+      }
+      for(UInt j=0; j<dataCols; j++)
+      {
+        const Vector v(data.at(j));
+        logInfo<<"  data"<<j%"%02i"s<<": min="<<min(v)%"%10.4f"s
+                                    <<", max="<<max(v)%"%10.4f"s
+                                    <<", mean="<<mean(v)%"%10.4f"s
+                                    <<", std="<<standardDeviation(v)%"%10.4f"s
+                                    <<", rms="<<rootMeanSquare(v)%"%10.4f"s
+                                    <<Log::endl;
+      }
+    }
   }
   catch(std::exception &e)
   {
