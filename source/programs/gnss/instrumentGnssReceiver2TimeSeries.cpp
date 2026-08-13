@@ -157,6 +157,24 @@ void InstrumentGnssReceiver2TimeSeries::run(Config &config, Parallel::Communicat
 
     if(!arcList.size())
       logWarning<<"empty arc"<<Log::endl;
+    else
+    {
+      // print some statistics for each observation type
+      for(UInt idType=0; idType<types.size(); idType++)
+      {
+        std::vector<Double> values;
+        for(const auto &arc : arcList)
+          for(const auto &epoch : arc)
+            if(epoch.values(2+idType) != 0.)
+              values.push_back(epoch.values(2+idType));
+
+        const Vector v(values);
+        logInfo<<types.at(idType).str()<<": mean="<<mean(v)%"%8.4f"s
+               <<", std="<<standardDeviation(v)%"%8.4f"s
+               <<", rms="<<rootMeanSquare(v)%"%8.4f"s
+               <<", count="<<v.size()%"%6i"s<<Log::endl;
+      }
+    }
 
     logStatus<<"write time series file <"<<fileNameOut<<">"<<Log::endl;
     InstrumentFile::write(fileNameOut, arcList);
