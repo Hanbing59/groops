@@ -669,7 +669,7 @@ void Arc::printStatistics(const std::vector<Arc> &arcList)
     // number of data columns
     UInt dataCols = 0;
     for(const Arc &arc : arcList)
-      if(arc.size())
+      if(arc.size() && arc.getType() != Epoch::GNSSRECEIVER)
       {
         dataCols = arc.matrix().columns()-1;
         break;
@@ -679,17 +679,22 @@ void Arc::printStatistics(const std::vector<Arc> &arcList)
       std::vector<std::vector<Double>> data(dataCols);
       for(UInt arcNo=0; arcNo<arcList.size(); arcNo++)
       {
+        if(arcList.at(arcNo).size() == 0)
+          continue;
+        if(arcList.at(arcNo).getType() == Epoch::GNSSRECEIVER)
+          continue;
         const Matrix A = arcList.at(arcNo).matrix();
-        if((A.columns() == 0) || (A.columns()-1 != dataCols))
+        if(A.columns()-1 != dataCols)
         {
-          logWarning<<"  arc"<<arcNo%"%02i"s<<" has "<<(A.columns() ? A.columns()-1 : 0)%"%02i"s
-                    <<" data columns but the first arc has "<<dataCols%"%02i"s
+          logWarning<<"  arc"<<arcNo%"%02i"s<<" has "<<(A.columns()-1)%"%02i"s
+                    <<" data columns but the first non-empty arc has "<<dataCols%"%02i"s
                     <<" data columns!"<<Log::endl;
           continue;
         }
         for(UInt i=0; i<A.rows(); i++)
           for(UInt j=0; j<dataCols; j++)
-            data.at(j).push_back(A(i, j+1));
+            if(!std::isnan(A(i, j+1)))
+              data.at(j).push_back(A(i, j+1));
       }
       for(UInt j=0; j<dataCols; j++)
       {
