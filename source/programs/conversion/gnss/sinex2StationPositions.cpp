@@ -98,7 +98,7 @@ void Sinex2StationPositions::run(Config &config, Parallel::CommunicatorPtr /*com
       Transform3d           lnof2trf;
     };
 
-    std::map<std::string, Station> stations;
+    std::map<std::string, std::vector<Station>> stations;
     std::vector<Time> times = timeSeries->times();
 
     // =========================================================
@@ -116,38 +116,55 @@ void Sinex2StationPositions::run(Config &config, Parallel::CommunicatorPtr /*com
         // *         1         2         3         4         5         6         7         8
         // *12345678901234567890123456789012345678901234567890123456789012345678901234567890
         // *Code PT __DOMES__ T _STATION DESCRIPTION__ APPROX_LON_ APPROX_LAT_ _APP_H_
-        std::string name = String::lowerCase(String::trim(line.substr(1, 4)));
+        const std::string name = String::lowerCase(String::trim(line.substr(1, 4)));
         if(stationNames.size() && std::find(stationNames.begin(), stationNames.end(), name) == stationNames.end())
           continue;
-        if(stations.find(name) != stations.end())
-          logWarning<<"multiple SITE/ID for same station: "<<line<<Log::endl;
+
+        const std::string pointCode = String::trim(line.substr(6, 2));
+        // 4-char station name + 2-char point code should be unique
+        const auto it = std::find_if(stations[name].begin(), stations[name].end(), [&](const Station &s) {return s.pointCode == pointCode;});
+        if(it != stations[name].end())
+        {
+          logWarning<<"SITE/ID duplicate: "<<line<<Log::endl;
+          continue;
+        }
         const Double longitude   = String::toDouble(line.substr(44, 3)) + String::toDouble(line.substr(48, 2))/60 + String::toDouble(line.substr(51, 4))/3600;
         const Double latitude    = String::toDouble(line.substr(56, 3)) + (String::startsWith(String::trim(line.substr(56, 3)), "-") ? -1 : 1) * std::fabs(String::toDouble(line.substr(60, 2))/60 + String::toDouble(line.substr(62, 5))/3600);
         const Double height      = String::toDouble(line.substr(68, 7));
-        stations[name].pointCode = String::trim(line.substr(6, 2));
-        stations[name].dome      = String::trim(line.substr(9, 9));
-        stations[name].position  = Ellipsoid()(Angle(DEG2RAD*longitude), Angle(DEG2RAD*latitude), height);
-        stations[name].lnof2trf  = localNorthEastUp(polar(Angle(DEG2RAD*longitude), Angle(DEG2RAD*latitude), 1.));
+        Station station;
+        station.pointCode = pointCode;
+        station.dome      = String::trim(line.substr(9, 9));
+        station.position  = Ellipsoid()(Angle(DEG2RAD*longitude), Angle(DEG2RAD*latitude), height);
+        station.lnof2trf  = localNorthEastUp(polar(Angle(DEG2RAD*longitude), Angle(DEG2RAD*latitude), 1.));
+        stations[name].push_back(station);
       }
 
       // SOLUTION/EPOCHS
       // ---------------
       for(std::string &line : sinex.findBlock("SOLUTION/EPOCHS")->lines)
       {
-        std::string name = String::lowerCase(String::trim(line.substr(1, 4)));
+        const std::string name = String::lowerCase(String::trim(line.substr(1, 4)));
         if(stationNames.size() && std::find(stationNames.begin(), stationNames.end(), name) == stationNames.end())
           continue;
         if(stations.find(name) == stations.end())
         {
-          logWarning<<"SOLUTION/EPOCHS without SITE/ID: "<<line<<Log::endl;
+          logWarning<<"SOLUTION/EPOCHS without matching SITE/ID 4-char name: "<<line<<Log::endl;
+          continue;
+        }
+
+        const std::string pointCode  = String::trim(line.substr(6, 2));
+        const auto it = std::find_if(stations[name].begin(), stations[name].end(), [&](const Station &s) {return s.pointCode == pointCode;});
+        if(it == stations[name].end())
+        {
+          logWarning<<"SOLUTION/EPOCHS without matching SITE/ID point code: "<<line<<Log::endl;
           continue;
         }
         Interval interval;
-        interval.pointCode  = String::trim(line.substr(6, 2));
+        interval.pointCode  = pointCode;
         interval.solutionId = String::trim(line.substr(9, 4));
         interval.timeStart  = Sinex::str2time(line, 16, FALSE);
         interval.timeEnd    = Sinex::str2time(line, 29, TRUE);
-        stations[name].intervals.push_back(interval);
+        it->intervals.push_back(interval);
       }
 
       // SOLUTION/ESTIMATE
@@ -173,14 +190,21 @@ void Sinex2StationPositions::run(Config &config, Parallel::CommunicatorPtr /*com
           continue;
         if(stations.find(name) == stations.end())
         {
-          logWarning<<"SOLUTION/ESTIMATE without SITE/ID: "<<line<<Log::endl;
+          logWarning<<"SOLUTION/ESTIMATE without matching SITE/ID 4-char name: "<<line<<Log::endl;
           continue;
         }
-
-        auto interval = std::find_if(stations[name].intervals.begin(), stations[name].intervals.end(),
-                                     [&](const Interval &i) {return (i.solutionId == solutionId) && (i.pointCode == pointCode);});
-        if(interval == stations[name].intervals.end())
-          throw(Exception(name+": interval for solutionId "+solutionId+" not found"));
+        const auto station = std::find_if(stations[name].begin(), stations[name].end(), [&](const Station &s) {return s.pointCode == pointCode;});
+        if(station == stations[name].end())
+        {
+          logWarning<<"SOLUTION/ESTIMATE without matching SITE/ID point code: "<<line<<Log::endl;
+          continue;
+        }
+        const auto interval = std::find_if(station->intervals.begin(), station->intervals.end(), [&](const Interval &i) {return i.solutionId == solutionId;});
+        if(interval == station->intervals.end())
+        {
+          logWarning<<"SOLUTION/ESTIMATE without matching SOLUTION/EPOCHS solution: "<<line<<Log::endl;
+          continue;
+        }
 
         interval->referenceTime = Sinex::str2time(line, 27, FALSE);
         Bool used = TRUE;
@@ -202,35 +226,36 @@ void Sinex2StationPositions::run(Config &config, Parallel::CommunicatorPtr /*com
     // test intervals
     // --------------
     for(auto &station : stations)
-    {
-      auto &intervals = station.second.intervals;
-      if(!intervals.size())
+      for(auto &point : station.second)
       {
-        logWarning<<station.first<<" without solution intervals"<<Log::endl;
-        continue;
-      }
-
-      std::stable_sort(station.second.intervals.begin(), station.second.intervals.end(), [](auto &a, auto &b) {return a.timeEnd < b.timeEnd;});
-
-      // repair overlapping periods
-      for(UInt i=0; i<intervals.size()-1; i++)
-        if(intervals.at(i).timeEnd > intervals.at(i+1).timeStart)
+        auto &intervals = point.intervals;
+        if(!intervals.size())
         {
-          if((intervals.at(i).timeEnd-intervals.at(i+1).timeStart).mjd() > 0.25)
-            logWarning<<station.first<<" interval ends at "<<intervals.at(i).timeEnd.dateTimeStr()<<", next intervals starts at "<<intervals.at(i+1).timeStart.dateTimeStr()<<Log::endl;
-          intervals.at(i).timeEnd = intervals.at(i+1).timeStart = 0.5*(intervals.at(i).timeEnd+intervals.at(i+1).timeStart);
+          logWarning<<station.first<<" "<<point.pointCode<<" without solution intervals"<<Log::endl;
+          continue;
         }
 
-      // fill gaps
-      for(UInt i=0; i<intervals.size()-1; i++)
-        if(intervals.at(i).timeEnd < intervals.at(i+1).timeStart)
-          intervals.at(i).timeEnd = intervals.at(i+1).timeStart;
+        std::stable_sort(point.intervals.begin(), point.intervals.end(), [](auto &a, auto &b) {return a.timeEnd < b.timeEnd;});
 
-      if(extrapolateBackward)
-        intervals.front().timeStart = Time();
-      if(extrapolateForward)
-        intervals.back().timeEnd = date2time(2500, 1, 1);
-    } // for(station)
+        // repair overlapping periods
+        for(UInt i=0; i<intervals.size()-1; i++)
+          if(intervals.at(i).timeEnd > intervals.at(i+1).timeStart)
+          {
+            if((intervals.at(i).timeEnd-intervals.at(i+1).timeStart).mjd() > 0.25)
+              logWarning<<station.first<<" "<<point.pointCode<<" interval ends at "<<intervals.at(i).timeEnd.dateTimeStr()<<", next intervals starts at "<<intervals.at(i+1).timeStart.dateTimeStr()<<Log::endl;
+            intervals.at(i).timeEnd = intervals.at(i+1).timeStart = 0.5*(intervals.at(i).timeEnd+intervals.at(i+1).timeStart);
+          }
+
+        // fill gaps
+        for(UInt i=0; i<intervals.size()-1; i++)
+          if(intervals.at(i).timeEnd < intervals.at(i+1).timeStart)
+            intervals.at(i).timeEnd = intervals.at(i+1).timeStart;
+
+        if(extrapolateBackward)
+          intervals.front().timeStart = Time();
+        if(extrapolateForward)
+          intervals.back().timeEnd = date2time(2500, 1, 1);
+      }
 
     // =========================================================
 
@@ -247,57 +272,78 @@ void Sinex2StationPositions::run(Config &config, Parallel::CommunicatorPtr /*com
         // *         1         2         3         4         5         6         7         8
         // *12345678901234567890123456789012345678901234567890123456789012345678901234567890
         //  ADEA  A    1 D 00:000:00000 98:084:11545 P - 1998/03/25-Earthquake_M8.1_Balleny_Islands_(616km)
-        std::string name = String::lowerCase(String::trim(line.substr(1, 4)));
+        const std::string name = String::lowerCase(String::trim(line.substr(1, 4)));
         if(stationNames.size() && std::find(stationNames.begin(), stationNames.end(), name) == stationNames.end())
           continue;
         if(stations.find(name) == stations.end())
           continue;
-        Interval interval;
-        interval.pointCode  = String::trim(line.substr(6, 2));
-        interval.solutionId = String::trim(line.substr(9, 4));
-        interval.timeStart  = Sinex::str2time(line, 16, FALSE);
-        interval.timeEnd    = Sinex::str2time(line, 29, TRUE);
+
+        const std::string pointCode = String::trim(line.substr(6, 2));
+        const auto station = std::find_if(stations[name].begin(), stations[name].end(), [&](const Station &s) {return s.pointCode == pointCode;});
+        if(station == stations[name].end())
+        {
+          logWarning<<"SOLUTION/DISCONTINUITY without matching SITE/ID point code: "<<line<<Log::endl;
+          continue;
+        }
+        const std::string solutionId = String::trim(line.substr(9, 4));
+        const auto interval = std::find_if(station->intervals.begin(), station->intervals.end(), [&](const Interval &i) {return i.solutionId == solutionId;});
+        if(interval == station->intervals.end())
+        {
+          logWarning<<"SOLUTION/DISCONTINUITY without matching SOLUTION/EPOCHS solution: "<<line<<Log::endl;
+          continue;
+        }
+
+        Interval discontinuity;
+        discontinuity.pointCode  = pointCode;
+        discontinuity.solutionId = solutionId;
+        discontinuity.timeStart  = Sinex::str2time(line, 16, FALSE);
+        discontinuity.timeEnd    = Sinex::str2time(line, 29, TRUE);
+
         if(line.substr(42,1) == "P") // position changes only
-          stations[name].discontinuities.push_back(interval);
+          station->discontinuities.push_back(discontinuity);
       }
 
       // adjust intervals
       // ----------------
       for(auto &station : stations)
-      {
-        auto &intervals       = station.second.intervals;
-        auto &discontinuities = station.second.discontinuities;
-        if(!discontinuities.size())
-          continue;
-
-        std::stable_sort(discontinuities.begin(), discontinuities.end(), [](auto &a, auto &b) {return a.timeEnd < b.timeEnd;});
-
-        // repair overlapping periods
-        for(UInt i=0; i<discontinuities.size()-1; i++)
-          if(discontinuities.at(i).timeEnd != discontinuities.at(i+1).timeStart)
-          {
-            logWarning<<station.first<<" discontinuity ends at "<<discontinuities.at(i).timeEnd.dateTimeStr()<<", next discontinuity starts at "<<discontinuities.at(i).timeStart.dateTimeStr()<<Log::endl;
-            discontinuities.at(i).timeEnd = discontinuities.at(i+1).timeStart = 0.5*(discontinuities.at(i).timeEnd+discontinuities.at(i+1).timeStart);
-          }
-
-        // adjust solution intervals
-        Time timeStart = intervals.front().timeStart;
-        Time timeEnd   = intervals.back().timeEnd;
-        for(UInt i=0; i<intervals.size(); i++)
+        for(auto &point : station.second)
         {
-          auto discontinuity = std::find_if(discontinuities.begin(), discontinuities.end(), [&] (auto &x) {return x.solutionId == intervals.at(i).solutionId;});
-          if(discontinuity != discontinuities.end())
+          auto &intervals       = point.intervals;
+          auto &discontinuities = point.discontinuities;
+          if(!discontinuities.size())
+            continue;
+
+          std::stable_sort(discontinuities.begin(), discontinuities.end(), [](auto &a, auto &b) {return a.timeEnd < b.timeEnd;});
+
+          // repair non-connected periods
+          for(UInt i=0; i<discontinuities.size()-1; i++)
+            if(discontinuities.at(i).timeEnd != discontinuities.at(i+1).timeStart)
+            {
+              logWarning<<station.first<<" "<<point.pointCode<<" Non-connected discontinuities: one ends at "
+                        <<discontinuities.at(i).timeEnd.dateTimeStr()<<" while the next starts at "
+                        <<discontinuities.at(i+1).timeStart.dateTimeStr()<<Log::endl;
+              discontinuities.at(i).timeEnd = discontinuities.at(i+1).timeStart = 0.5*(discontinuities.at(i).timeEnd+discontinuities.at(i+1).timeStart);
+            }
+
+          // adjust solution intervals
+          Time timeStart = intervals.front().timeStart;
+          Time timeEnd   = intervals.back().timeEnd;
+          for(UInt i=0; i<intervals.size(); i++)
           {
-            if(intervals.at(i).pointCode != discontinuity->pointCode)
-              logWarning<<station.first<<" point code differ "<<intervals.at(i).pointCode<<" != "<<discontinuity->pointCode<<Log::endl;
-            intervals.at(i).pointCode = discontinuity->pointCode;
-            intervals.at(i).timeStart = std::max(timeStart, discontinuity->timeStart);
-            intervals.at(i).timeEnd   = std::min(timeEnd,   discontinuity->timeEnd);
+            auto discontinuity = std::find_if(discontinuities.begin(), discontinuities.end(), [&] (auto &x) {return x.solutionId == intervals.at(i).solutionId;});
+            if(discontinuity != discontinuities.end())
+            {
+              // this should never happen
+              if(intervals.at(i).pointCode != discontinuity->pointCode)
+                logWarning<<station.first<<" point code differ "<<intervals.at(i).pointCode<<" != "<<discontinuity->pointCode<<Log::endl;
+              intervals.at(i).pointCode = discontinuity->pointCode;
+              intervals.at(i).timeStart = std::max(timeStart, discontinuity->timeStart);
+              intervals.at(i).timeEnd   = std::min(timeEnd,   discontinuity->timeEnd);
+            }
+            else
+              logWarning<<station.first<<" "<<point.pointCode<<" solution '"<<intervals.at(i).solutionId<<"' without discontinuity interval"<<Log::endl;
           }
-          else
-            logWarning<<station.first<<" solution '"<<intervals.at(i).solutionId<<"' without discontinuity interval"<<Log::endl;
         }
-      }
     }
 
     // =========================================================
@@ -305,15 +351,21 @@ void Sinex2StationPositions::run(Config &config, Parallel::CommunicatorPtr /*com
     // create arcs
     // -----------
     for(auto &station : stations)
-      for(auto &interval : station.second.intervals)
-        for(auto &time : times)
-          if(time.isInInterval(interval.timeStart, interval.timeEnd))
-          {
-            Vector3dEpoch epoch;
-            epoch.time     = time;
-            epoch.vector3d = interval.position + interval.velocity * (time-interval.referenceTime).mjd()/365.25;
-            interval.arc.push_back(epoch);
-          }
+      for(auto &point : station.second)
+        for(auto &interval : point.intervals)
+        {
+          logInfo<<station.first<<" "<<point.pointCode<<" solution "<<interval.solutionId
+                <<" from "<<interval.timeStart.dateTimeStr()<<" to "<<interval.timeEnd.dateTimeStr()<<Log::endl;
+          for(auto &time : times)
+            if(time.isInInterval(interval.timeStart, interval.timeEnd))
+            {
+              Vector3dEpoch epoch;
+              epoch.time     = time;
+              epoch.vector3d = interval.position + interval.velocity * (time-interval.referenceTime).mjd()/365.25;
+              interval.arc.push_back(epoch);
+            }
+        }
+
 
     // =========================================================
 
@@ -330,18 +382,24 @@ void Sinex2StationPositions::run(Config &config, Parallel::CommunicatorPtr /*com
         // *         1         2         3         4         5         6         7         8
         // *12345678901234567890123456789012345678901234567890123456789012345678901234567890
         // *Code PT __DOMES__ T _STATION DESCRIPTION__ APPROX_LON_ APPROX_LAT_ _APP_H_
-        std::string name = String::lowerCase(String::trim(line.substr(1, 4)));
+        const std::string name = String::lowerCase(String::trim(line.substr(1, 4)));
         if(stationNames.size() && std::find(stationNames.begin(), stationNames.end(), name) == stationNames.end())
           continue;
         if(stations.find(name) == stations.end())
           continue;
+
+        const std::string pointCode = String::trim(line.substr(6, 2));
+        const auto station = std::find_if(stations[name].begin(), stations[name].end(), [&](const Station &s) {return s.pointCode == pointCode;});
+        if(station == stations[name].end())
+          continue;
+
         const Double longitude = String::toDouble(line.substr(44, 3)) + String::toDouble(line.substr(48, 2))/60 + String::toDouble(line.substr(51, 4))/3600;
         const Double latitude  = String::toDouble(line.substr(56, 3)) + (String::startsWith(String::trim(line.substr(56, 3)), "-") ? -1 : 1) * std::fabs(String::toDouble(line.substr(60, 2))/60 + String::toDouble(line.substr(62, 5))/3600);
         const Double height    = String::toDouble(line.substr(68, 7));
-        const Double dist      = (stations[name].position - Ellipsoid()(Angle(DEG2RAD*longitude), Angle(DEG2RAD*latitude), height)).r();
+        const Double dist      = (station->position - Ellipsoid()(Angle(DEG2RAD*longitude), Angle(DEG2RAD*latitude), height)).r();
         if(dist > 10)
-          logWarning<<name<<": approx position differ "<<dist<<" m"<<Log::endl;
-        stations[name].lnof2trf = localNorthEastUp(polar(Angle(DEG2RAD*longitude), Angle(DEG2RAD*latitude), 1.));
+          logWarning<<name<<" "<<pointCode<<": approx position differs with that from the solution file by "<<dist<<" m"<<Log::endl;
+        station->lnof2trf = localNorthEastUp(polar(Angle(DEG2RAD*longitude), Angle(DEG2RAD*latitude), 1.));
       }
 
       UInt count = 0;
@@ -358,26 +416,30 @@ void Sinex2StationPositions::run(Config &config, Parallel::CommunicatorPtr /*com
           continue;
         if(stations.find(name) == stations.end())
           continue;
+        const std::string pointCode  = String::trim(lines.at(i).substr(19, 2));
+        const auto station = std::find_if(stations[name].begin(), stations[name].end(), [&](const Station &s) {return s.pointCode == pointCode;});
+        if(station == stations[name].end())
+          continue;
 
         // parameter type
-        const Bool isLog = (String::upperCase(lines.at(i).substr(7, 5))   == "ALOG_") &&
+        const Bool isLog = (String::upperCase(lines.at(i  ).substr(7, 5)) == "ALOG_") &&
                            (String::upperCase(lines.at(i+1).substr(7, 5)) == "TLOG_");
-        if(!isLog && ((String::upperCase(lines.at(i).substr(7, 5))   != "AEXP_") ||
+        if(!isLog && ((String::upperCase(lines.at(i  ).substr(7, 5)) != "AEXP_") ||
                       (String::upperCase(lines.at(i+1).substr(7, 5)) != "TEXP_")))
           continue; // other parameter type
 
-        const Double A     = String::toDouble(lines.at(i).substr(47, 21));
+        const Double A     = String::toDouble(lines.at(i  ).substr(47, 21));
         const Double tau   = String::toDouble(lines.at(i+1).substr(47, 21)) * 365.25;
         const Time   time0 = Sinex::str2time(lines.at(i), 27, FALSE);
 
         Vector3d ampl3d;
         const Char c = String::upperCase(lines.at(i).substr(12, 1)).at(0);
-        if(     c == 'N')                 ampl3d = stations[name].lnof2trf.transform(Vector3d(A, 0, 0));
-        else if(c == 'E')                 ampl3d = stations[name].lnof2trf.transform(Vector3d(0, A, 0));
-        else if((c == 'U') || (c == 'H')) ampl3d = stations[name].lnof2trf.transform(Vector3d(0, 0, A));
+        if(     c == 'N')                 ampl3d = station->lnof2trf.transform(Vector3d(A, 0, 0));
+        else if(c == 'E')                 ampl3d = station->lnof2trf.transform(Vector3d(0, A, 0));
+        else if((c == 'U') || (c == 'H')) ampl3d = station->lnof2trf.transform(Vector3d(0, 0, A));
 
         Bool used = FALSE;
-        for(auto &interval : stations[name].intervals)
+        for(auto &interval : station->intervals)
           for(UInt i=0; i<interval.arc.size(); i++)
           {
             if(interval.arc.at(i).time >= time0)
@@ -409,18 +471,24 @@ void Sinex2StationPositions::run(Config &config, Parallel::CommunicatorPtr /*com
         // *         1         2         3         4         5         6         7         8
         // *12345678901234567890123456789012345678901234567890123456789012345678901234567890
         // *Code PT __DOMES__ T _STATION DESCRIPTION__ APPROX_LON_ APPROX_LAT_ _APP_H_
-        std::string name = String::lowerCase(String::trim(line.substr(1, 4)));
+        const std::string name = String::lowerCase(String::trim(line.substr(1, 4)));
         if(stationNames.size() && std::find(stationNames.begin(), stationNames.end(), name) == stationNames.end())
           continue;
         if(stations.find(name) == stations.end())
           continue;
+
+        const std::string pointCode = String::trim(line.substr(6, 2));
+        const auto station = std::find_if(stations[name].begin(), stations[name].end(), [&](const Station &s) {return s.pointCode == pointCode;});
+        if(station == stations[name].end())
+          continue;
+
         const Double longitude = String::toDouble(line.substr(44, 3)) + String::toDouble(line.substr(48, 2))/60 + String::toDouble(line.substr(51, 4))/3600;
         const Double latitude  = String::toDouble(line.substr(56, 3)) + (String::startsWith(String::trim(line.substr(56, 3)), "-") ? -1 : 1) * std::fabs(String::toDouble(line.substr(60, 2))/60 + String::toDouble(line.substr(62, 5))/3600);
         const Double height    = String::toDouble(line.substr(68, 7));
         const std::string dome = String::trim(line.substr(9, 9));
-        const Double dist      = (stations[name].position - Ellipsoid()(Angle(DEG2RAD*longitude), Angle(DEG2RAD*latitude), height)).r();
+        const Double dist      = (station->position - Ellipsoid()(Angle(DEG2RAD*longitude), Angle(DEG2RAD*latitude), height)).r();
         if(dist > 10)
-          logWarning<<name<<": approx position differ "<<dist<<" m"<<Log::endl;
+          logWarning<<name<<" "<<pointCode<<": approx position differs with that from the solution file by "<<dist<<" m"<<Log::endl;
         // stations[name].lnof2trf = localNorthEastUp(polar(Angle(DEG2RAD*longitude), Angle(DEG2RAD*latitude), 1.));
       }
 
@@ -431,18 +499,23 @@ void Sinex2StationPositions::run(Config &config, Parallel::CommunicatorPtr /*com
         // *12345678901234567890123456789012345678901234567890123456789012345678901234567890
         // *INDEX _TYPE_ CODE PT SOLN _REF_EPOCH__ UNIT S ___ESTIMATED_VALUE___ __STD_DEV__
         //      1 A1COSX ALBH  A    1 15:001:00000 m    2  2.77340030328052e-05 1.64130e-04
-        std::string name = String::lowerCase(String::trim(line.substr(14, 4)));
+        const std::string name = String::lowerCase(String::trim(line.substr(14, 4)));
         if(stationNames.size() && std::find(stationNames.begin(), stationNames.end(), name) == stationNames.end())
           continue;
         if(stations.find(name) == stations.end())
           continue;
         const std::string pointCode  = String::trim(line.substr(19, 2));
-        const std::string solutionId = String::trim(line.substr(22, 4));
-        if(std::none_of(stations[name].intervals.begin(), stations[name].intervals.end(), [&](auto &x) {return x.pointCode == pointCode;}))
-        {
-          logWarning<<"Unused: "<<line<<Log::endl;
+        const auto station = std::find_if(stations[name].begin(), stations[name].end(), [&](const Station &s) {return s.pointCode == pointCode;});
+        if(station == stations[name].end())
           continue;
-        }
+
+        const std::string solutionId = String::trim(line.substr(22, 4));
+        const auto interval = std::find_if(station->intervals.begin(), station->intervals.end(), [&](const Interval &i) {return i.solutionId == solutionId;});
+        if(interval == station->intervals.end())
+          {
+            logWarning<<"SOLUTION/ESTIMATE without matching SOLUTION/EPOCHS solution: "<<line<<Log::endl;
+            continue;
+          }
 
         // parameter type
         std::string para = String::upperCase(line.substr(7, 5));
@@ -455,58 +528,50 @@ void Sinex2StationPositions::run(Config &config, Parallel::CommunicatorPtr /*com
         if(     c == 'X') ampl3d = Vector3d(A, 0, 0);
         else if(c == 'Y') ampl3d = Vector3d(0, A, 0);
         else if(c == 'Z') ampl3d = Vector3d(0, 0, A);
-        else if(c == 'N') ampl3d = stations[name].lnof2trf.transform(Vector3d(A, 0, 0));
-        else if(c == 'E') ampl3d = stations[name].lnof2trf.transform(Vector3d(0, A, 0));
-        else if(c == 'U') ampl3d = stations[name].lnof2trf.transform(Vector3d(0, 0, A));
-
-        Bool used = FALSE;
-        for(auto &interval : stations[name].intervals)
-          if((interval.solutionId == solutionId) && (interval.pointCode == pointCode))
-          {
-            interval.ampl3d[para] += ampl3d;
-            used = TRUE;
-          }
-        count += used;
-        if(!used)
-         logWarning<<"Unused: "<<line<<Log::endl;
+        else if(c == 'N') ampl3d = station->lnof2trf.transform(Vector3d(A, 0, 0));
+        else if(c == 'E') ampl3d = station->lnof2trf.transform(Vector3d(0, A, 0));
+        else if(c == 'U') ampl3d = station->lnof2trf.transform(Vector3d(0, 0, A));
+        interval->ampl3d[para] += ampl3d;
+        count++;
       }
       logInfo<<"  "<<count<<" of "<<sinex.findBlock("SOLUTION/ESTIMATE")->lines.size()<<" parameters used"<<Log::endl;
 
       for(auto &station : stations)
-      {
-        // find oscillations in one of the intervals
-        std::map<std::string, Vector3d> ampl3d;
-        for(auto &interval : station.second.intervals)
-          if(interval.ampl3d.size())
-            ampl3d = interval.ampl3d;
-        // check if oscillations in all intervals the same
-        Bool same = TRUE;
-        for(auto &interval : station.second.intervals)
-          if(interval.ampl3d.size())
-            same = same && std::equal(ampl3d.begin(), ampl3d.end(), interval.ampl3d.begin(), [](auto &a, auto &b)
-                                     {return (a.first == b.first) && ((a.second-b.second).r() < 0.0001);});
-        if(same) // can extend to missing intervals
-          for(auto &interval : station.second.intervals)
+        for(auto &point : station.second)
+        {
+          // find oscillations in one of the intervals
+          std::map<std::string, Vector3d> ampl3d;
+          for(auto &interval : point.intervals)
+            if(interval.ampl3d.size())
+              ampl3d = interval.ampl3d;
+          // check if oscillations in all intervals the same
+          Bool same = TRUE;
+          for(auto &interval : point.intervals)
+            if(interval.ampl3d.size())
+              same = same && std::equal(ampl3d.begin(), ampl3d.end(), interval.ampl3d.begin(), [](auto &a, auto &b)
+                                      {return (a.first == b.first) && ((a.second-b.second).r() < 0.0001);});
+          if(same) // can extend to missing intervals
+            for(auto &interval : point.intervals)
+              if(!interval.ampl3d.size())
+                interval.ampl3d = ampl3d;
+
+          // check for empty intervals
+          for(auto &interval : point.intervals)
             if(!interval.ampl3d.size())
-              interval.ampl3d = ampl3d;
+              logWarning<<station.first<<" "<<point.pointCode<<" interval "<<interval.timeStart.dateTimeStr()<<" -- "<<interval.timeEnd.dateTimeStr()<<" without frequencies"<<Log::endl;
 
-        // check for empty intervals
-        for(auto &interval : station.second.intervals)
-          if(!interval.ampl3d.size())
-            logWarning<<station.first<<" interval "<<interval.timeStart.dateTimeStr()<<" -- "<<interval.timeEnd.dateTimeStr()<<" without frequencies"<<Log::endl;
-
-        // apply oscillations
-        for(auto &interval : station.second.intervals)
-          for(auto &A : interval.ampl3d)
-          {
-            const Bool isCos   = (A.first.substr(2, 3) == "COS");
-            const Double omega = 2*PI*String::toDouble(A.first.substr(1, 1)); // annual or semiannual
-            if(!isCos && (A.first.substr(2, 3) != "SIN"))
-              throw(Exception("COS/SIN expected"));
-            for(UInt i=0; i<interval.arc.size(); i++)
-              interval.arc.at(i).vector3d += A.second * (isCos ? std::cos(omega*interval.arc.at(i).time.decimalYear()) : std::sin(omega*interval.arc.at(i).time.decimalYear()));
-          }
-      }
+          // apply oscillations
+          for(auto &interval : point.intervals)
+            for(auto &A : interval.ampl3d)
+            {
+              const Bool isCos   = (A.first.substr(2, 3) == "COS");
+              const Double omega = 2*PI*String::toDouble(A.first.substr(1, 1)); // annual or semiannual
+              if(!isCos && (A.first.substr(2, 3) != "SIN"))
+                throw(Exception("COS/SIN expected"));
+              for(UInt i=0; i<interval.arc.size(); i++)
+                interval.arc.at(i).vector3d += A.second * (isCos ? std::cos(omega*interval.arc.at(i).time.decimalYear()) : std::sin(omega*interval.arc.at(i).time.decimalYear()));
+            }
+        }
     } // if(!fileNameSinexFreq.empty())
 
     // =========================================================
@@ -516,25 +581,31 @@ void Sinex2StationPositions::run(Config &config, Parallel::CommunicatorPtr /*com
     logStatus<<"write instrument files <"<<fileNameInstrument(fileNameVariableList)<<">"<<Log::endl;
     UInt count = 0;
     for(auto &station : stations)
-    {
-      fileNameVariableList.setVariable(variableLoopStation, station.first);
-      std::vector<Vector3dArc> arcs;
-      for(auto &interval : station.second.intervals)
-        if(interval.arc.size())
-          arcs.push_back(interval.arc);
-      if(arcs.size())
+      for(auto &point : station.second)
       {
-        Double dist = 0;
-        for(auto &arc : arcs)
-          for(auto &epoch : arc)
-            dist = std::max(dist, (epoch.vector3d-station.second.position).r());
-        if(dist > 10)
-          logWarning<<station.first<<": approx position differ "<<dist<<" m"<<Log::endl;
+        if(&point == &station.second.back())
+          fileNameVariableList.setVariable(variableLoopStation, station.first);
+        else
+          fileNameVariableList.setVariable(variableLoopStation, station.first+"_"s+point.pointCode);
 
-        InstrumentFile::write(fileNameInstrument(fileNameVariableList), arcs);
-        count++;
+        std::vector<Vector3dArc> arcs;
+        for(auto &interval : point.intervals)
+          if(interval.arc.size())
+            arcs.push_back(interval.arc);
+        if(arcs.size())
+        {
+          Double dist = 0;
+          for(auto &arc : arcs)
+            for(auto &epoch : arc)
+              dist = std::max(dist, (epoch.vector3d - point.position).r());
+          if(dist > 10)
+            logWarning<<station.first<<": max diff of approx position with its solution reaches "<<dist<<" m"<<Log::endl;
+
+          InstrumentFile::write(fileNameInstrument(fileNameVariableList), arcs);
+          count++;
+          logStatus<<"  "<<count%"%3i"s<<" "<<station.first<<" "<<point.pointCode<<" "<<fileNameInstrument(fileNameVariableList)<<Log::endl;
+        }
       }
-    }
     logInfo<<"  "<<count<<" station files written"<<Log::endl;
   }
   catch(std::exception &e)
