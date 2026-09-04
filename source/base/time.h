@@ -47,6 +47,9 @@ public:
   /** @brief Returns the time in seconds. */
   Double seconds() const;
 
+  /** @brief Returns seconds of day of the time. */
+  Double sod() const;
+
   /// Decimal year e.g. 2008.135
   Double decimalYear() const;
 
@@ -158,6 +161,7 @@ inline Double Time::mjd()     const {return _mjdInt + _mjdMod;}
 inline Int    Time::mjdInt()  const {return _mjdInt;}
 inline Double Time::mjdMod()  const {return _mjdMod;}
 inline Double Time::seconds() const {return mjd()*(24*60*60);}
+inline Double Time::sod()     const {return _mjdMod*(24*60*60);}
 
 inline Time mjd2time(LongDouble mjd)
 {
