@@ -769,6 +769,9 @@ Double min(const_MatrixSliceRef A)
 
 Double max(const_MatrixSliceRef A)
 {
+  // Note: std::numeric_limits<double>::min() returns the smallest positive normalized value,
+  // not the most negative value. Should use std::numeric_limits<double>::lowest() for the
+  // most negative value instead?
   Double d = std::numeric_limits<double>::min();
   for(UInt i=0; i<A.rows(); i++)
     for(UInt k=0; k<A.columns(); k++)

@@ -24,7 +24,8 @@ Concerning the satellite surfaces an external file must be imported which must c
 the macro model for GRACE can be found under:
 \url{https://podaac-tools.jpl.nasa.gov/drive/files/allData/grace/docs/ProdSpecDoc_v4.6.pdf}
 Additionally, it is possible to add further information like antennaThrust, solar panel, temporal mass changes and
-massInstrument using the modules option.
+massInstrument using the modules option. For the \config{inputfileInstrument} of the massInstrument module,
+refer to the output file of \program{GraceL1b2Mass}.
 )";
 
 /***********************************************/
@@ -96,7 +97,7 @@ template<> Bool readConfig(Config &config, const std::string &name, SatelliteMod
       readConfig(config, "mass", modul->mass,  Config::MUSTSET,  "", "");
     }
 
-    // Satellite mass change
+    // Satellite mass change from instrument files
     // ---------------------
     if(readConfigChoiceElement(config, "massInstrument", choice, ""))
     {

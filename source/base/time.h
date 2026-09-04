@@ -44,7 +44,7 @@ public:
   /// Time as MJD (modified julian date)
   Double mjd() const;
 
-  /// Time in seconds.
+  /** @brief Returns the time in seconds. */
   Double seconds() const;
 
   /// Decimal year e.g. 2008.135

@@ -110,7 +110,7 @@ typedef std::shared_ptr<SatelliteModelModule> SatelliteModelModulePtr;
 class SatelliteModel
 {
 public:
-  /** @brief Surface of the satellite. */
+  /** @brief One surface of the satellite macro model. */
   class Surface
   {
   public:
@@ -135,7 +135,7 @@ public:
   SatelliteModel &operator=(const SatelliteModel &x) = delete; //!< Disallow copying.
   SatelliteModel(const SatelliteModel &x) = delete;            //!< Disallow copy constructor.
 
-  /// Name of satellite.
+  /// Name of the satellite.
   std::string                          satelliteName;
   /// Mass of satellite [kg].
   Double                               mass;
@@ -145,7 +145,7 @@ public:
   Vector3d                             thrustPower;
   /// Surfaces of satellite.
   std::vector<Surface>                 surfaces;
-  /// Adjust the state of satellite.
+  /// Modules of the satellite
   std::vector<SatelliteModelModulePtr> modules;
 
   /**
@@ -206,8 +206,10 @@ public:
 class SatelliteModelModuleSolarPanel : public SatelliteModelModule
 {
 public:
+  /// Rotation axis of the solar panel in the satellite reference frame (SRF)
   Vector3d          rotationAxis;
   Vector3d          normal;
+  /// Indexes of the solar panel surfaces in the satellite model surfaces vector, starting with 0.
   std::vector<UInt> indexSurface;
 
   Type type() const {return SOLARPANEL;}
@@ -259,6 +261,7 @@ class SatelliteModelModuleSetSpecificHeatCapacity : public SatelliteModelModule
 public:
   Bool                applied;
   std::vector<Double> specificHeatCapacity;
+  /// Indexes of the surfaces in the satellite model surfaces vector, starting with 0.
   std::vector<UInt>   indexSurface;
 
   Type type() const {return SPECIFICHEATCAPACITY;}

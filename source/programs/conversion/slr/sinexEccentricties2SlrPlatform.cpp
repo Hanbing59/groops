@@ -78,6 +78,7 @@ void SinexEccentricties2SlrPlatform::run(Config &config, Parallel::CommunicatorP
         station->name = String::trim(line.substr(80, 8)); // CDP-SOD
       station->timeStart = Sinex::str2time(line, 16, FALSE);
       station->timeEnd   = Sinex::str2time(line, 29, TRUE);
+      // eccentricities in UNE
       station->position = Vector3d(String::toDouble(line.substr(55, 8)), String::toDouble(line.substr(64, 8)), String::toDouble(line.substr(46, 8)));
       platform.equipments.push_back(station);
     }

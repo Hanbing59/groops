@@ -92,9 +92,10 @@ void Sinex2StationPositions::run(Config &config, Parallel::CommunicatorPtr /*com
     {
       std::vector<Interval> intervals;
       std::vector<Interval> discontinuities;
-      std::string pointCode, dome;
-      Vector3d    position;
-      Transform3d lnof2trf;
+      std::string           pointCode, dome;
+      // approximate position from the SITE/ID block of the SINEX solution file
+      Vector3d              position;
+      Transform3d           lnof2trf;
     };
 
     std::map<std::string, Station> stations;

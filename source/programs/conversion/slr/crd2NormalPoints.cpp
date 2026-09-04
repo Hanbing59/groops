@@ -33,7 +33,7 @@ including normal point data like range, accuracy, redundancy, wavelength and win
  * The input CRD file should contain only one satellite but one or more sateions.
  * The Consolidated laser Ranging Data (CRD) format can accomodate all three types of laser ranging
  * data: full-rate, sampled engineering, and normal point. Both the version 1 and version 2
- * of the CRD format are supported. Format specifications of CRD version 1 and version 2 
+ * of the CRD format are supported. Format specifications of CRD version 1 and version 2
  * can be found at <a href="https://ilrs.gsfc.nasa.gov/data_and_products/formats/crd.html">ILRS</a>.
 * @ingroup programsConversionGroup */
 class Crd2NormalPoints
@@ -148,7 +148,7 @@ void Crd2NormalPoints::run(Config &config, Parallel::CommunicatorPtr /*comm*/)
       }
       else if(type == "H9") // End of File (EOF) Footer
       {
-        // A complete CRD file should end after this record. Otherwise, the file may have been 
+        // A complete CRD file should end after this record. Otherwise, the file may have been
         // truncated or corrupted.
       }
       else if(type == "C0") // System Configuration Record

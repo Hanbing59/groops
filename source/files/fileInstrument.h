@@ -165,6 +165,14 @@ class Arc
 protected:
   std::vector<std::unique_ptr<Epoch>> epoch;
 
+  /**
+   * @brief Checks whether the data type of this arc is compatible with the given @a type.
+   * @param type data type to check against.
+   * @throws Exception if the data type of this arc is not compatible with the given @a type.
+   * @note The data type of this arc is compatible with the given @a type if
+   * either the data type of this arc is EMPTY, or the given @a type is EMPTY,
+   * or both data types are equal.
+   */
   virtual void checkType(Epoch::Type type)
   {
     if((type != Epoch::EMPTY) && (getType() != Epoch::EMPTY) && (type != getType()))
@@ -262,7 +270,7 @@ public:
   /** @brief Number of epochs. */
   UInt size() const {return epoch.size();}
 
-  /** @brief Data type (e.g. ORBIT, ACCELEROMETER). */
+  /** @brief Returns the data type (e.g. ORBIT, ACCELEROMETER) of this arc. */
   Epoch::Type getType() const {return epoch.size() ? front().getType() : Epoch::EMPTY;}
 
   /** @brief Name of data type (e.g. ORBIT, ACCELEROMETER). */
@@ -780,11 +788,13 @@ typedef ArcTemplate<ObservationSigmaEpoch> ObservationSigmaArc;
 
 /***********************************************/
 
-/** @brief Epoch with mass data. */
+/** @brief Epoch with mass data like GRACE(-FO) MAS1A/B. */
 class MassEpoch : public Epoch
 {
 public:
+  /// Spacecraft mass based on tank and thruster observations
   Double massThr;
+  /// Same as @a massThr ?
   Double massTank;
 
   static constexpr Type type = MASS;

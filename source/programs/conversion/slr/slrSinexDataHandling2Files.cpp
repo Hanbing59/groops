@@ -94,9 +94,11 @@ void SlrSinexDataHandling2Files::run(Config &config, Parallel::CommunicatorPtr /
       Time timeEnd   = Sinex::str2time(line, 29, TRUE);
       MiscValueEpoch epoch;
       epoch.time  = timeStart;
-      epoch.value = 1e-3 * String::toDouble(line.substr(44, 12)); // mm -> m
+      // range bias in mm -> m
+      epoch.value = 1e-3 * String::toDouble(line.substr(44, 12));
       // satellite SP3c ID without the leading letter "L"
       std::string satId = String::trim(line.substr(6, 2));
+      // range bias applies to all targets
       if(satId == "--")
         satId = "";
 
@@ -115,9 +117,9 @@ void SlrSinexDataHandling2Files::run(Config &config, Parallel::CommunicatorPtr /
         // station-satellite specific range bias
         auto iter = std::find_if(tableSatelliteId.begin(), tableSatelliteId.end(), [&](auto &t){return (t.size()>1) && ((t.front() == satId) || (t.front() == "L"+satId));});
         if(iter != tableSatelliteId.end())
-          satId = iter->at(1); // replace SP3 ID by satellite name from table
+          satId = iter->at(1); // If founded, replace SP3 ID by satellite name from the input table
         else
-          satId = "L" + satId;
+          satId = "L" + satId; // Otherwise keep the SP3 ID with leading "L" as the satellite name
 
         if(rangeBiasesStationSatellite[station][satId].size() && (rangeBiasesStationSatellite[station][satId].back().time >= timeStart-seconds2time(1)))
           rangeBiasesStationSatellite[station][satId].remove(rangeBiasesStationSatellite[station][satId].size()-1);
@@ -163,7 +165,6 @@ void SlrSinexDataHandling2Files::run(Config &config, Parallel::CommunicatorPtr /
         logWarning<<"Unknown time unit (ms or us) '"<<line<<"'"<<Log::endl;
         continue;
       }
-
       MiscValuesEpoch epoch(2);
       epoch.time  = timeStart;
       epoch.values(0) = unit * String::toDouble(line.substr(44, 12)); // bias  ms/us -> s

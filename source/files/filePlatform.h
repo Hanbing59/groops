@@ -133,7 +133,7 @@ public:
   std::string comment;
   std::string name, serial;
   Time        timeStart, timeEnd;
-  /// positions of this instrument in north, east, up or vehicle system
+  /// positions of this instrument in North, East, Up or vehicle system
   Vector3d    position;
 
   virtual ~PlatformEquipment() {}

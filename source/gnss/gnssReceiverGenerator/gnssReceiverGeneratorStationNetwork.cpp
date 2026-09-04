@@ -119,9 +119,10 @@ void GnssReceiverGeneratorStationNetwork::init(std::vector<GnssType> simulationT
     std::vector<std::vector<std::string>> stationName;
     readFileStringTable(fileNameStationList, stationName);
     VariableList fileNameVariableList;
+    // receivers alternatives for each station
     std::vector<std::vector<GnssReceiverPtr>> receiversWithAlternatives(stationName.size());
     for(UInt i=0; i<stationName.size(); i++)
-      for(UInt k=0; k<stationName.at(i).size(); k++) // alternatives
+      for(UInt k=0; k<stationName.at(i).size(); k++) // loop over each alternative
       {
         try
         {
@@ -175,20 +176,22 @@ void GnssReceiverGeneratorStationNetwork::init(std::vector<GnssType> simulationT
         }
       }
 
-    // remove empty stations
+    // remove stations without any receiver alternatives
     receiversWithAlternatives.erase(std::remove_if(receiversWithAlternatives.begin(), receiversWithAlternatives.end(),
                                                    [](auto x) {return !x.size();}), receiversWithAlternatives.end());
 
     // read observations at single nodes
     // ---------------------------------
     logStatus<<"read observations"<<Log::endl;
+    // index of the valid receiver alternatives of each station
     Vector receiverAlternative(receiversWithAlternatives.size());
     Log::Timer timer(receiversWithAlternatives.size());
     for(UInt i=0; i<receiversWithAlternatives.size(); i++)
       if(i%Parallel::size(comm) == Parallel::myRank(comm)) // distribute to nodes
       {
         timer.loopStep(i);
-        for(UInt k=0; k<receiversWithAlternatives.at(i).size(); k++) // test alternatives
+        // test each alternative of the station
+        for(UInt k=0; k<receiversWithAlternatives.at(i).size(); k++)
         {
           try
           {
@@ -277,7 +280,7 @@ void GnssReceiverGeneratorStationNetwork::init(std::vector<GnssType> simulationT
               }
             }
 
-            // found valid station
+            // found a valid alternative for this station, then skip the remaining alternatives
             receiverAlternative(i) = k+1;
             break;
           }

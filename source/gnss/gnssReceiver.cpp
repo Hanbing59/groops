@@ -912,7 +912,7 @@ void GnssReceiver::disableEpochsWithGrossCodeObservationOutliers(ObservationEqua
     for(UInt idEpoch=0; idEpoch<idEpochSize(); idEpoch++)
       if(useable(idEpoch))
       {
-        // number of outliers at this epoch
+        // number of outlier satellites at this epoch
         UInt outlierCount = 0;
         // number of observed satellites at this epoch
         UInt count   = 0;
@@ -1011,7 +1011,7 @@ void GnssReceiver::createTracks(const std::vector<GnssTransmitterPtr> &transmitt
           if((type == GnssType::PHASE) && !type.isInList(extraTypes) && !type.isInList(typeFrequencies))
             typeFrequencies.push_back(type & GnssType::FREQUENCY);
 
-        // a valid track
+        // a valid track: minimum number of epochs and at least 2 phase frequencies
         if((countEpoch >= minObsCountPerTrack) && (typeFrequencies.size() >= 2))
         {
           tracks.push_back(std::make_shared<GnssTrack>(this, transmitters.at(idTrans).get(), idEpochStart, idEpochEnd, types));
@@ -1163,7 +1163,7 @@ void GnssReceiver::linearCombinations(ObservationEquationList &eqnList, GnssTrac
       {
         idEpochs.push_back(idEpoch);
         for(GnssType type : eqnList(track->transmitter->idTrans(), idEpoch)->types)
-          if((type == GnssType::PHASE) && !type.isInList(typesPhase) && !type.isInList(extraTypes)) // ignore time variable GPS L5 signals
+          if((type == GnssType::PHASE) && !type.isInList(typesPhase) && !type.isInList(extraTypes))
             typesPhase.push_back(type);
       }
 
@@ -1347,7 +1347,7 @@ void GnssReceiver::cycleSlipsDetection(ObservationEquationList &eqnList, GnssTra
     // -----------------------------------------------------
     // list of phase types in this track (additional to extraTypes)
     std::vector<GnssType> typesPhase;
-    // epochs of this track with valid observations
+    // list of epochs in this track with valid observations
     std::vector<UInt>     idEpochs;
     // the computed linear combinations of the observations in this track
     Matrix                combinations;

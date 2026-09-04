@@ -132,6 +132,7 @@ public:
    * @param group The GNSS observation group to check for availability.
    * @param types List of available GNSS observation types.
    * @return True if the required GNSS observation types are available, false otherwise.
+   * @note If @a group contains CODE or PHASE, code or phase observations from dual-frequency signals are required, respectively.
    */
   Bool observationList        (Group group, std::vector<GnssType> &types) const;
   void setHomogenizedResiduals(const std::vector<GnssType> &types, const_MatrixSliceRef residuals, const_MatrixSliceRef redundancy);

@@ -55,9 +55,11 @@ void SatelliteModelModuleSolarPanel::changeState(SatelliteModel &satellite, cons
   {
     if(positionSun.r() == 0.)
       throw(Exception("Need position of the sun"));
-    const Vector3d posSun = rotSat.inverseRotate(positionSun-position); // in SRF
+    // the sat -> Sun vector in the satellite reference frame (SRF)
+    const Vector3d posSun = rotSat.inverseRotate(positionSun-position);
+    // rotation of the solar panel from its old orientation to current new orientation
     const Rotary3d rot = Rotary3d(rotationAxis, posSun)
-                       * inverse(Rotary3d(rotationAxis, normal)); // from old to new orientation
+                       * inverse(Rotary3d(rotationAxis, normal));
     normal = rot.rotate(normal);
     for(UInt i=0; i<indexSurface.size(); i++)
       satellite.surfaces.at(indexSurface.at(i)).normal = rot.rotate(satellite.surfaces.at(indexSurface.at(i)).normal);
