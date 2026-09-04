@@ -44,14 +44,16 @@ void SlrSinexDataHandling2Files::run(Config &config, Parallel::CommunicatorPtr /
 {
   try
   {
-    FileName                 fileNameRangeBiasStation, fileNameRangeBiasSatellite, fileNameTimeBias;
+    FileName                 fileNameRangeBiasStation, fileNameRangeBiasSatellite;
+    FileName                 fileNameTimeBiasStation, fileNameTimeBiasSatellite;
     FileName                 fileNameSinex, fileNameSatelliteId;
     std::string              variableLoopStation, variableLoopSatellite;
     std::vector<std::string> stationNames;
 
     readConfig(config, "outputfileRangeBiasStation",          fileNameRangeBiasStation,   Config::OPTIONAL, "rangeBias.{station}.txt",             "MISCVALUE [m]");
     readConfig(config, "outputfileRangeBiasStationSatellite", fileNameRangeBiasSatellite, Config::OPTIONAL, "rangeBias.{station}.{satellite}.txt", "MISCVALUE [m]");
-    readConfig(config, "outputfileTimeBias",                  fileNameTimeBias,           Config::OPTIONAL, "timeBias.{station}.txt",              "MISCVALUES(bias [s], drift [s/d])");
+    readConfig(config, "outputfileTimeBiasStation",           fileNameTimeBiasStation,    Config::OPTIONAL, "timeBias.{station}.txt",              "MISCVALUES(bias [s], drift [s/d])");
+    readConfig(config, "outputfileTimeBiasStationSatellite",  fileNameTimeBiasSatellite,  Config::OPTIONAL, "timeBias.{station}.{satellite}.txt",  "MISCVALUES(bias [s], drift [s/d])");
     readConfig(config, "variableLoopStation",                 variableLoopStation,        Config::DEFAULT,  "station",                             "variable name for station loop");
     readConfig(config, "variableLoopSatellite",               variableLoopSatellite,      Config::DEFAULT,  "satellite",                           "variable name for satellite loop");
     readConfig(config, "inputfileSinex",                      fileNameSinex,              Config::MUSTSET,  "ILRS_Data_Handling_File.snx",         "SINEX file (.snx)");
@@ -69,7 +71,8 @@ void SlrSinexDataHandling2Files::run(Config &config, Parallel::CommunicatorPtr /
 
     std::map<std::string, MiscValueArc>                         rangeBiasesStation;
     std::map<std::string, std::map<std::string, MiscValueArc>>  rangeBiasesStationSatellite;
-    std::map<std::string, MiscValuesArc>                        timeBiases;
+    std::map<std::string, MiscValuesArc>                        timeBiasesStation;
+    std::map<std::string, std::map<std::string, MiscValuesArc>> timeBiasesStationSatellite;
 
     logStatus<<"read SINEX file <"<<fileNameSinex<<">"<<Log::endl;
     Sinex sinex;
@@ -87,7 +90,11 @@ void SlrSinexDataHandling2Files::run(Config &config, Parallel::CommunicatorPtr /
       std::string station = String::lowerCase(String::trim(line.substr(1, 4)));
       if(stationNames.size() && std::find(stationNames.begin(), stationNames.end(), station) == stationNames.end())
         continue;
-      if(line.at(42) != 'R') // range bias
+      // Keep only range bias lines
+      if(line.at(42) != 'R')
+        continue;
+      // Skip OPTIONAL corrections as it seems that they should not be applied with the MANDATORY corrections simultaneously.
+      if(line.at(1) == '*')
         continue;
 
       Time timeStart = Sinex::str2time(line, 16, FALSE);
@@ -144,17 +151,12 @@ void SlrSinexDataHandling2Files::run(Config &config, Parallel::CommunicatorPtr /
         continue;
       if(line.at(42) != 'T')  // time bias
         continue;
-      if((line.substr(6, 2) != "  ") && (line.substr(6, 2) != "--"))
-      {
-        logWarning<<"station-satellite specific time bias ignored in line '"<<line<<"'"<<Log::endl;
+      // Skip OPTIONAL corrections
+      if(line.at(1) == '*')
         continue;
-      }
 
       Time timeStart = Sinex::str2time(line, 16, FALSE);
       Time timeEnd   = Sinex::str2time(line, 29, TRUE);
-      if(timeBiases[station].size() && (timeBiases[station].back().time >= timeStart-seconds2time(1)))
-        timeBiases[station].remove(timeBiases[station].size()-1);
-
       Double unit = 1.;
       if(String::trim(line.substr(75, 4)) == "ms")
         unit = 1e-3;
@@ -170,11 +172,38 @@ void SlrSinexDataHandling2Files::run(Config &config, Parallel::CommunicatorPtr /
       epoch.values(0) = unit * String::toDouble(line.substr(44, 12)); // bias  ms/us -> s
       epoch.values(1) = unit * String::toDouble(line.substr(65, 9));  // drift ms/us -> s/d
       epoch.values(0) -= epoch.values(1) * 0.5 * (timeEnd-timeStart).mjd(); // move bias from mid to start of interval
-      timeBiases[station].push_back(epoch);
-      // zero bias after end of interval
-      epoch.time  = timeEnd;
-      epoch.values.setNull();
-      timeBiases[station].push_back(epoch);
+
+      std::string satId = String::trim(line.substr(6, 2));
+      if(satId == "--")
+        satId = "";
+
+      if(satId.empty()) // station specific time bias
+      {
+        if(timeBiasesStation[station].size() && (timeBiasesStation[station].back().time >= timeStart-seconds2time(1)))
+          timeBiasesStation[station].remove(timeBiasesStation[station].size()-1);
+        timeBiasesStation[station].push_back(epoch);
+        // zero bias after end of interval
+        epoch.time  = timeEnd;
+        epoch.values.setNull();
+        timeBiasesStation[station].push_back(epoch);
+      }
+      else
+      {
+        // station-satellite specific time bias
+        auto iter = std::find_if(tableSatelliteId.begin(), tableSatelliteId.end(), [&](auto &t){return (t.size()>1) && ((t.front() == satId) || (t.front() == "L"+satId));});
+        if(iter != tableSatelliteId.end())
+          satId = iter->at(1);
+        else
+          satId = "L" + satId;
+
+        if(timeBiasesStationSatellite[station][satId].size() && (timeBiasesStationSatellite[station][satId].back().time >= timeStart-seconds2time(1)))
+          timeBiasesStationSatellite[station][satId].remove(timeBiasesStationSatellite[station][satId].size()-1);
+        timeBiasesStationSatellite[station][satId].push_back(epoch);
+        // zero bias after end of interval
+        epoch.time  = timeEnd;
+        epoch.values.setNull();
+        timeBiasesStationSatellite[station][satId].push_back(epoch);
+      }
     }
 
     // write results
@@ -208,18 +237,35 @@ void SlrSinexDataHandling2Files::run(Config &config, Parallel::CommunicatorPtr /
           }
     }
 
-    if(!fileNameTimeBias.empty())
+    if(!fileNameTimeBiasStation.empty())
     {
       VariableList varList;
       varList.setVariable(variableLoopStation, "****");
-      logStatus<<"write time biases to file <"<<fileNameTimeBias(varList)<<">"<<Log::endl;
-      for(auto &timeBiasPair : timeBiases)
+      logStatus<<"write station time biases to file <"<<fileNameTimeBiasStation(varList)<<">"<<Log::endl;
+      for(auto &timeBiasPair : timeBiasesStation)
         if(timeBiasPair.second.size())
         {
           varList.setVariable(variableLoopStation, timeBiasPair.first);
-          InstrumentFile::write(fileNameTimeBias(varList), timeBiasPair.second);
+          InstrumentFile::write(fileNameTimeBiasStation(varList), timeBiasPair.second);
         }
     }
+
+    if(!fileNameTimeBiasSatellite.empty())
+    {
+      VariableList varList;
+      varList.setVariable(variableLoopStation,   "****");
+      varList.setVariable(variableLoopSatellite, "****");
+      logStatus<<"write station-satellite time biases to file <"<<fileNameTimeBiasSatellite(varList)<<">"<<Log::endl;
+      for(auto &pairStation : timeBiasesStationSatellite)
+        for(auto &pairSatellite : pairStation.second)
+          if(pairSatellite.second.size())
+          {
+            varList.setVariable(variableLoopStation,   pairStation.first);
+            varList.setVariable(variableLoopSatellite, pairSatellite.first);
+            InstrumentFile::write(fileNameTimeBiasSatellite(varList), pairSatellite.second);
+          }
+    }
+
   }
   catch(std::exception &e)
   {
