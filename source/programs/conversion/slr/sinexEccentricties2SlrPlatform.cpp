@@ -134,9 +134,9 @@ void SinexEccentricties2SlrPlatform::run(Config &config, Parallel::CommunicatorP
       for(UInt i=1; i<platform.equipments.size(); i++)
         if(platform.equipments.at(i)->timeStart < platform.equipments.at(i-1)->timeEnd)
           logWarning<<"overlapping time intervals between "<<platform.equipments.at(i-1)->name<<" ("<<platform.equipments.at(i-1)->serial<<") "
-                    <<"ENU("<<platform.equipments.at(i-1)->position.x()<<", "<<platform.equipments.at(i-1)->position.y()<<", "<<platform.equipments.at(i-1)->position.z()<<") ends "<<platform.equipments.at(i-1)->timeEnd.dateTimeStr()
+                    <<"NEU("<<platform.equipments.at(i-1)->position.x()%"%8.4f"s<<", "<<platform.equipments.at(i-1)->position.y()%"%8.4f"s<<", "<<platform.equipments.at(i-1)->position.z()%"%8.4f"s<<") ends "<<platform.equipments.at(i-1)->timeEnd.dateTimeStr()
                     <<" and "<<platform.equipments.at(i)->name<<" ("<<platform.equipments.at(i)->serial<<") "
-                    <<"ENU("<<platform.equipments.at(i)->position.x()<<", "<<platform.equipments.at(i)->position.y()<<", "<<platform.equipments.at(i)->position.z()<<") starts "<<platform.equipments.at(i)->timeStart.dateTimeStr()<<Log::endl;
+                    <<"NEU("<<platform.equipments.at(i  )->position.x()%"%8.4f"s<<", "<<platform.equipments.at(i  )->position.y()%"%8.4f"s<<", "<<platform.equipments.at(i  )->position.z()%"%8.4f"s<<") starts "<<platform.equipments.at(i)->timeStart.dateTimeStr()<<Log::endl;
       varList.setVariable(variableLoopStation, platform.markerName);
       writeFilePlatform(fileNamePlatform(varList), platform);
     }

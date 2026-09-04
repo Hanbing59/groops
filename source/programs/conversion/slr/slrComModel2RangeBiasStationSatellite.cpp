@@ -101,7 +101,7 @@ void SlrComModel2RangeBiasStationSatellite::run(Config &config, Parallel::Commun
        reflector = platform.findEquipment<PlatformLaserRetroReflector>(timeEnd);
       if(!reflector)
       {
-        logWarning<<"reflector not found in ["<<timeStart.dateStr()<<", "<<timeEnd.dateStr()<<"] -> skipping"<<Log::endl;
+        logWarning<<"LRA not found in ["<<timeStart.dateStr()<<", "<<timeEnd.dateStr()<<"] for "<<platform.markerName<<" -> skipping"<<Log::endl;
         continue;
       }
 
