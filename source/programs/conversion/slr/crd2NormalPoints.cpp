@@ -259,7 +259,7 @@ void Crd2NormalPoints::run(Config &config, Parallel::CommunicatorPtr /*comm*/)
       else if(type == "30") // Pointing Angle Record
       {
         // Angles are not considered in the moment.
-        logStatus<<"Record 30 available" <<Log::endl;
+        logStatus<<"Record 30 available but not considered at this moment!" <<Log::endl;
       }
       else if(type == "40") // Calibration Record
       {
@@ -309,6 +309,8 @@ void Crd2NormalPoints::run(Config &config, Parallel::CommunicatorPtr /*comm*/)
 
       if(arcSlr.size())
       {
+        logStatus<<"sort epochs"<<Log::endl;
+        arcSlr.sort();
         logStatus<<"write normal point data to file <"<<fileNameNormalPoints(varList)<<">"<<Log::endl;
         InstrumentFile::write(fileNameNormalPoints(varList), arcSlr);
         Arc::printStatistics(arcSlr);
@@ -316,6 +318,8 @@ void Crd2NormalPoints::run(Config &config, Parallel::CommunicatorPtr /*comm*/)
 
       if(arcMeteorological.size())
       {
+        logStatus<<"sort epochs"<<Log::endl;
+        arcMeteorological.sort();
         logStatus<<"write meteorological data to file <"<<fileNameMeteorological(varList)<<">"<<Log::endl;
         InstrumentFile::write(fileNameMeteorological(varList), arcMeteorological);
         Arc::printStatistics(arcMeteorological);
