@@ -83,7 +83,7 @@ template<> Bool readConfig(Config &config, const std::string &name, SatelliteMod
       readConfig(config, "normalX",       modul->normal.x(),       Config::DEFAULT,  "0", "Direction to sun");
       readConfig(config, "normalY",       modul->normal.y(),       Config::DEFAULT,  "0", "Direction to sun");
       readConfig(config, "normalZ",       modul->normal.z(),       Config::DEFAULT,  "0", "Direction to sun");
-      readConfig(config, "indexSurface",  modul->indexSurface,     Config::MUSTSET,   "", "index of solar panel surfaces");
+      readConfig(config, "indexSurface",  modul->indexSurface,     Config::MUSTSET,   "", "index of solar panel surfaces, starts from 0");
     }
 
     // Satellite mass change
@@ -102,13 +102,16 @@ template<> Bool readConfig(Config &config, const std::string &name, SatelliteMod
     if(readConfigChoiceElement(config, "massInstrument", choice, ""))
     {
       std::vector<FileName> fileName;
-      readConfig(config, "inputfileInstrument", fileName, Config::MUSTSET,  "", "");
+      readConfig(config, "inputfileInstrument", fileName, Config::MUSTSET,  "", "Refer to the output file of the program GraceL1b2Mass for the input file format.");
 
       if(!isCreateSchema(config))
       {
         MassArc massArc;
         for(UInt i=0; i<fileName.size(); i++)
+        {
+          logStatus<<"read mass changes from <"<<fileName.at(i)<<">"<<Log::endl;
           massArc.append(InstrumentFile::read(fileName.at(i)));
+        }
         massArc.sort();
 
         SatelliteModelModuleMassChange *modul = new SatelliteModelModuleMassChange;
@@ -153,16 +156,16 @@ template<> Bool readConfig(Config &config, const std::string &name, std::vector<
 
     readConfig(config, "inputfile",            fileNameIn,               Config::MUSTSET, "",       "each line must contain one surface element");
     readConfig(config, "type",                 typeExpr,                 Config::MUSTSET, "0",      "0: plate, 1: sphere, 2: cylinder");
-    readConfig(config, "area",                 areaExpr,                 Config::MUSTSET, "data0",  "[m^2]");
-    readConfig(config, "normalX",              normalXExpr,              Config::MUSTSET, "data1",  "");
-    readConfig(config, "normalY",              normalYExpr,              Config::MUSTSET, "data2",  "");
-    readConfig(config, "normalZ",              normalZExpr,              Config::MUSTSET, "data3",  "");
-    readConfig(config, "reflectionVisible",    reflexionVisibleExpr,     Config::MUSTSET, "data4",  "");
-    readConfig(config, "diffusionVisible",     diffusionVisibleExpr,     Config::MUSTSET, "data5",  "");
-    readConfig(config, "absorptionVisible",    absorptionVisibleExpr,    Config::MUSTSET, "data6",  "");
-    readConfig(config, "reflectionInfrared",   reflexionInfraredExpr,    Config::MUSTSET, "data7",  "");
-    readConfig(config, "diffusionInfrared",    diffusionInfraredExpr,    Config::MUSTSET, "data8",  "");
-    readConfig(config, "absorptionInfrared",   absorptionInfraredExpr,   Config::MUSTSET, "data9",  "");
+    readConfig(config, "area",                 areaExpr,                 Config::MUSTSET, "data0",  "Surface area [m^2]");
+    readConfig(config, "normalX",              normalXExpr,              Config::MUSTSET, "data1",  "X component of the surface normal");
+    readConfig(config, "normalY",              normalYExpr,              Config::MUSTSET, "data2",  "Y component of the surface normal");
+    readConfig(config, "normalZ",              normalZExpr,              Config::MUSTSET, "data3",  "Z component of the surface normal");
+    readConfig(config, "reflectionVisible",    reflexionVisibleExpr,     Config::MUSTSET, "data4",  "Visible reflection coefficient");
+    readConfig(config, "diffusionVisible",     diffusionVisibleExpr,     Config::MUSTSET, "data5",  "Visible diffusion coefficient");
+    readConfig(config, "absorptionVisible",    absorptionVisibleExpr,    Config::MUSTSET, "data6",  "Visible absorption coefficient");
+    readConfig(config, "reflectionInfrared",   reflexionInfraredExpr,    Config::MUSTSET, "data7",  "Infrared reflection coefficient");
+    readConfig(config, "diffusionInfrared",    diffusionInfraredExpr,    Config::MUSTSET, "data8",  "Infrared diffusion coefficient");
+    readConfig(config, "absorptionInfrared",   absorptionInfraredExpr,   Config::MUSTSET, "data9",  "Infrared absorption coefficient");
     readConfig(config, "specificHeatCapacity", specificHeatCapacityExpr, Config::MUSTSET, "data10", "0: no thermal radiation, -1: direct reemission [Ws/K/m^2]");
     endSequence(config);
     if(isCreateSchema(config))
@@ -170,7 +173,7 @@ template<> Bool readConfig(Config &config, const std::string &name, std::vector<
 
     // read data
     // ---------
-    logStatus<<"read input from <"<<fileNameIn<<">"<<Log::endl;
+    logStatus<<"read surfaces from <"<<fileNameIn<<">"<<Log::endl;
     Matrix data;
     readFileMatrix(fileNameIn, data);
 
@@ -221,11 +224,11 @@ template<> Bool readConfig(Config &config, const std::string &name, SatelliteMod
 
     renameDeprecatedConfig(config, "modul", "module", date2time(2020, 8, 20));
 
-    readConfig(config, "satelliteName",   satellite->satelliteName,   Config::MUSTSET,  "", "");
-    readConfig(config, "mass",            satellite->mass,            Config::MUSTSET,  "", "");
-    readConfig(config, "coefficientDrag", satellite->coefficientDrag, Config::MUSTSET,  "", "");
-    readConfig(config, "surfaces",        satellite->surfaces,        Config::MUSTSET,  "", "");
-    readConfig(config, "module",          satellite->modules,         Config::OPTIONAL, "", "");
+    readConfig(config, "satelliteName",   satellite->satelliteName,   Config::MUSTSET,  "", "Name of the satellite");
+    readConfig(config, "mass",            satellite->mass,            Config::MUSTSET,  "", "Satellite mass in [kg]");
+    readConfig(config, "coefficientDrag", satellite->coefficientDrag, Config::MUSTSET,  "", "Drag coefficient of the satellite");
+    readConfig(config, "surfaces",        satellite->surfaces,        Config::MUSTSET,  "", "Surfaces of the satellite");
+    readConfig(config, "module",          satellite->modules,         Config::OPTIONAL, "", "Modules of the satellite");
     endSequence(config);
 
     // extra module to set specificHeatCapacity without changing the file format
