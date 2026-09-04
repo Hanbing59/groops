@@ -123,7 +123,7 @@ void GnssReceiver::deleteObservation(UInt idTrans, UInt idEpoch)
       return;
     observations_[idEpoch][idTrans] = nullptr;
     if(std::all_of(observations_[idEpoch].begin(), observations_[idEpoch].end(), [](auto obs) {return obs == nullptr;}))
-      disable(idEpoch, "no valid transmitters left");
+      disable(idEpoch, "no valid transmitters left at this epoch");
   }
   catch(std::exception &e)
   {
@@ -312,7 +312,7 @@ void GnssReceiver::readObservations(const FileName &fileName, const std::vector<
   {
     GnssReceiverArc arc = InstrumentFile::read(fileName);
     // Counts each tracked transmitter as one observation
-    preprocessingInfo("in file <"+fileName.str()+">", arc.size(),
+    preprocessingInfo("in obs file <"+fileName.str()+">", arc.size(),
                       std::accumulate(arc.begin(), arc.end(), UInt(0), [](UInt count, const auto &e){return count+e.satellite.size();}), 0);
 
     // Epochs of matched observations
@@ -322,8 +322,12 @@ void GnssReceiver::readObservations(const FileName &fileName, const std::vector<
     std::map<GnssType, UInt> removedTypes;
 
     UInt idEpoch = 0;
-    // Number of deleted observations due to different reasons
-    std::vector<UInt> countDeleted(4, 0);
+    // Number of deleted epochs (epoch-satellite pairs) due to different reasons for each transmitter
+    std::map<GnssType, std::vector<UInt>> countDeletedEpo;
+    for(const auto &transmitter : transmitters)
+      countDeletedEpo[transmitter->PRN()] = std::vector<UInt>(5, 0);
+    // Number of matched observation epochs
+    UInt countMatchedEpochs = 0;
     // loop over observation epochs
     for(UInt arcEpoch=0; arcEpoch<arc.size(); arcEpoch++)
     {
@@ -341,6 +345,9 @@ void GnssReceiver::readObservations(const FileName &fileName, const std::vector<
       if((arc.at(arcEpoch).time+timeMargin < times.at(idEpoch)) || !useable(idEpoch))
         continue;
 
+      // Number of matched observation epochs
+      countMatchedEpochs++;
+
       // 3) if the processing epoch and the observation epoch match,
       //    update the processing epoch with the observation epoch.
       times.at(idEpoch) = arc.at(arcEpoch).time;
@@ -356,6 +363,8 @@ void GnssReceiver::readObservations(const FileName &fileName, const std::vector<
       for(UInt k=0; k<arc.at(arcEpoch).satellite.size(); k++)
       {
         GnssType satType = arc.at(arcEpoch).satellite.at(k);
+        // Number of epochs before filtering for this transmitter
+        countDeletedEpo[satType][0]++;
         // Index of the first obs type for this satellite
         UInt idType = 0;
         while(arc.at(arcEpoch).obsType.at(idType) != satType)
@@ -430,26 +439,26 @@ void GnssReceiver::readObservations(const FileName &fileName, const std::vector<
 
         if(obs->size() == 0)
         {
-          countDeleted[0]++;
+          countDeletedEpo[satType][1]++;
           delete obs;
           continue;
         }
         if(idTrans >= transmitters.size())
         {
-          countDeleted[1]++;
+          countDeletedEpo[satType][2]++;
           delete obs;
           continue;
         }
         if(!obs->init(*this, *transmitters.at(idTrans), rotationCrf2Trf, idEpoch, elevationCutOff, phaseWindup(idTrans)))
         {
-          countDeleted[2]++;
+          countDeletedEpo[satType][3]++;
           delete obs;
           continue;
         }
         std::vector<GnssType> types;
         if(!obs->observationList(group, types))
         {
-          countDeleted[3]++;
+          countDeletedEpo[satType][4]++;
           delete obs;
           continue;
         }
@@ -478,7 +487,7 @@ void GnssReceiver::readObservations(const FileName &fileName, const std::vector<
     {
       std::stringstream ss;
       for(const auto &type : removedTypes)
-        ss<<"  "<<type.first.str()<<"="<<type.second;
+        ss<<std::endl<<"    "<<type.first.str()<<"="<<type.second%"%6i"s;
       logWarning<<name()<<": removed undefined observations"<<ss.str()<<Log::endl;
     }
 
@@ -486,9 +495,33 @@ void GnssReceiver::readObservations(const FileName &fileName, const std::vector<
     copyObservations2ContinuousMemoryBlock();
 
     std::stringstream ss;
-    ss << "readObservations(), deleted";
-    for(UInt i=0; i<countDeleted.size(); i++)
-      ss << " " << countDeleted[i];
+    ss << "readObservations(), matched epo Nr.=" << countMatchedEpochs;
+
+    std::vector<UInt> countDeletedEpoAll(5, 0);
+    ss << std::endl << std::string(50, ' ') << "epo # of org, del due to reasons 1-4, left";
+    for(const auto &x : countDeletedEpo)
+    {
+      if(!x.second[0])
+        continue;
+      ss << std::endl << std::string(50, ' ') << x.first.prnStr() << " = " << x.second[0]%"%6i"s
+                                                                  << "   " << x.second[1]%"%6i"s
+                                                                  << "   " << x.second[2]%"%6i"s
+                                                                  << "   " << x.second[3]%"%6i"s
+                                                                  << "   " << x.second[4]%"%6i"s
+                                                                  << "   " << (x.second[0] - x.second[1] - x.second[2] - x.second[3] - x.second[4])%"%6i"s;
+      countDeletedEpoAll[0] += x.second[0];
+      countDeletedEpoAll[1] += x.second[1];
+      countDeletedEpoAll[2] += x.second[2];
+      countDeletedEpoAll[3] += x.second[3];
+      countDeletedEpoAll[4] += x.second[4];
+    }
+    ss << std::endl << std::string(50, ' ') << "SUM" << " = " << countDeletedEpoAll[0]%"%6i"s
+                                                     << "   " << countDeletedEpoAll[1]%"%6i"s
+                                                     << "   " << countDeletedEpoAll[2]%"%6i"s
+                                                     << "   " << countDeletedEpoAll[3]%"%6i"s
+                                                     << "   " << countDeletedEpoAll[4]%"%6i"s
+                                                     << "   " << (countDeletedEpoAll[0] - countDeletedEpoAll[1] - countDeletedEpoAll[2] - countDeletedEpoAll[3] - countDeletedEpoAll[4])%"%6i"s;
+
     preprocessingInfo(ss.str());
   }
   catch(std::exception &e)
@@ -909,37 +942,73 @@ void GnssReceiver::disableEpochsWithGrossCodeObservationOutliers(ObservationEqua
   {
     // Count the number of disabled epochs
     UInt countDisabled = 0;
+    // Count the number of deleted epochs for each transmitter
+    std::map<GnssType, std::vector<UInt>> countDeletedEpo;
     for(UInt idEpoch=0; idEpoch<idEpochSize(); idEpoch++)
       if(useable(idEpoch))
       {
         // number of outlier satellites at this epoch
         UInt outlierCount = 0;
-        // number of observed satellites at this epoch
-        UInt count   = 0;
+        // List of observed satellites at this epoch
+        std::map<UInt, GnssType> observedSatellites;
         for(UInt idTrans=0; idTrans<idTransmitterSize(idEpoch); idTrans++)
           if(observation(idTrans, idEpoch))
           {
             const GnssObservationEquation &eqn = *eqnList(idTrans, idEpoch);
+            observedSatellites[idTrans] = eqn.transmitter->PRN();
+            // Initialize the entry for this transmitter if it doesn't exist yet
+            if(countDeletedEpo.find(eqn.transmitter->PRN()) == countDeletedEpo.end())
+              countDeletedEpo[eqn.transmitter->PRN()] = std::vector<UInt>(3, 0);
+
+            // Number of valid epochs for this transmitter
+            countDeletedEpo[eqn.transmitter->PRN()][0]++;
             for(UInt idType=0; idType<eqn.types.size(); idType++)
               if((eqn.types.at(idType) == GnssType::RANGE) && (std::fabs(eqn.l.at(idType)) >= threshold))
               {
                 // delete all observations to a satellite at an epoch if they contain a gross code outlier
                 deleteObservation(idTrans, idEpoch);
                 outlierCount++;
+                // Number of deleted epochs for this transmitter (because of gross code outliers)
+                countDeletedEpo[eqn.transmitter->PRN()][1]++;
+                // Number of outlier epochs for this transmitter
+                countDeletedEpo[eqn.transmitter->PRN()][2]++;
                 break;
               }
-            count++;
           }
-
+        // number of observed satellites at this epoch
+        UInt count = observedSatellites.size();
         // disable epoch if outlierRatio or more of the observed satellites have gross code outliers
         if(outlierCount >= outlierRatio * count)
         {
           disable(idEpoch, "too many gross code outliers, "+outlierCount%"%i out of "s+count%"%i transmitters"s);
           countDisabled++;
+          // Number of deleted epochs for each transmitter (because of disabled epochs)
+          for(const auto &sat : observedSatellites)
+            if(observation(sat.first, idEpoch))
+              countDeletedEpo[sat.second][1]++;
         }
       }
 
-    preprocessingInfo("disableEpochsWithGrossCodeObservationOutliers(), disabled "+countDisabled%"%i epochs"s);
+    std::stringstream ss;
+    ss << "disableEpochsWithGrossCodeObservationOutliers(), disabled " << countDisabled << " epochs (" << (outlierRatio * 100) << "% of observed satellites)";
+
+    std::vector<UInt> countDeletedEpoAll(3, 0);
+    for(const auto &x : countDeletedEpo)
+    {
+      ss << std::endl <<std::string(50, ' ') << "deleted epo # " << x.first.prnStr() << " = " << x.second[0]%"%6i"s
+                                                                                     << "   " << x.second[1]%"%6i"s
+                                                                                     << "   " << x.second[2]%"%6i"s
+                                                                                     << "   " << (x.second[0] - x.second[1])%"%6i"s;
+      countDeletedEpoAll[0] += x.second[0];
+      countDeletedEpoAll[1] += x.second[1];
+      countDeletedEpoAll[2] += x.second[2];
+    }
+    ss << std::endl <<std::string(50, ' ') << "deleted epo # " << "SUM" << " = " << countDeletedEpoAll[0]%"%6i"s
+                                                                        << "   " << countDeletedEpoAll[1]%"%6i"s
+                                                                        << "   " << countDeletedEpoAll[2]%"%6i"s
+                                                                        << "   " << (countDeletedEpoAll[0] - countDeletedEpoAll[1])%"%6i"s;
+
+    preprocessingInfo(ss.str());
   }
   catch(std::exception &e)
   {
@@ -954,8 +1023,12 @@ void GnssReceiver::createTracks(const std::vector<GnssTransmitterPtr> &transmitt
   try
   {
     tracks.clear();
-    // Count the number of deleted observations for each transmitter
-    std::vector<UInt> countDeleted(transmitters.size(), 0);
+    // Count the number of created tracks for each transmitter
+    std::map<GnssType, UInt> countCreatedTrk;
+    // Count the number of deleted epochs for each transmitter
+    std::map<GnssType, std::vector<UInt>> countDeletedEpo;
+    for(const auto &transmitter : transmitters)
+      countDeletedEpo[transmitter->PRN()] = std::vector<UInt>(3, 0);
     for(UInt idTrans=0; idTrans<transmitters.size(); idTrans++)
     {
       UInt idEpochStart = 0;
@@ -978,7 +1051,9 @@ void GnssReceiver::createTracks(const std::vector<GnssTransmitterPtr> &transmitt
             types.push_back(obs->at(idType).type);
         std::sort(types.begin(), types.end());
 
-        // number of epochs in this track
+        // Number of valid epochs for this transmitter
+        countDeletedEpo[transmitters.at(idTrans)->PRN()][0]++;
+        // number of valid epochs in this track
         UInt countEpoch = 1;
         // find the last epoch of this track
         UInt idEpochEnd = idEpochStart;
@@ -1002,6 +1077,7 @@ void GnssReceiver::createTracks(const std::vector<GnssTransmitterPtr> &transmitt
 
             idEpochEnd = idEpoch;
             countEpoch++;
+            countDeletedEpo[transmitters.at(idTrans)->PRN()][0]++;
           }
         }
 
@@ -1014,25 +1090,67 @@ void GnssReceiver::createTracks(const std::vector<GnssTransmitterPtr> &transmitt
         // a valid track: minimum number of epochs and at least 2 phase frequencies
         if((countEpoch >= minObsCountPerTrack) && (typeFrequencies.size() >= 2))
         {
+          logInfo << "createTracks():" << name() << " " << transmitters.at(idTrans)->PRN().prnStr() << " VAL trk: "
+                  << idEpochStart%"%6i"s << " - " << idEpochEnd%"%6i"s
+                  << ", " << countEpoch%"%6i"s << " epo (min. " << minObsCountPerTrack%"%6i"s << ")"
+                  << ", " << typeFrequencies.size()%"%2i"s << " frq (min. 2)" << Log::endl;
           tracks.push_back(std::make_shared<GnssTrack>(this, transmitters.at(idTrans).get(), idEpochStart, idEpochEnd, types));
           for(UInt idEpoch=idEpochStart; idEpoch<=idEpochEnd; idEpoch++)
             if(observation(idTrans, idEpoch))
               observation(idTrans, idEpoch)->track = tracks.back().get();
+          countCreatedTrk[transmitters.at(idTrans)->PRN()]++;
         }
         else
         {
+          logWarning << "createTracks():" << name() << " " << transmitters.at(idTrans)->PRN().prnStr() << " DEL trk: "
+                     << idEpochStart%"%6i"s << " - " << idEpochEnd%"%6i"s
+                     << ", " << countEpoch%"%6i"s << " epo (min. " << minObsCountPerTrack%"%6i"s << ")"
+                     << ", " << typeFrequencies.size()%"%2i"s << " frq (min. 2)" << Log::endl;
           for(UInt idEpoch=idEpochStart; idEpoch<=idEpochEnd; idEpoch++)
           {
+            if(!observation(idTrans, idEpoch))
+              continue;
             deleteObservation(idTrans, idEpoch);
-            countDeleted[idTrans]++;
+            // Number of deleted epochs for this transmitter
+            countDeletedEpo[transmitters.at(idTrans)->PRN()][1]++;
+            // Number of deleted epochs for this transmitter due to it being the last one deleted
+            if(std::all_of(observations_[idEpoch].begin(), observations_[idEpoch].end(), [](auto obs) {return obs == nullptr;}))
+              countDeletedEpo[transmitters.at(idTrans)->PRN()][2]++;
           }
         }
         idEpochStart = idEpochEnd + 1;
       }
     }
-    // total number of deleted observations for all transmitters
-    UInt countDeletedTotal = std::accumulate(countDeleted.begin(), countDeleted.end(), UInt(0));
-    preprocessingInfo("createTracks(), deleted "+countDeletedTotal%"%i observations"s);
+    std::stringstream ss;
+    ss << "createTracks()";
+
+    std::vector<UInt> countDeletedEpoAll(3, 0);
+    for(const auto &x : countDeletedEpo)
+    {
+      if(!x.second[0])
+        continue;
+      ss << std::endl << std::string(50, ' ') << "deleted epo # " << x.first.prnStr() << " = " << x.second[0]%"%6i"s
+                                                                                      << "   " << x.second[1]%"%6i"s
+                                                                                      << "   " << x.second[2]%"%6i"s
+                                                                                      << "   " << (x.second[0] - x.second[1])%"%6i"s;
+      countDeletedEpoAll[0] += x.second[0];
+      countDeletedEpoAll[1] += x.second[1];
+      countDeletedEpoAll[2] += x.second[2];
+    }
+    ss << std::endl << std::string(50, ' ') << "deleted epo # " << "SUM" << " = " << countDeletedEpoAll[0]%"%6i"s
+                                                                         << "   " << countDeletedEpoAll[1]%"%6i"s
+                                                                         << "   " << countDeletedEpoAll[2]%"%6i"s
+                                                                         << "   " << (countDeletedEpoAll[0] - countDeletedEpoAll[1])%"%6i"s;
+    ss << std::endl;
+
+    UInt countCreatedTrkAll = 0;
+    for(const auto &x : countCreatedTrk)
+    {
+      ss << std::endl << std::string(50, ' ') << "created trk # " << x.first.prnStr() << " = " << x.second%"%6i"s;
+      countCreatedTrkAll += x.second;
+    }
+    ss << std::endl << std::string(50, ' ') << "created trk # " << "SUM" << " = " << countCreatedTrkAll%"%6i"s;
+    preprocessingInfo(ss.str());
   }
   catch(std::exception &e)
   {
@@ -1321,15 +1439,52 @@ void GnssReceiver::cycleSlipsDetection(ObservationEquationList &eqnList, UInt mi
 {
   try
   {
+    // Number of tracks deleted for each transmitter
+    std::map<GnssType, UInt> countDeletedTrk;
+    // Number of observations deleted for each transmitter
+    std::map<GnssType, UInt> countDeletedObs;
     for(UInt idTrack=0; idTrack<tracks.size(); idTrack++)
     {
+      std::stringstream s;
+      s<<"cycleSlipsDetection(), track "<<idTrack<<" ("<<tracks.at(idTrack)->transmitter->name()<<") with "<<tracks.at(idTrack)->countObservations()%"%6i"s<<" observations";
+
       if(tracks.at(idTrack)->countObservations() >= std::max(minObsCountPerTrack, windowSize))
+      {
+        s << ", detection";
         cycleSlipsDetection(eqnList, tracks.at(idTrack), lambda, windowSize, tecSigmaFactor, extraTypes);
+      }
+
       if(tracks.at(idTrack)->countObservations() < minObsCountPerTrack)
+      {
+        s <<tracks.at(idTrack)->countObservations()%"%6i"s<< ", deleted";
+        countDeletedTrk[tracks.at(idTrack)->transmitter->PRN()]++;
+        countDeletedObs[tracks.at(idTrack)->transmitter->PRN()] += tracks.at(idTrack)->countObservations();
         deleteTrack(idTrack--);
+      }
+      logInfo<<s.str()<<Log::endl;
     }
 
-    preprocessingInfo("cycleSlipsDetection()");
+    std::stringstream ss;
+    ss << "cycleSlipsDetection()";
+
+    UInt countDeletedObsAll = 0;
+    for(const auto &x : countDeletedObs)
+    {
+      ss << std::endl << std::string(50, ' ') << "deleted obs # " << x.first.prnStr() << " = " << x.second%"%6i"s;
+      countDeletedObsAll += x.second;
+    }
+    ss << std::endl << std::string(50, ' ') << "deleted obs # " << "SUM" << " = " << countDeletedObsAll%"%6i"s;
+    ss << std::endl;
+
+    UInt countDeletedTrkAll = 0;
+    for(const auto &x : countDeletedTrk)
+    {
+      ss << std::endl << std::string(50, ' ') << "deleted trk # " << x.first.prnStr() << " = " << x.second%"%6i"s;
+      countDeletedTrkAll += x.second;
+    }
+    ss << std::endl << std::string(50, ' ') << "deleted trk # " << "SUM" << " = " << countDeletedTrkAll%"%6i"s;
+
+    preprocessingInfo(ss.str());
   }
   catch(std::exception &e)
   {

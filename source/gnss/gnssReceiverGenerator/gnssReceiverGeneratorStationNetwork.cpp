@@ -243,7 +243,10 @@ void GnssReceiverGeneratorStationNetwork::init(std::vector<GnssType> simulationT
             };
 
             if(!enoughEpochs())
+            {
+              logWarning<<"Not enough valid epochs in observations of <"<<recv->name()<<">, disabling receiver."<<Log::endl;
               continue;
+            }
 
             // clock file
             // ----------
