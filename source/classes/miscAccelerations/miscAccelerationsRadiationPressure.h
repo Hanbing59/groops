@@ -238,8 +238,9 @@ inline Vector3d MiscAccelerationsRadiationPressure::acceleration(SatelliteModelP
       {
         if((state->time > time) || ((time - state->time).seconds() > 15*60))
         {
-          logWarning<<time.dateTimeStr()<<" thermal radiation pressure: temperature state time "<<state->time.dateTimeStr()<<" is not within 15 min before -> restart with equillibrium temperature"<<Log::endl;
-          logWarning<<"maybe disable parallel computing?"<<Log::endl;
+          logWarning<<       time.mjdInt()<<" "<<       time.sod()%"%10.4f"s<<" thermal radiation pressure: temperature state time "<<
+                      state->time.mjdInt()<<" "<<state->time.sod()%"%10.4f"s<<" is not within 15 min before -> restart with equillibrium temperature! "<<
+                      "Maybe disable parallel computing?"<<Log::endl;
           computeEquillibriumTemperature(*state, time, absorbedPressure);
         }
         else
