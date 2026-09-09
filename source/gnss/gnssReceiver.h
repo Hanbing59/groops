@@ -279,8 +279,9 @@ public:
   void removeLowElevationTracks(ObservationEquationList &eqn, Angle minElevation);
 
   /**
-   * @brief Splits a @p track at epoch @p idEpochSplit into two new tracks.
-   * After splitting, the original track would be shortened and the new track would be returned.
+   * @brief Splits a track at a given epoch into two new tracks.
+   * After the splitting, the original track would be shortened to the epoch before the splitting epoch
+   * and the new track which starts at the splitting epoch would be added to the list of tracks and returned.
    * Track affiliations in observations and observation equations would be updated accordingly.
    * @param eqn The observation equations containing the reduced observations.
    * @param track The track to split.
@@ -298,19 +299,19 @@ public:
    * @param[out] typesPhase Phase types found in this track, not including the extra types.
    * @param[out] idEpochs Epochs in this track.
    * @param[out] combinations The resulting combinations.
-   * @param[out] cycles2tecu The conversion factor from cycles to TECU.
+   * @param[out] cycles2tecu The conversion factor from linear combination phase cycles to TECU.
    */
   void linearCombinations(ObservationEquationList &eqnList, GnssTrackPtr track, const std::vector<GnssType> &extraTypes,
                           std::vector<GnssType> &typesPhase, std::vector<UInt> &idEpochs, Matrix &combinations, Double &cycles2tecu) const;
 
   /**
-   * @brief Estimates range and TEC from phase observations.
+   * @brief Estimates epoch-wise ranges and STECs from phase observations.
    * @param[in] eqnList The list of observation equations.
    * @param[in] idTrans The ID of the transmitter.
-   * @param[in] idEpochs The epochs for which to compute range and TEC.
+   * @param[in] idEpochs The epochs for which to compute range and STEC.
    * @param[in] typesPhase The phase types found in the track.
-   * @param[out] range The resulting range.
-   * @param[out] tec The resulting TEC.
+   * @param[out] range The resulting range time series.
+   * @param[out] tec The resulting STEC time series (in TECU).
    */
   void rangeAndTec(ObservationEquationList &eqnList, UInt idTrans, const std::vector<UInt> &idEpochs,
                    const std::vector<GnssType> &typesPhase, Vector &range, Vector &tec) const;
@@ -396,7 +397,14 @@ public:
   /// Pointer to the ambiguity associated with this track
   GnssAmbiguity        *ambiguity;
 
-  /** @brief Constructor. */
+  /**
+   * @brief Constructor.
+   * @param _receiver Pointer to the GNSS receiver.
+   * @param _transmitter Pointer to the GNSS transmitter.
+   * @param _idEpochStart Starting epoch of the track.
+   * @param _idEpochEnd Ending epoch of the track.
+   * @param _types GNSS signal types of the observations in the track.
+   */
   GnssTrack(GnssReceiver *_receiver, GnssTransmitter *_transmitter, UInt _idEpochStart, UInt _idEpochEnd, const std::vector<GnssType> &_types);
 
   /** @brief Destructor. */

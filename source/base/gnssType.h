@@ -284,9 +284,9 @@ public:
   explicit GnssType(const std::string &str);
   GnssType &operator=(const GnssType &t) {type = t.type; return *this;}
 
-  /** @brief Returns the frequency of the GnssType. */
+  /** @brief Returns the frequency of this GNSS type, in Hz. */
   Double      frequency() const;
-  /** @brief Returns the wavelength of the GnssType. */
+  /** @brief Returns the wavelength of this GNSS type, in meters. */
   Double      wavelength() const;
   /** @brief Returns the string representation of the GnssType. */
   std::string str() const;
@@ -304,8 +304,13 @@ public:
   /** @brief Returns TRUE if calling instance is in the given list. */
   Bool isInList(const std::vector<GnssType> &types) const;
 
-  /** @brief Returns TRUE if calling instance is in the given list.
-  * Returns the @p index of types vector. If not found NULLINDEX is returned.*/
+  /**
+   * @brief Checks if the calling instance is in the given GNSS types list.
+   * @param[in] types The list of GNSS types to check against.
+   * @param[out] index The index of the calling instance in the list if found, otherwise NULLINDEX is returned.
+   * @return TRUE if calling instance is in the given list, FALSE otherwise.
+   * Returns TRUE if calling instance is in the given list.
+   */
   Bool isInList(const std::vector<GnssType> &types, UInt &index) const;
 
   /** @brief Returns the index of types vector. If not found NULLINDEX is returned. */

@@ -27,18 +27,21 @@ Matrix GnssLambda::phaseDecorrelation(const std::vector<GnssType> &types, Double
 
     // design matrix
     // assume for every phase observation an additional range observation
-    // parameters: range, TEC, ambiguities
+    // parameters: range, STEC, ambiguities for each phase observation
     const UInt dim = types.size();
     Matrix A(2*dim+1, 2+dim);
     for(UInt i=0; i<dim; i++)
     {
-      // phase observations:
-      A(i, 0)   = 1.;                                        // range
-      A(i, 1)   = types.at(i).ionosphericFactor();           // TEC
-      A(i, 2+i) = wavelengthFactor*types.at(i).wavelength(); // ambiguity
-      // range observations (100 times less accurate):
-      A(i+dim, 0) = 1./100.;       // range
-      A(i+dim, 1) = -A(i, 1)/100.; // TEC
+      // range of phase observation
+      A(i, 0)   = 1.;
+      // STEC of phase observation
+      A(i, 1)   = types.at(i).ionosphericFactor();
+      // ambiguity of phase observation
+      A(i, 2+i) = wavelengthFactor*types.at(i).wavelength();
+      // range of code observations (100 times less accurate):
+      A(i+dim, 0) = 1./100.;
+      // STEC of code observation (100 times less accurate)
+      A(i+dim, 1) = -A(i, 1)/100.;
     }
     A(2*dim, 0) = weightRange; // range is determined by geometry
 

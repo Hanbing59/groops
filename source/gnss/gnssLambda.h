@@ -48,11 +48,13 @@ namespace GnssLambda
 
   enum class IncompleteAction {STOP, SHRINKBLOCKSIZE, IGNORE, EXCEPTION};
 
-  /** @brief Decorrelate ambiguities (Melbourne Wuebbena like linear combinations).
-  * @param types list of phase observations.
-  * @param wavelengthFactor 0.5 for old receivers using squaring technology.
-  * @param weightRange weight of range obersvation (relative ro phase observation).
-  * @return Transformation matrix from decorrelated ambiguities to phase observations [cycles]->[m]. */
+  /**
+   * @brief Decorrelates ambiguities (Melbourne Wuebbena like linear combinations).
+   * @param types list of phase observations types.
+   * @param wavelengthFactor 0.5 for old receivers using squaring technology.
+   * @param weightRange weight of range obersvation (relative ro phase observation).
+   * @return Transformation matrix from decorrelated ambiguities to phase observations [cycles]->[m].
+   */
   Matrix phaseDecorrelation(const std::vector<GnssType> &types, Double wavelengthFactor, Double weightRange=0.0);
 
   // LAMBDA method

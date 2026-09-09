@@ -1285,36 +1285,48 @@ void GnssReceiver::linearCombinations(ObservationEquationList &eqnList, GnssTrac
             typesPhase.push_back(type);
       }
 
+    // Inverse transformation matrix from orignial phase biases (in cycles) to the decorrelated linear combinations (in meters)
     const Matrix Bias = GnssLambda::phaseDecorrelation(typesPhase, wavelengthFactor);
+    // epoch-wise estimates of the linear combinations of phase biases (excluding the least accurate one)
     combinations = Matrix(idEpochs.size(), Bias.columns()-1);
     UInt row = 0;
     for(UInt idEpoch : idEpochs)
     {
       const GnssObservationEquation &eqn = *eqnList(track->transmitter->idTrans(), idEpoch);
       Vector l = eqn.l;
+      // design matrix: columns correspond to range, STEC and phase biases
       Matrix A(l.rows(), Bias.columns()+2);
       UInt idx;
-      for(UInt idType=0; idType<eqn.types.size(); idType++) // ambiguities
+      for(UInt idType=0; idType<eqn.types.size(); idType++)
         if(eqn.types.at(idType).isInList(typesPhase, idx) || (eqn.types.at(idType) == GnssType::RANGE))
         {
+          // Normalize the observation by its standard deviation
           l(idType) = eqn.l(idType)/eqn.sigma0(idType);
-          A(idType, 0) = 1.; // range
-          A(idType, 1) = eqn.types.at(idType).ionosphericFactor(); // TEC
+          // range
+          A(idType, 0) = 1.;
+          // STEC
+          A(idType, 1) = eqn.types.at(idType).ionosphericFactor();
+          // phase observation
           if(idx != NULLINDEX)
             copy(Bias.row(idx), A.slice(idType, 2, 1, Bias.columns()));
+          // Normalize the design matrix by the standard deviation of the observation
           A.row(idType) *= 1./eqn.sigma0(idType);
         }
 
-      // skip the first, inaccurate one
+      // skip the first, i.e. the least accurate linear combination
       copy(leastSquares(A, l).row(2+1, Bias.columns()-1).trans(), combinations.row(row++));
     }
 
-    // determine cycle slip size in terms of TEC
-    Vector l = Bias.column(0); // cycle slips can only occur in this linear combination anymore
-    Matrix A(typesPhase.size(), 2, 1.); // first column range
+    // For detecting cycle slips in the least accurate linear combination via the STEC time series,
+    // we need to calculate the conversion factor from cycles (of the least accurate linear combination)
+    // to STEC.
+    Vector l = Bias.column(0);
+    // design matrix (using only phase observations): columns correspond to range and STEC
+    Matrix A(typesPhase.size(), 2, 1.);
     for(UInt idType=0; idType<typesPhase.size(); idType++)
-      A(idType, 1) = typesPhase.at(idType).ionosphericFactor(); // TEC
-    cycles2tecu = std::fabs(leastSquares(A, l)(1,0)); // one cycle slip in terms of TEC
+      A(idType, 1) = typesPhase.at(idType).ionosphericFactor(); // STEC
+    // one cycle slip in the least accurate linear combination in terms of TEC unit
+    cycles2tecu = std::fabs(leastSquares(A, l)(1,0));
   }
   catch(std::exception &e)
   {
@@ -1329,8 +1341,10 @@ void GnssReceiver::rangeAndTec(ObservationEquationList &eqnList, UInt idTrans, c
 {
   try
   {
+    // design matrix (using only phase observations): columns correspond to range and STEC
     Matrix A(typesPhase.size(), 2, 1.);
     for(UInt k=0; k<A.rows(); k++)
+      // STEC
       A(k, 1) = typesPhase.at(k).ionosphericFactor();
 
     Matrix L(typesPhase.size(), idEpochs.size());
@@ -1350,6 +1364,12 @@ void GnssReceiver::rangeAndTec(ObservationEquationList &eqnList, UInt idTrans, c
 
 /***********************************************/
 
+/**
+ * @brief Computes the bias/mean of the given data within a specified maximum range.
+ * @param data The input data vector.
+ * @param maxRange The maximum allowed range for the bias computation.
+ * @return The computed bias.
+ */
 static Double computeBias(const Vector &data, Double maxRange)
 {
   try
@@ -1502,15 +1522,16 @@ void GnssReceiver::cycleSlipsDetection(ObservationEquationList &eqnList, GnssTra
     // -----------------------------------------------------
     // list of phase types in this track (additional to extraTypes)
     std::vector<GnssType> typesPhase;
-    // list of epochs in this track with valid observations
+    // index list of epochs in this track with valid observations
     std::vector<UInt>     idEpochs;
     // the computed linear combinations of the observations in this track
     Matrix                combinations;
-    // conversion factor from cycles to TEC
+    // conversion factor from cycles (of the least accurate linear combination) to TEC
     Double                cycles2tecu;
     linearCombinations(eqnList, track, extraTypes, typesPhase, idEpochs, combinations, cycles2tecu);
     // marking cycle slips at epochs
     Vector slips(idEpochs.size());
+    // Loop over each linear combination to detect cycle slips
     for(UInt k=0; k<combinations.columns(); k++)
     {
       const Vector smoothed = totalVariationDenoising(combinations.column(k), lambda);
@@ -1525,16 +1546,16 @@ void GnssReceiver::cycleSlipsDetection(ObservationEquationList &eqnList, GnssTra
       if(slips(i))
       {
         splitTrack(eqnList, track, idEpochs.at(i));
-        // the original track is shortened to the epoch before the splitting epoch
+        // resize the index list to reflect the shortened original track
         idEpochs.resize(i);
       }
 
-    // find cycle slips in TEC based on moving window over autoregressive model residuals
+    // Detect cycle slips (in TEC) based on moving window over autoregressive model residuals
     // ----------------------------------------------------------------------------------
     Vector range, tec;
     rangeAndTec(eqnList, track->transmitter->idTrans(), idEpochs, typesPhase, range, tec);
-
-    const UInt order = 3; // AR model order
+    // AR model order
+    const UInt order = 3;
     if(windowSize && (tec.size() >= order+windowSize+1))
     {
       // Estimate AR process with Burg
@@ -1598,8 +1619,8 @@ void GnssReceiver::cycleSlipsDetection(ObservationEquationList &eqnList, GnssTra
       // compute forward/backwards prediction error
       // could also be done with slicing stuff but I think this is
       // easier to understand
-      // Formula: x(t) - phi_1*x(t-1) - phi_2*x(t-2) - phi_3*x(t-3) = e_forward
-      //          x(t-3) - phi_1*x(t-2) - phi_2*x(t-1) - phi_3*x(t) = e_backward
+      // Formula: x(t  ) - phi_1*x(t-1) - phi_2*x(t-2) - phi_3*x(t-3) = e_forward
+      //          x(t-3) - phi_1*x(t-2) - phi_2*x(t-1) - phi_3*x(t  ) = e_backward
       // AR coefficients should be the same according to a lot of conditions which
       // would theoretically need to be checked but honestly its not necessary
       // for this scenarios.
