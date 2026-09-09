@@ -68,7 +68,6 @@ GnssReceiverGeneratorLowEarthOrbiter::GnssReceiverGeneratorLowEarthOrbiter(Confi
       readConfig(config, "tecSigmaFactor",               tecSigmaFactor,          Config::DEFAULT,  "3.5",  "factor applied to moving standard deviation used as threshold in TEC smoothness evaluation during cycle slip detection");
       readConfig(config, "outputfileTrackBefore",        fileNameTrackBefore,     Config::OPTIONAL, "",     "variables {station}, {prn}, {trackTimeStart}, {trackTimeEnd}, {types}, TEC and MW-like combinations in cycles for each track before cycle slip detection");
       readConfig(config, "outputfileTrackAfter",         fileNameTrackAfter,      Config::OPTIONAL, "",     "variables {station}, {prn}, {trackTimeStart}, {trackTimeEnd}, {types}, TEC and MW-like combinations in cycles for each track after cycle slip detection");
-      readConfig(config, "extraTypes",                   extraTypes,              Config::OPTIONAL, "",     "extra GNSS phase types to be considered");
       endSequence(config);
     }
     if(isCreateSchema(config)) return;
@@ -206,7 +205,7 @@ void GnssReceiverGeneratorLowEarthOrbiter::preprocessing(Gnss *gnss, Parallel::C
     {
       try
       {
-        recv->createTracks(gnss->transmitters, minObsCountPerTrack, extraTypes);
+        recv->createTracks(gnss->transmitters, minObsCountPerTrack);
         std::vector<Vector3d> posApriori = recv->pos;
         // estimate initial clock errors from code observations
         recv->pos = recv->estimateInitialClockErrorFromCodeObservations(gnss->transmitters, gnss->funcRotationCrf2Trf, gnss->funcReduceModels, huber, huberPower, TRUE/*estimateKinematicPosition*/);
@@ -215,11 +214,11 @@ void GnssReceiverGeneratorLowEarthOrbiter::preprocessing(Gnss *gnss, Parallel::C
         recv->pos = std::move(posApriori); // restore apriori positions
 
         recv->disableEpochsWithGrossCodeObservationOutliers(eqn, codeMaxPosDiff, 0.5);
-        recv->writeTracks(fileNameTrackBefore, eqn, extraTypes);
-        recv->cycleSlipsDetection(eqn, minObsCountPerTrack, denoisingLambda, tecWindowSize, tecSigmaFactor, extraTypes);
-        recv->trackOutlierDetection(eqn, extraTypes, huber, huberPower);
+        recv->writeTracks(fileNameTrackBefore, eqn);
+        recv->cycleSlipsDetection(eqn, minObsCountPerTrack, denoisingLambda, tecWindowSize, tecSigmaFactor);
+        recv->trackOutlierDetection(eqn, huber, huberPower);
         recv->cycleSlipsRepairAtSameFrequency(eqn);
-        recv->writeTracks(fileNameTrackAfter, eqn, extraTypes);
+        recv->writeTracks(fileNameTrackAfter, eqn);
 
         // apply factors for accuracies from expressions
         if(exprSigmaPhase || exprSigmaCode)

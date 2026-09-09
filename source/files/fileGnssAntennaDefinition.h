@@ -185,7 +185,7 @@ class GnssAntennaPattern
   // pattern estimation -> not written to file
   std::vector<std::vector<std::vector<Double>>> residuals;
   Matrix   ePe, redundancy;
-  Matrix   sum, count;
+  Matrix   sum, weight, count;
 
   /**
    * @brief Returns the antenna variations for a given azimuth and elevation angle.

@@ -264,13 +264,12 @@ public:
    * @brief Creates tracks with continuously identical set of phase and range observations.
    * @param[in] transmitters A vector of shared pointers to GNSS transmitters.
    * @param[in] minObsCountPerTrack The minimum number of epochs per track.
-   * @param[in] extraTypes A vector of extra GNSS phase types to include in the tracks.
    *
    * @note Tracks may contain short gaps but must contain observations of at least @p minObsCountPerTrack epochs.
    * @note Extra phase types are included (e.g. L5*G), but tracks must have at
    *       least two other phases at different frequencies.
    */
-  void createTracks(const std::vector<GnssTransmitterPtr> &transmitters, UInt minObsCountPerTrack, const std::vector<GnssType> &extraTypes={});
+  void createTracks(const std::vector<GnssTransmitterPtr> &transmitters, UInt minObsCountPerTrack);
 
   /** @brief Deletes a track and all its related observations. */
   void deleteTrack(UInt idTrack);
@@ -290,6 +289,12 @@ public:
    *         ending at the original track's end epoch.
    */
   GnssTrackPtr splitTrack(ObservationEquationList &eqn, GnssTrackPtr track, UInt idEpochSplit);
+
+  /**
+   * @brief List of phase types that require special handling.
+   * @note L5 of BLOCK IIF has temporal changing bias.
+   */
+  std::vector<GnssType> getExtraTypes(const ObservationEquationList &eqn, GnssTrackPtr track) const;
 
   /**
    * @brief Computes Melbourne-Wuebbena-like linear combinations for a given track.
@@ -320,11 +325,10 @@ public:
    * @brief Writes phase tracks to a file.
    * @param fileName The name of the file to write tracks to.
    * @param eqnList The list of observation equations.
-   * @param extraTypes The extra GNSS signal types to include.
    *
    * @note The tracks are written in a format that can be read by the @a readTracks function.
    */
-  void writeTracks(const FileName &fileName, ObservationEquationList &eqnList, const std::vector<GnssType> &extraTypes) const;
+  void writeTracks(const FileName &fileName, ObservationEquationList &eqnList) const;
 
   /**
    * @brief Splits tracks at detected cycle slips based on all Melbourne-Wuebbena like combinations.
@@ -336,8 +340,8 @@ public:
    * @param lambda Regularization parameter (@see @a totalVariationDenoising) (e.g. @p lambda = 5 for GPS ground stations).
    * @param[in] windowSize Size of the moving window used for the TEC smoothness evaluation. If 0, TEC is not analyzed.
    * @param tecSigmaFactor Factor applied to moving standard deviation of AR model residuals to determine threshold for peak/outlier detection.
-   * @param extraTypes GPS L5 observations are handled separately due to temporal changing bias.*/
-  void cycleSlipsDetection(ObservationEquationList &eqnList, UInt minObsCountPerTrack, Double lambda, UInt windowSize, Double tecSigmaFactor, const std::vector<GnssType> &extraTypes={});
+   */
+  void cycleSlipsDetection(ObservationEquationList &eqnList, UInt minObsCountPerTrack, Double lambda, UInt windowSize, Double tecSigmaFactor);
 
   /**
    * @brief Splits the track at detected cycle slips based on all Melbourne-Wuebbena like combinations.
@@ -348,9 +352,8 @@ public:
    * @param tecSigmaFactor Factor applied to moving standard deviation of AR model residuals to determine threshold for peak/outlier detection.
    * @param countSlips Number of detected cycle slips.
    * @param countSlipsTrans Number of detected cycle slips for each transmitter.
-   * @param extraTypes GPS L5 observations are handled separately due to temporal changing bias.
    */
-  void cycleSlipsDetection(ObservationEquationList &eqnList, GnssTrackPtr track, Double lambda, UInt windowSize, Double tecSigmaFactor, UInt &countSlips, std::map<GnssType, UInt> &countSlipsTrans, const std::vector<GnssType> &extraTypes);
+  void cycleSlipsDetection(ObservationEquationList &eqnList, GnssTrackPtr track, Double lambda, UInt windowSize, Double tecSigmaFactor, UInt &countSlips, std::map<GnssType, UInt> &countSlipsTrans);
 
   /**
    * @brief Repairs cycle slip differences between different phase types of
@@ -363,12 +366,11 @@ public:
   /**
    * @brief Detects outliers in tracks based on robust least squares estimation.
    * @param eqn Observation equations (reduced observations).
-   * @param ignoreTypes Types of observations to be ignored (downweighted) in the estimation.
    * @param huber Huber loss parameter.
    * @param huberPower Power for the Huber loss function.
    * @note Outliers are not disabled or deleted but downweighted.
    */
-  void trackOutlierDetection(const ObservationEquationList &eqn, const std::vector<GnssType> &ignoreTypes, Double huber, Double huberPower);
+  void trackOutlierDetection(const ObservationEquationList &eqn, Double huber, Double huberPower);
 
   /**
    * @brief Total variation denoising, which solves the total variation regularized least-squares problem.

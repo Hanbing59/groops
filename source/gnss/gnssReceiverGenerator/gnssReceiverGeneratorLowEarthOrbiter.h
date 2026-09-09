@@ -66,7 +66,6 @@ class GnssReceiverGeneratorLowEarthOrbiter : public GnssReceiverGeneratorBase
   UInt                  tecWindowSize;
   Double                tecSigmaFactor;
   FileName              fileNameTrackBefore, fileNameTrackAfter;
-  std::vector<GnssType> extraTypes;
   GnssReceiverPtr       recv;
 
 public:

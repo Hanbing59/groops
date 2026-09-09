@@ -39,9 +39,8 @@ besides the residuals, which can also be selected with \configClass{type}{gnssTy
 \end{itemize}
 
 Furthermore these files may include for each residual \configClass{type}{gnssType}
-information about the redundancy and the accuracy relation $\sigma/\sigma_0$
-of the estimated $\sigma$ versus the apriori $\sigma_0$ from the least squares adjustment.
-The three values (residuals, redundancy, $\sigma/\sigma_0$) are coded with the same type.
+information about the redundancy and the accuracy $\sigma$ from the least squares adjustment.
+The 3 values (residuals, redundancy, $\sigma$) are coded with the same type.
 To get access to all values the corresponding type must be repeated in \configClass{type}{gnssType}.
 
 Example: Selected GPS phase residuals (\configClass{type}{gnssType}='\verb|L1*G|' and \configClass{type}{gnssType}='\verb|L2*G|').
@@ -99,19 +98,15 @@ void InstrumentGnssReceiver2TimeSeries::run(Config &config, Parallel::Communicat
         InstrumentFile fileReceiver(fileName);
         for(UInt arcNo=0; arcNo<fileReceiver.arcCount(); arcNo++)
         {
-          GnssReceiverArc arc = fileReceiver.readArc(arcNo);
           MiscValuesArc arcNew;
-          for(auto &epoch : arc)
+          for(auto &epoch : GnssReceiverArc(fileReceiver.readArc(arcNo)))
           {
             UInt idObs = 0;
             for(GnssType typeSat : epoch.satellite)
             {
-              // find first type for this satellite
-              UInt idType = std::distance(epoch.obsType.begin(), std::find(epoch.obsType.begin(), epoch.obsType.end(), typeSat));
-
               MiscValuesEpoch epochNew(2+types.size()); // prn, system, types
               epochNew.time      = epoch.time;
-              // PRN
+              epochNew.values    = Vector(2+types.size(), NAN_EXPR);
               epochNew.values(0) = static_cast<Double>(typeSat.prn());
               // system ID
                    if(typeSat == GnssType::GPS)     epochNew.values(1) = static_cast<Double>('G');
@@ -124,18 +119,18 @@ void InstrumentGnssReceiver2TimeSeries::run(Config &config, Parallel::Communicat
 
               Bool                  found    = FALSE;
               std::vector<GnssType> typesTmp = types;
-              // loop over all obs types for this satellite
-              while((idType<epoch.obsType.size()) && (idObs<epoch.observation.size()) && (epoch.obsType.at(idType) == typeSat))
+              // find type for the satellite system, loop over all obs for this satellite
+              UInt idType = std::distance(epoch.obsType.begin(), std::find(epoch.obsType.begin(), epoch.obsType.end(), typeSat));
+              for(; (idType<epoch.obsType.size()) && (epoch.obsType.at(idType)==typeSat); idType++, idObs++)
               {
-                const GnssType type  = epoch.obsType.at(idType++) + typeSat;
-                const Double   value = epoch.observation.at(idObs++);
+                const GnssType type  = epoch.obsType.at(idType) + typeSat;
+                const Double   value = epoch.observation.at(idObs);
 
-                const UInt     idx   = GnssType::index(typesTmp, type);
-                if(idx != NULLINDEX)
+                UInt idx;
+                if(type.isInList(typesTmp, idx) && value && !std::isnan(value))
                 {
                   epochNew.values(2+idx) = value;
-                  // Mark this type as processed
-                  typesTmp.at(idx) = GnssType(static_cast<UInt64>(-1));
+                  typesTmp.at(idx) = GnssType(static_cast<UInt64>(-1)); // disable types already found
                   found = TRUE;
                 }
               }

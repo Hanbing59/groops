@@ -81,7 +81,6 @@ class GnssReceiverGeneratorStationNetwork : public GnssReceiverGeneratorBase
   UInt                  tecWindowSize;
   Double                tecSigmaFactor;
   FileName              fileNameTrackBefore, fileNameTrackAfter;
-  std::vector<GnssType> extraTypes;
   // List of receivers of this station network
   std::vector<GnssReceiverPtr> receivers;
 
