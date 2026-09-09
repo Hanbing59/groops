@@ -346,9 +346,11 @@ public:
    * @param lambda Regularization parameter (@see @a totalVariationDenoising) (e.g. @p lambda = 5 for GPS ground stations).
    * @param[in] windowSize Size of the moving window used for the TEC smoothness evaluation. If 0, TEC is not analyzed.
    * @param tecSigmaFactor Factor applied to moving standard deviation of AR model residuals to determine threshold for peak/outlier detection.
+   * @param countSlips Number of detected cycle slips.
+   * @param countSlipsTrans Number of detected cycle slips for each transmitter.
    * @param extraTypes GPS L5 observations are handled separately due to temporal changing bias.
    */
-  void cycleSlipsDetection(ObservationEquationList &eqnList, GnssTrackPtr track, Double lambda, UInt windowSize, Double tecSigmaFactor, const std::vector<GnssType> &extraTypes);
+  void cycleSlipsDetection(ObservationEquationList &eqnList, GnssTrackPtr track, Double lambda, UInt windowSize, Double tecSigmaFactor, UInt &countSlips, std::map<GnssType, UInt> &countSlipsTrans, const std::vector<GnssType> &extraTypes);
 
   /**
    * @brief Repairs cycle slip differences between different phase types of

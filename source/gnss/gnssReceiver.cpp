@@ -1090,10 +1090,11 @@ void GnssReceiver::createTracks(const std::vector<GnssTransmitterPtr> &transmitt
         // a valid track: minimum number of epochs and at least 2 phase frequencies
         if((countEpoch >= minObsCountPerTrack) && (typeFrequencies.size() >= 2))
         {
-          logInfo << "createTracks():" << name() << " " << transmitters.at(idTrans)->PRN().prnStr() << " VAL trk: "
+          logInfo << "createTracks(): " << name() << " " << transmitters.at(idTrans)->PRN().prnStr() << " VAL trk: "
                   << idEpochStart%"%6i"s << " - " << idEpochEnd%"%6i"s
                   << ", " << countEpoch%"%6i"s << " epo (min. " << minObsCountPerTrack%"%6i"s << ")"
-                  << ", " << typeFrequencies.size()%"%2i"s << " frq (min. 2)" << Log::endl;
+                  << ", " << typeFrequencies.size()%"%2i"s << " frq (min. 2)"
+                  << ", " << (tracks.size()+1)%"%6i"s << Log::endl;
           tracks.push_back(std::make_shared<GnssTrack>(this, transmitters.at(idTrans).get(), idEpochStart, idEpochEnd, types));
           for(UInt idEpoch=idEpochStart; idEpoch<=idEpochEnd; idEpoch++)
             if(observation(idTrans, idEpoch))
@@ -1102,7 +1103,7 @@ void GnssReceiver::createTracks(const std::vector<GnssTransmitterPtr> &transmitt
         }
         else
         {
-          logWarning << "createTracks():" << name() << " " << transmitters.at(idTrans)->PRN().prnStr() << " DEL trk: "
+          logWarning << "createTracks(): " << name() << " " << transmitters.at(idTrans)->PRN().prnStr() << " DEL trk: "
                      << idEpochStart%"%6i"s << " - " << idEpochEnd%"%6i"s
                      << ", " << countEpoch%"%6i"s << " epo (min. " << minObsCountPerTrack%"%6i"s << ")"
                      << ", " << typeFrequencies.size()%"%2i"s << " frq (min. 2)" << Log::endl;
@@ -1225,8 +1226,10 @@ void GnssReceiver::removeLowElevationTracks(ObservationEquationList &eqnList, An
         deleteTrack(idTrack);
       }
     }
+    std::stringstream ss;
+    ss << "removeLowElevationTracks(), deleted " << countDeleted << " tracks (" << minElevation*RAD2DEG << " degrees)";
 
-    preprocessingInfo("removeLowElevationTracks(), deleted "+countDeleted%"%i tracks"s);
+    preprocessingInfo(ss.str());
   }
   catch(std::exception &e)
   {
@@ -1461,39 +1464,54 @@ void GnssReceiver::cycleSlipsDetection(ObservationEquationList &eqnList, UInt mi
   {
     // Number of tracks deleted for each transmitter
     std::map<GnssType, UInt> countDeletedTrk;
-    // Number of observations deleted for each transmitter
-    std::map<GnssType, UInt> countDeletedObs;
+    // Number of epochs deleted for each transmitter
+    std::map<GnssType, UInt> countDeletedEpo;
+    // Number of detected slips from all tracks of all transmitters
+    UInt countSlips = 0;
+    // Number of detected slips of each transmitter
+    std::map<GnssType, UInt> countSlipsTrans;
+    std::stringstream ss;
     for(UInt idTrack=0; idTrack<tracks.size(); idTrack++)
     {
-      std::stringstream s;
-      s<<"cycleSlipsDetection(), track "<<idTrack<<" ("<<tracks.at(idTrack)->transmitter->name()<<") with "<<tracks.at(idTrack)->countObservations()%"%6i"s<<" observations";
+      // ss.str("");
+      // ss << "cycleSlipsDetection(): " << name() << " " << tracks.at(idTrack)->transmitter->name() << " "
+      //    << idTrack%"%6i"s << " " << tracks.at(idTrack)->countObservations()%"%6i"s;
 
       if(tracks.at(idTrack)->countObservations() >= std::max(minObsCountPerTrack, windowSize))
       {
-        s << ", detection";
-        cycleSlipsDetection(eqnList, tracks.at(idTrack), lambda, windowSize, tecSigmaFactor, extraTypes);
+        // ss << ", detection ";
+        cycleSlipsDetection(eqnList, tracks.at(idTrack), lambda, windowSize, tecSigmaFactor, countSlips, countSlipsTrans, extraTypes);
       }
 
       if(tracks.at(idTrack)->countObservations() < minObsCountPerTrack)
       {
-        s <<tracks.at(idTrack)->countObservations()%"%6i"s<< ", deleted";
+        // ss << tracks.at(idTrack)->countObservations()%"%6i"s<< ", deleted";
         countDeletedTrk[tracks.at(idTrack)->transmitter->PRN()]++;
-        countDeletedObs[tracks.at(idTrack)->transmitter->PRN()] += tracks.at(idTrack)->countObservations();
+        countDeletedEpo[tracks.at(idTrack)->transmitter->PRN()] += tracks.at(idTrack)->countObservations();
         deleteTrack(idTrack--);
       }
-      logInfo<<s.str()<<Log::endl;
+      // logInfo << ss.str() << Log::endl;
     }
 
-    std::stringstream ss;
-    ss << "cycleSlipsDetection()";
+    ss.str("");
+    ss << "cycleSlipsDetection(), " << countSlips << " slips detected, tracks shorter than " << minObsCountPerTrack << " epochs deleted";
 
-    UInt countDeletedObsAll = 0;
-    for(const auto &x : countDeletedObs)
+    UInt countSlipsAll = 0;
+    for(const auto &x : countSlipsTrans)
     {
-      ss << std::endl << std::string(50, ' ') << "deleted obs # " << x.first.prnStr() << " = " << x.second%"%6i"s;
-      countDeletedObsAll += x.second;
+      ss << std::endl << std::string(50, ' ') << "detected slips # " << x.first.prnStr() << " = " << x.second%"%6i"s;
+      countSlipsAll += x.second;
     }
-    ss << std::endl << std::string(50, ' ') << "deleted obs # " << "SUM" << " = " << countDeletedObsAll%"%6i"s;
+    ss << std::endl << std::string(50, ' ') << "detected slips # " << "SUM" << " = " << countSlipsAll%"%6i"s;
+    ss << std::endl;
+
+    UInt countDeletedEpoAll = 0;
+    for(const auto &x : countDeletedEpo)
+    {
+      ss << std::endl << std::string(50, ' ') << "deleted epo # " << x.first.prnStr() << " = " << x.second%"%6i"s;
+      countDeletedEpoAll += x.second;
+    }
+    ss << std::endl << std::string(50, ' ') << "deleted epo # " << "SUM" << " = " << countDeletedEpoAll%"%6i"s;
     ss << std::endl;
 
     UInt countDeletedTrkAll = 0;
@@ -1514,7 +1532,7 @@ void GnssReceiver::cycleSlipsDetection(ObservationEquationList &eqnList, UInt mi
 
 /***********************************************/
 
-void GnssReceiver::cycleSlipsDetection(ObservationEquationList &eqnList, GnssTrackPtr track, Double lambda, UInt windowSize, Double tecSigmaFactor, const std::vector<GnssType> &extraTypes)
+void GnssReceiver::cycleSlipsDetection(ObservationEquationList &eqnList, GnssTrackPtr track, Double lambda, UInt windowSize, Double tecSigmaFactor, UInt &countSlips, std::map<GnssType, UInt> &countSlipsTrans, const std::vector<GnssType> &extraTypes)
 {
   try
   {
@@ -1531,6 +1549,8 @@ void GnssReceiver::cycleSlipsDetection(ObservationEquationList &eqnList, GnssTra
     linearCombinations(eqnList, track, extraTypes, typesPhase, idEpochs, combinations, cycles2tecu);
     // marking cycle slips at epochs
     Vector slips(idEpochs.size());
+    // Count the number of slips of this track
+    UInt countSlipsTrack = 0;
     // Loop over each linear combination to detect cycle slips
     for(UInt k=0; k<combinations.columns(); k++)
     {
@@ -1538,8 +1558,25 @@ void GnssReceiver::cycleSlipsDetection(ObservationEquationList &eqnList, GnssTra
       const Double bias     = computeBias(smoothed, 0.01);
       // cycle slip if the rounded epoch-to-epoch difference of two consecutive unbiased denoised values exceeds 3/4 cycle
       for(UInt i=1; i<idEpochs.size(); i++)
-        if(std::fabs(std::round(smoothed(i)-bias) - std::round(smoothed(i-1)-bias)) > 0.75)
-          slips(i) = TRUE;
+      {
+        const Double diff = std::round(smoothed(i)-bias) - std::round(smoothed(i-1)-bias);
+        if(std::fabs(diff) > 0.75)
+        {
+          if(!slips(i))
+          {
+            countSlipsTrack++;
+            countSlipsTrans[track->transmitter->PRN()]++;
+            countSlips++;
+            slips(i) = TRUE;
+          }
+          logWarning << "cycleSlipsDetection(): " << name() << " " << track->transmitter->PRN().prnStr() << " "
+                     << track->idEpochStart%"%6i"s << " " << track->idEpochEnd%"%6i"s << " "
+                     << idEpochs.size()%"%6i"s << " " << (k+1)%"%1i"s << " "
+                     << countSlipsTrack%"%6i"s << " " << countSlipsTrans[track->transmitter->PRN()]%"%6i"s << " " << countSlips%"%6i"s << " "
+                     << bias%"%9.3f"s << " SLIP "
+                     << idEpochs.at(i)%"%6i"s << " " << diff%"%9.3f"s << Log::endl;
+        }
+      }
     }
 
     for(UInt i=slips.rows(); i-->0;)
@@ -1689,16 +1726,25 @@ void GnssReceiver::cycleSlipsDetection(ObservationEquationList &eqnList, GnssTra
       }
 
       // list of epochs where a cycle slip is detected
-      std::vector<UInt> slips;
+      std::vector<UInt> idEpochslips;
       for(UInt i = 0; i < slipsDetect.size(); i++)
         if(slipsDetect.at(i) == 3)
-          slips.push_back(i);
+          idEpochslips.push_back(i);
 
-      for(UInt i=slips.size(); i-->0;)
+      for(UInt i=idEpochslips.size(); i-->0;)
       {
-        splitTrack(eqnList, track, idEpochs.at(slips.at(i)));
+        splitTrack(eqnList, track, idEpochs.at(idEpochslips.at(i)));
         // shorten the original track to the epoch before the splitting epoch
-        idEpochs.resize(slips.at(i));
+        idEpochs.resize(idEpochslips.at(i));
+        countSlipsTrack++;
+        countSlipsTrans[track->transmitter->PRN()]++;
+        countSlips++;
+        logInfo << "cycleSlipsDetection(): " << name() << " " << track->transmitter->PRN().prnStr() << " "
+                << track->idEpochStart%"%6i"s << " " << track->idEpochEnd%"%6i"s << " "
+                << idEpochs.size()%"%6i"s << " " << 0%"%1i"s << " "
+                << countSlipsTrack%"%6i"s << " " << countSlipsTrans[track->transmitter->PRN()]%"%6i"s << " " << countSlips%"%6i"s << " "
+                << "STEC" << " SLIP "
+                << idEpochs.at(idEpochslips.at(i))%"%6i"s << " " << i%"%6i"s << Log::endl;
       }
     }
 
