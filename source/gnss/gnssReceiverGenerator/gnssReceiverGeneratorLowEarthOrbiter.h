@@ -39,10 +39,12 @@ the star camera data can be simulated by using \program{SimulateStarCamera}.
 * @see GnssReceiverGenerator */
 class GnssReceiverGeneratorLowEarthOrbiter : public GnssReceiverGeneratorBase
 {
+  /// Platform information file for the LEO receiver
   FileName              fileNameStationInfo;
   FileName              fileNameAntennaDef;
   FileName              fileNameReceiverDef;
   FileName              fileNameAccuracyDef;
+  /// Observation file for the LEO receiver
   FileName              fileNameObs;
   FileName              fileNameOrbit;
   FileName              fileNameStarCamera;

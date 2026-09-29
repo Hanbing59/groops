@@ -104,7 +104,8 @@ void InstrumentGnssReceiver2TimeSeries::run(Config &config, Parallel::Communicat
             UInt idObs = 0;
             for(GnssType typeSat : epoch.satellite)
             {
-              MiscValuesEpoch epochNew(2+types.size()); // prn, system, types
+              // Column indices: 0 = prn, 1 = system, 2+ = types
+              MiscValuesEpoch epochNew(2+types.size());
               epochNew.time      = epoch.time;
               epochNew.values    = Vector(2+types.size(), NAN_EXPR);
               epochNew.values(0) = static_cast<Double>(typeSat.prn());

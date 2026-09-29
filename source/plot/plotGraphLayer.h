@@ -56,7 +56,15 @@ public:
 
   Bool drawOnSecondAxis() const {return onSecondAxis;}
   virtual Bool requiresColorBar() const {return FALSE;}
+
+  /**
+   * @brief Gets the minimum and maximum values of the x-axis with extensions on both sides.
+   */
   virtual void getIntervalX(Bool isLogarithmic, Double &minX, Double &maxX) const;
+
+  /**
+   * @brief Gets the minimum and maximum values of the y-axis with extensions on both sides.
+   */
   virtual void getIntervalY(Bool isLogarithmic, Double minX, Double maxX, Double &minY, Double &maxY) const;
   virtual void getIntervalZ(Bool isLogarithmic, Double minX, Double maxX, Double minY, Double maxY, Double &minZ, Double &maxZ) const;
   virtual void writeDataFile(const FileName &workingDirectory, UInt idxLayer, Double minX, Double maxX, Double minY, Double maxY);
