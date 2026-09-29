@@ -254,6 +254,13 @@ void PlotAxisTime::setAutoInterval(Double minAuto, Double maxAuto)
   {
     if(std::isnan(vMin)) vMin = minAuto;
     if(std::isnan(vMax)) vMax = maxAuto;
+
+    if(vMin == vMax)
+    {
+      vMin -= 5.0/1440;
+      vMax += 5.0/1440;
+    }
+
     if(vMin > vMax) std::swap(vMin, vMax);
   }
   catch(std::exception &e)
