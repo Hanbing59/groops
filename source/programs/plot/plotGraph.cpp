@@ -104,7 +104,7 @@ void PlotGraph::run(Config &config, Parallel::CommunicatorPtr /*comm*/)
     for(UInt k=0; k<layer.size(); k++)
       layer.at(k)->getIntervalX(axisX->isLogarithmic(), minX, maxX);
     axisX->setAutoInterval(minX, maxX);
-    logInfo<<"  plot x range  ("<<axisX->getMin()<<" .. "<<axisX->getMax()<<") of ("<<minX<<" .. "<<maxX<<")"<<Log::endl;
+    logInfo<<"  plot x range  ("<<axisX->getMin()%"%.6f"s<<" .. "<<axisX->getMax()%"%.6f"s<<") of ("<<minX%"%.6f"s<<" .. "<<maxX%"%.6f"s<<")"<<Log::endl;
 
     // y-axis
     Double minY  =  1e99;
@@ -121,9 +121,9 @@ void PlotGraph::run(Config &config, Parallel::CommunicatorPtr /*comm*/)
     axisY->setAutoInterval(minY, maxY);
     if(axisY2)
       axisY2->setAutoInterval(minY2, maxY2);
-    logInfo<<"  plot y range  ("<<axisY->getMin()<<" .. "<<axisY->getMax()<<") of ("<<minY<<" .. "<<maxY<<")"<<Log::endl;
+    logInfo<<"  plot y range  ("<<axisY->getMin()%"%.6f"s<<" .. "<<axisY->getMax()%"%.6f"s<<") of ("<<minY%"%.6f"s<<" .. "<<maxY%"%.6f"s<<")"<<Log::endl;
     if(axisY2)
-      logInfo<<"  plot y2 range ("<<axisY2->getMin()<<" .. "<<axisY2->getMax()<<") of ("<<minY2<<" .. "<<maxY2<<")"<<Log::endl;
+      logInfo<<"  plot y2 range ("<<axisY2->getMin()%"%.6f"s<<" .. "<<axisY2->getMax()%"%.6f"s<<") of ("<<minY2%"%.6f"s<<" .. "<<maxY2%"%.6f"s<<")"<<Log::endl;
 
     // z-axis
     if(colorbar)
@@ -136,7 +136,7 @@ void PlotGraph::run(Config &config, Parallel::CommunicatorPtr /*comm*/)
         else
           layer.at(k)->getIntervalZ(colorbar->isLogarithmic(), minX, maxX, minY, maxY, minZ, maxZ);
       colorbar->setAutoInterval(minZ, maxZ);
-      logInfo<<"  plot z range  ("<<colorbar->getMin()<<" .. "<<colorbar->getMax()<<") of ("<<minZ<<" .. "<<maxZ<<")"<<Log::endl;
+      logInfo<<"  plot z range  ("<<colorbar->getMin()%"%.6f"s<<" .. "<<colorbar->getMax()%"%.6f"s<<") of ("<<minZ%"%.6f"s<<" .. "<<maxZ%"%.6f"s<<")"<<Log::endl;
     }
 
     // create data files

@@ -647,7 +647,7 @@ void GnssReceiver::simulateZeroObservations(const std::vector<GnssType> &types,
     copyObservations2ContinuousMemoryBlock();
 
     std::stringstream ss;
-    ss << "simulateObservations(), deleted";
+    ss << "simulateZeroObservations(), deleted";
     for(UInt i=0; i<countDeleted.size(); i++)
       ss << " " << countDeleted[i];
     preprocessingInfo(ss.str());
@@ -1126,18 +1126,18 @@ void GnssReceiver::createTracks(const std::vector<GnssTransmitterPtr> &transmitt
     {
       if(!x.second[0])
         continue;
-      ss << std::endl << std::string(50, ' ') << "deleted epo # " << x.first.prnStr() << " = " << x.second[0]%"%6i"s
-                                                                                      << "   " << x.second[1]%"%6i"s
-                                                                                      << "   " << x.second[2]%"%6i"s
-                                                                                      << "   " << (x.second[0] - x.second[1])%"%6i"s;
+      ss << std::endl << std::string(50, ' ') << "deleted epo # " << x.first.prnStr() << " = " << x.second[0]%"%9i"s
+                                                                                      << "   " << x.second[1]%"%9i"s
+                                                                                      << "   " << x.second[2]%"%9i"s
+                                                                                      << "   " << (x.second[0] - x.second[1])%"%9i"s;
       countDeletedEpoAll[0] += x.second[0];
       countDeletedEpoAll[1] += x.second[1];
       countDeletedEpoAll[2] += x.second[2];
     }
-    ss << std::endl << std::string(50, ' ') << "deleted epo # " << "SUM" << " = " << countDeletedEpoAll[0]%"%6i"s
-                                                                         << "   " << countDeletedEpoAll[1]%"%6i"s
-                                                                         << "   " << countDeletedEpoAll[2]%"%6i"s
-                                                                         << "   " << (countDeletedEpoAll[0] - countDeletedEpoAll[1])%"%6i"s;
+    ss << std::endl << std::string(50, ' ') << "deleted epo # " << "SUM" << " = " << countDeletedEpoAll[0]%"%9i"s
+                                                                         << "   " << countDeletedEpoAll[1]%"%9i"s
+                                                                         << "   " << countDeletedEpoAll[2]%"%9i"s
+                                                                         << "   " << (countDeletedEpoAll[0] - countDeletedEpoAll[1])%"%9i"s;
     ss << std::endl;
 
     UInt countCreatedTrkAll = 0;
@@ -1599,7 +1599,7 @@ void GnssReceiver::cycleSlipsDetection(ObservationEquationList &eqnList, GnssTra
                      << track->idEpochStart%"%6i"s << " " << track->idEpochEnd%"%6i"s << " "
                      << idEpochs.size()%"%6i"s << " " << (k+1)%"%1i"s << " "
                      << countSlipsTrack%"%6i"s << " " << countSlipsTrans[track->transmitter->PRN()]%"%6i"s << " " << countSlips%"%6i"s << " "
-                     << bias%"%9.3f"s << " SLIP "
+                     << bias%"%19.3f"s << " SLIP "
                      << idEpochs.at(i)%"%6i"s << " " << diff%"%9.3f"s << Log::endl;
         }
       }
