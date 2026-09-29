@@ -161,8 +161,10 @@ void InstrumentGnssReceiver2TimeSeries::run(Config &config, Parallel::Communicat
         std::vector<Double> values;
         for(const auto &arc : arcList)
           for(const auto &epoch : arc)
-            if(epoch.values(2+idType) != 0.)
+            if(!std::isnan(epoch.values(2+idType)))
               values.push_back(epoch.values(2+idType));
+        if(values.empty())
+          continue;
 
         const Vector v(values);
         logInfo<<types.at(idType).str()<<": mean="<<mean(v)%"%8.4f"s
